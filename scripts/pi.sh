@@ -9,6 +9,10 @@ export PI_CODING_AGENT_DIR="${PI_CODING_AGENT_DIR:-$PROFILE}"
 # directory visible to those child processes in sessions launched from this script.
 TOOLS_BIN_DIR="${CYBER_TOOLS_BIN_DIR:-${PI_TOOLS_DIR:-$HOME/.pi/tools}/bin}"
 export PATH="$TOOLS_BIN_DIR:${PATH:-}"
+DEFAULT_FFUF_WORDLIST="${PI_TOOLS_DIR:-$HOME/.pi/tools}/wordlists/seclists-common.txt"
+if [[ -z "${CYBER_FFUF_WORDLIST:-}" && -f "$DEFAULT_FFUF_WORDLIST" ]]; then
+  export CYBER_FFUF_WORDLIST="$DEFAULT_FFUF_WORDLIST"
+fi
 # The harness is repo scoped: run the session from the repository root so the
 # specialist roles, the evidence store and the job artifacts resolve there.
 cd "$ROOT"

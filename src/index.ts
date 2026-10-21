@@ -3,7 +3,7 @@ import { Type } from "typebox";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
-import { STATE_ENTRY, brief, recoverState, switchMode, updateState, type CyberMode, type CyberState } from "./state.ts";
+import { STATE_ENTRY, brief, recoverState, updateState, type CyberState } from "./state.ts";
 import { registerGithubTool } from "./tools/github.ts";
 import { registerEvidenceTool } from "./tools/evidence.ts";
 import { registerCyberJobsTool } from "./tools/jobs.ts";
@@ -12,9 +12,9 @@ import { registerBrowserTool } from "./tools/browser.ts";
 import { registerKnowledgeTool } from "./tools/knowledge.ts";
 import { contextLine } from "./evidence/db.ts";
 
-const CYBER_THEME = "cyber-defense"; // Single blue accent in both modes; nothing rethemes on mode change.
+const CYBER_THEME = "cyber-offense";
 const resource = (path: string) => fileURLToPath(new URL(`../${path}`, import.meta.url));
-const instructions = Object.fromEntries(["base", "offense", "defense"].map((name) => [name, readFileSync(resource(`prompts/${name}.md`), "utf8")]));
+const instructions = Object.fromEntries(["base", "offense"].map((name) => [name, readFileSync(resource(`prompts/${name}.md`), "utf8")]));
 
 /** Absolute path to the prompt tree. Injected into the runtime prompt so the agent can reach the full spec and packages by absolute path. */
 const PROMPTS_DIR = resource("prompts");
@@ -55,8 +55,7 @@ function renderOffense(modelId: string | undefined): string {
   return instructions.offense.replaceAll("{{PROMPTS_DIR}}", PROMPTS_DIR).replace("{{MODEL_OVERLAY}}", overlayFor(modelId));
 }
 /** One-line pointer to the full spec and the package set, re-injected on every provider call so it survives compaction. */
-function specPointer(mode: CyberMode): string {
-  if (mode !== "offense") return "";
+function specPointer(): string {
   const packages = Object.keys(PACKAGE_FILES).map((name) => `${name}=${join(PROMPTS_DIR, "packages", PACKAGE_FILES[name])}`).join(" ");
   return `OFFENSE SPEC: full=${join(PROMPTS_DIR, "offense-full.md")} | packages: ${packages} | read the file you need before acting on that area.`;
 }
@@ -73,8 +72,6 @@ export default function cyber(pi: ExtensionAPI): void {
   registerAdapterTools(pi);
   registerBrowserTool(pi);
   registerKnowledgeTool(pi);
-  const runningTools = new Set<string>();
-  let agentRunning = false;
   let visualReady = false;
   const current = (ctx: ExtensionContext) => recoverState(ctx.sessionManager.getBranch());
   const save = (state: CyberState) => pi.appendEntry(STATE_ENTRY, state);
@@ -84,16 +81,16 @@ export default function cyber(pi: ExtensionAPI): void {
     if (ctx.hasUI) ctx.ui.notify(content, type);
     else pi.sendMessage({ customType: "cyber.notice", content, display: true, details: { type } });
   }
-  /** OFFENSE renders red and DEFENSE blue (belt-color convention) whenever a theme is reachable; plain text otherwise (print mode, fixture UIs). */
-  function badge(ctx: ExtensionContext, mode: CyberMode): string {
-    if (ctx.mode !== "tui") return mode.toUpperCase();
-    try { return ctx.ui.theme.fg(mode === "offense" ? "error" : "accent", mode.toUpperCase()); }
-    catch { return mode.toUpperCase(); }
+  /** The sole engagement label uses the theme's red accent when a TUI is available. */
+  function badge(ctx: ExtensionContext): string {
+    if (ctx.mode !== "tui") return "OFFENSE";
+    try { return ctx.ui.theme.fg("accent", "OFFENSE"); }
+    catch { return "OFFENSE"; }
   }
-  function decorate(ctx: ExtensionContext, mode: CyberMode) {
+  function decorate(ctx: ExtensionContext) {
     if (ctx.mode !== "tui") return;
-    ctx.ui.setStatus("cyber", `${badge(ctx, mode)}${visualReady ? "" : " · theme unavailable"}`);
-    ctx.ui.setTitle(`Pi Cyber · ${mode.toUpperCase()}`);
+    ctx.ui.setStatus("cyber", `${badge(ctx)}${visualReady ? "" : " · theme unavailable"}`);
+    ctx.ui.setTitle("Pi Cyber · OFFENSE");
   }
   function applyTheme(ctx: ExtensionContext) {
     if (ctx.mode !== "tui") return;
@@ -105,40 +102,18 @@ export default function cyber(pi: ExtensionAPI): void {
   }
   function restore(ctx: ExtensionContext) {
     visualReady = false;
-    try { applyTheme(ctx); decorate(ctx, current(ctx).mode); }
+    try { applyTheme(ctx); decorate(ctx); }
     catch (error) { notice(ctx, errorText(error), "error"); }
   }
-  // Shared guard + persistence path for /cyber mode, /offense and /defense.
-  async function setMode(ctx: ExtensionContext, state: CyberState, mode: CyberMode) {
-    if (agentRunning || !ctx.isIdle() || runningTools.size || ctx.hasPendingMessages()) throw new Error("Mode switch refused while agent/tool work or queued messages are active. Stop or drain work first, then retry.");
-    const next = switchMode(state, mode);
-    save(next);
-    decorate(ctx, next.mode);
-    notice(ctx, `Cyber ${badge(ctx, next.mode)} · checkpoint ${next.revision}. Engagement scope and objective retained.`);
-  }
-  const registerModeCommand = (mode: CyberMode) => pi.registerCommand(mode, {
-    description: `Cyber engagement ${mode.toUpperCase()} mode (same switch as /cyber mode ${mode}).`,
-    handler: async (args, ctx) => {
-      try {
-        if (args.trim()) throw new Error(`Usage: /${mode} (no arguments).`);
-        await setMode(ctx, current(ctx), mode);
-      } catch (error) { notice(ctx, errorText(error), "error"); }
-    },
-  });
-  pi.on("resources_discover", () => ({ themePaths: [resource("themes/cyber-offense.json"), resource("themes/cyber-defense.json")] }));
-  pi.on("session_start", (_event, ctx) => { runningTools.clear(); agentRunning = false; restore(ctx); });
+  pi.on("resources_discover", () => ({ themePaths: [resource("themes/cyber-offense.json")] }));
+  pi.on("session_start", (_event, ctx) => { restore(ctx); });
   pi.on("session_tree", (_event, ctx) => { restore(ctx); });
-  pi.on("agent_start", () => { agentRunning = true; });
-  pi.on("agent_end", () => { agentRunning = false; runningTools.clear(); });
-  pi.on("tool_execution_start", (event) => { runningTools.add(event.toolCallId); });
-  pi.on("tool_execution_end", (event) => { runningTools.delete(event.toolCallId); });
   // No compaction override: Pi retains its native summarizer and overflow retry.
   pi.on("before_agent_start", (event, ctx) => {
     const state = current(ctx);
-    try { applyTheme(ctx); decorate(ctx, state.mode); }
+    try { applyTheme(ctx); decorate(ctx); }
     catch (error) { visualReady = false; notice(ctx, errorText(error), "error"); }
-    const modePrompt = state.mode === "offense" ? renderOffense(ctx.model?.id) : instructions.defense;
-    return { systemPrompt: `${event.systemPrompt}\n\n${instructions.base}\n\n${modePrompt}` };
+    return { systemPrompt: `${event.systemPrompt}\n\n${instructions.base}\n\n${renderOffense(ctx.model?.id)}` };
   });
   // Runs for every provider call, including a continuation after mid-turn compaction.
   // This message is ephemeral: it does not grow the session transcript.
@@ -148,8 +123,8 @@ export default function cyber(pi: ExtensionAPI): void {
     let evidenceSuffix = "";
     try { const line = contextLine(); if (line) evidenceSuffix = `\n${line}`; } catch { evidenceSuffix = ""; }
     const state = current(ctx);
-    const spec = specPointer(state.mode);
-    const suffix = `${evidenceSuffix}${spec ? `\n${spec}` : ""}`;
+    const spec = specPointer();
+    const suffix = `${evidenceSuffix}\n${spec}`;
     return { messages: [
       ...event.messages.filter((message) => !(message.role === "custom" && message.customType === "cyber.context")),
       { role: "custom" as const, customType: "cyber.context", content: `${brief(state)}${suffix}`, display: false, timestamp: Date.now() },
@@ -157,10 +132,10 @@ export default function cyber(pi: ExtensionAPI): void {
   });
   pi.on("tool_call", (_event, ctx) => {
     try { current(ctx); } catch (error) { return { block: true, reason: errorText(error) }; }
-    if (ctx.mode === "tui" && !visualReady) return { block: true, reason: "Cyber theme restoration failed. Resolve the visible error and retry /cyber mode before executing tools." };
+    if (ctx.mode === "tui" && !visualReady) return { block: true, reason: "Cyber theme restoration failed. Resolve the visible error and restart the session before executing tools." };
   });
   pi.registerCommand("cyber", {
-    description: "Cyber engagement: status, checkpoint, mode offense|defense (mode also via /offense and /defense)",
+    description: "Cyber engagement: status, checkpoint",
     handler: async (args, ctx) => {
       try {
         const words = args.trim().split(/\s+/).filter(Boolean);
@@ -169,22 +144,16 @@ export default function cyber(pi: ExtensionAPI): void {
         if (command === "status" && words.length <= 1) { notice(ctx, brief(state)); return; }
         if (command === "checkpoint" && words.length === 1) {
           const next = updateState(state, {}); save(next);
-          notice(ctx, `Cyber ${badge(ctx, next.mode)} checkpoint ${next.revision} appended to this session. Only recorded state is checkpointed; undisclosed tool results are not inferred.`); return;
+          notice(ctx, `Cyber ${badge(ctx)} checkpoint ${next.revision} appended to this session. Only recorded state is checkpointed; undisclosed tool results are not inferred.`); return;
         }
-        if (command === "mode" && words.length === 2 && (words[1] === "offense" || words[1] === "defense")) {
-          await setMode(ctx, state, words[1] as CyberMode); return;
-        }
-        throw new Error("Usage: /cyber [status|checkpoint|mode offense|defense] · /offense · /defense");
+        throw new Error("Usage: /cyber [status|checkpoint]");
       } catch (error) { notice(ctx, errorText(error), "error"); }
     },
   });
-  registerModeCommand("offense");
-  registerModeCommand("defense");
   pi.registerCommand("offensespec", {
     description: "Load the offense operator specification into the session: /offensespec [full|behavior|contract|doctrine|doors|exfil|backdoor|secrets|evidence|status]",
     handler: async (args, ctx) => {
       try {
-        if (current(ctx).mode !== "offense") { notice(ctx, "The offense specification needs offense mode. Switch with /offense first.", "warning"); return; }
         const requested = (args.trim() || "full").toLowerCase();
         const body = requested === "full"
           ? readPrompt("offense-full.md")
@@ -197,7 +166,7 @@ export default function cyber(pi: ExtensionAPI): void {
   });
   pi.registerTool({
     name: "cyber_state", label: "Cyber state",
-    description: "Read or replace selected durable engagement fields. Scope/objective are shared; coverage, evidenceRefs and nextSteps belong to the active mode. Record established user scope only. No raw secrets. Lists replace their previous values; use get first. Mode changes require the user's /offense or /defense command (also /cyber mode offense|defense).",
+    description: "Read or replace selected durable engagement fields: scope, objective, coverage, evidence references and next steps. The engagement is offense-only; record established user scope only. No raw secrets. Lists replace their previous values; use get first.",
     promptSnippet: "Maintain concise engagement scope, objective, coverage, sanitized evidence references and next steps across compaction.",
     parameters: Type.Union([
       Type.Object({ action: Type.Literal("get") }, { additionalProperties: false }),
@@ -218,7 +187,7 @@ export default function cyber(pi: ExtensionAPI): void {
       "Load the offense operator specification on demand. target='full' returns the complete specification; " +
       "target=<package> returns one focused package (behavior, contract, doctrine, doors, exfil, backdoor, secrets, evidence, status). " +
       "Read 'full' before the first target interaction in an engagement, and the package matching the current task before acting on that area. " +
-      "Offense mode only.",
+      "The harness has one offense workflow.",
     promptSnippet:
       "Load the offense operator specification, or the focused package for the task at hand, before acting on that area.",
     parameters: Type.Object({
@@ -227,7 +196,6 @@ export default function cyber(pi: ExtensionAPI): void {
     executionMode: "sequential",
     annotations: { readOnlyHint: true, openWorldHint: false },
     async execute(_id, params, _signal, _onUpdate, ctx) {
-      if (current(ctx).mode !== "offense") throw new Error("The offense specification is only available in offense mode. Switch with /offense.");
       const requested = params.target.trim().toLowerCase();
       if (requested === "full" || requested === "offense-full" || requested === "spec") {
         const body = readPrompt("offense-full.md");

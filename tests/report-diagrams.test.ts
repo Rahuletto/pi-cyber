@@ -32,11 +32,11 @@ describe("diagram helpers", () => {
     expect(diagram).toContain('s2 --> s3["consolidate"]');
   });
 
-  test("engagementFlow with no steps still renders a valid single-node diagram", () => {
-    const diagram = engagementFlow("defense", []);
+  test("engagementFlow with no steps still renders an offense-only single-node diagram", () => {
+    const diagram = engagementFlow("offense", []);
     expect(diagram.startsWith("```mermaid\n")).toBe(true);
     expect(diagram).toContain("flowchart TD");
-    expect(diagram).toContain('mode: defense');
+    expect(diagram).toContain('mode: offense');
     expect(diagram).not.toContain("-->");
   });
 

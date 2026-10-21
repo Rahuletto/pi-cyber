@@ -9,7 +9,7 @@ in-memory sqlite, and must never be deployed or pointed at another host. Use the
 identities `member/memberpw` and `admin/adminpw` only.
 
 **What this walkthrough proves.** The launcher, the naabu typed-tool path, the evidence ledger,
-the mode switch and the remediation loop were exercised on loopback. Several other adapters
+the offense workflow and remediation loop were exercised on loopback. Several other adapters
 still have documented flag or required-parameter drift. It does **not** prove a
 real engagement, a real browser, an MCP registration or a provider call — see
 [Unproven by this walkthrough](#unproven-by-this-walkthrough).
@@ -102,8 +102,9 @@ specialist roles, the evidence store and job artifacts resolve, and finally runs
 `scripts/pi.sh` forwards no other CLI arguments, so `bun run pi --help` starts a session rather
 than printing help.
 
-A fresh session starts in **OFFENSE**. The mode badge is red in offense and blue in defense;
-the theme stays blue in both.
+A fresh session always starts in **OFFENSE**. The status badge and TUI use the red-accented
+`cyber-offense` theme. The former defense mode has been removed; older defense checkpoints
+are merged into the offense brief when loaded.
 
 ---
 
@@ -127,8 +128,8 @@ Read first, then replace the fields (lists replace their previous values):
 }
 ```
 
-`scope` and `objective` are shared across modes; `coverage`, `evidenceRefs` and `nextSteps` are
-stored per mode. The state rejects raw-secret-looking text — keep credentials out of it.
+`scope`, `objective`, `coverage`, `evidenceRefs` and `nextSteps` are stored in one brief. The
+state rejects raw-secret-looking text — keep credentials out of it.
 
 ---
 
@@ -145,7 +146,7 @@ Measured on this host against `http://127.0.0.1:4747` with the installed binarie
 | `httpx` | yes | Previously emitted no rows because targets were positional; adapter now passes repeated `-u` targets, retest pending |
 | `katana` | yes | Previously emitted no rows because targets were positional; adapter now passes repeated `-u` targets, retest pending |
 | `nuclei` | yes | Previously exited 2 on `-json`; adapter now emits `-jsonl`, retest pending |
-| `ffuf` | yes | Set `CYBER_FFUF_WORDLIST` to an operator-owned wordlist path; the adapter passes it as `-w` |
+| `ffuf` | yes | `bun run pi` uses the installed SecLists common wordlist; a custom path can be set with `CYBER_FFUF_WORDLIST` |
 | `subfinder`, `dnsx` | no | passive/active DNS against real domains; a loopback fixture has no domain to resolve |
 | `uncover` | no | queries search indexes (Shodan/Censys) with credentials and free limits |
 | `vulnx` | no | CVE advisory lookup against an upstream dataset |
@@ -285,22 +286,9 @@ Recent: #12 2026-10-21T… job | #11 2026-10-21T… evidence | …
 
 ---
 
-## 7. Switch to defense
+## 7. Remediation dossier (IDOR + path traversal)
 
-```text
-/defense
-```
-
-The switch is guarded: it is refused while the agent is running, a tool is in flight, or
-messages are queued. Scope and objective survive the switch; coverage, evidence references and
-next steps are per mode, so re-record the defense-side coverage after switching. The theme stays
-blue; the badge changes.
-
----
-
-## 8. Remediation dossier (IDOR + path traversal)
-
-The defense lane's default output is an implementation-ready dossier. Shape it like this, one
+The workflow's remediation output is an implementation-ready dossier. Shape it like this, one
 block per confirmed issue, with **proposed ≠ applied ≠ verified** kept distinct.
 
 ### F-01 — Cross-user balance disclosure (IDOR)
@@ -400,12 +388,12 @@ is not part of the repository.
 | --- | --- | --- |
 | Fixture banner | fixture terminal | `cyberbench: http://127.0.0.1:4747 (local fixture only — never deploy)` |
 | Doctor report | doctor terminal | `platform darwin / arm64`; 16 `validated`, 8 `cataloged`; runtime `ast-grep`/`sg` absent |
-| Pi session | Pi terminal | `Pi Cyber · OFFENSE` title, blue theme, red badge; `/cyber status` prints the recorded brief |
+| Pi session | Pi terminal | `Pi Cyber · OFFENSE` title, red-accented theme and badge; `/cyber status` prints the recorded brief |
 | Evidence database | `config/cyber/evidence/default/cyber.sqlite` | `jobs` row per adapter run, `evidence` rows per parsed finding, `events` for job summaries |
 | Evidence summary | `cyber_evidence` `summary` | `EVIDENCE · mode offense · events N · evidence N · findings N · jobs N · sessions N (0 active)` |
 | Upload side effects | `fixtures/cyberbench/uploads/` | benign uploads land here; a traversal attempt lands in the fixture root instead |
 | Scanner artifacts | not persisted | adapter stdout is transient; only parsed rows reach the store |
-| Session checkpoint | Pi session file | one `cyber.state.v1` entry per state update and mode change |
+| Session checkpoint | Pi session file | one `cyber.state.v1` entry per state update or checkpoint |
 | Retest table | dossier | the R1–R10 table above, with measured status codes |
 
 ---

@@ -28,7 +28,7 @@ export const FINDING_LIFECYCLE = [
 ] as const;
 export type FindingLifecycle = (typeof FINDING_LIFECYCLE)[number];
 
-export type EngagementMode = "offense" | "defense";
+export type EngagementMode = "offense";
 
 /** A finding as the diagram layer needs it (structurally compatible with `FindingRow`). */
 export interface DiagramFinding {

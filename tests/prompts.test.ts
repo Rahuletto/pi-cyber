@@ -14,14 +14,14 @@ const read = (name: string): string => readFileSync(promptFile(name), "utf8");
 
 const base = read("base");
 const offense = read("offense");
-const defense = read("defense");
-const all = { base, offense, defense };
+const remediation = read("remediation");
+const all = { base, offense, remediation };
 
 /**
  * Line caps from the buildout plan Task 13. Lines enforce the dense-paragraph
  * structure (bolded section headers, no walls of bullets).
  */
-const LINE_CAPS: Record<string, number> = { base: 40, offense: 25, defense: 25 };
+const LINE_CAPS: Record<string, number> = { base: 40, offense: 25, remediation: 25 };
 
 /**
  * Character caps. The overlays are injected into the system prompt on every
@@ -29,7 +29,7 @@ const LINE_CAPS: Record<string, number> = { base: 40, offense: 25, defense: 25 }
  * lines — a 25-line file can hold 60k characters and blow the context window
  * without tripping the line cap. This budget is the real size guard.
  */
-const CHAR_CAPS: Record<string, number> = { base: 12_000, offense: 16_000, defense: 12_000 };
+const CHAR_CAPS: Record<string, number> = { base: 12_000, offense: 16_000, remediation: 12_000 };
 
 /** Tools the overlays are allowed to name. Anything else is a phantom. */
 const REGISTERED_CYBER_TOOLS = ["cyber_state", "cyber_evidence", "cyber_jobs", "cyber_spec"];
@@ -59,10 +59,9 @@ describe("prompt overlays", () => {
     }
   });
 
-  test("base states mode discipline and the scope law", () => {
-    expect(base).toContain("/offense");
-    expect(base).toContain("/defense");
-    expect(base).toMatch(/mode/i);
+  test("base states the single offense workflow and scope law", () => {
+    expect(base).toContain("always operates in OFFENSE");
+    expect(base).toContain("There is no mode switch.");
     expect(base).toMatch(/never expands scope|never widens scope|never expand scope/i);
     expect(base).toContain("cyber_state");
     expect(base).toMatch(/stop and ask|stop and resolve/i);
@@ -86,7 +85,7 @@ describe("prompt overlays", () => {
     }
   });
 
-  test("all three overlays carry the redaction reflex, tool-first rule, diagram rule and output caps", () => {
+  test("all instruction prompts carry the redaction reflex, tool-first rule, diagram rule and output caps", () => {
     for (const [name, text] of Object.entries(all)) {
       expect(text).toMatch(/never store or echo raw secrets|raw credentials|raw key material/i);
       expect(text).toContain("cyber_jobs");
@@ -96,18 +95,17 @@ describe("prompt overlays", () => {
     }
   });
 
-  test("the coverage matrix rule belongs to the mode overlays, not the base", () => {
+  test("the offense prompt owns the coverage matrix rule", () => {
     expect(offense).toContain("coverage matrix");
-    expect(defense).toContain("coverage matrix");
     expect(base).not.toContain("coverage matrix");
   });
 
-  test("the mode overlays name their own lifecycle and fix classes", () => {
+  test("offense and remediation prompts name finding lifecycle and distinct fix classes", () => {
     expect(offense).toContain("needs-validation");
     expect(offense).toContain("retest-passed");
-    expect(defense).toContain("needs-validation");
-    expect(defense).toContain("retest-passed");
-    expect(defense).toMatch(/proposed ≠ applied ≠ verified/);
+    expect(remediation).toContain("needs-validation");
+    expect(remediation).toContain("retest-passed");
+    expect(remediation).toMatch(/proposed ≠ applied ≠ verified/);
   });
 
   test("no overlay names a cyber tool that is not registered", () => {

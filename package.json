@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Lean offense and defense engagement context extension for Pi",
+  "description": "Lean offense-only engagement context extension for Pi",
   "scripts": {
     "test": "bun test",
     "typecheck": "tsc --noEmit",

@@ -93,4 +93,4 @@ cannot be verified.
 
 Read `prompts/packages/evidence.md` for the finding document template and the
 dossier fields, and `prompts/packages/behavior.md` for the output contract.
-Shared operating rules are in `prompts/defense.md`.
+Shared remediation guidance is in `prompts/remediation.md`.

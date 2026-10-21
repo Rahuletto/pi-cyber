@@ -6,11 +6,12 @@ from capabilities actually exercised, and it records what is still unverified an
 
 ## Implemented in the extension
 
-- `/offense`, `/defense`, and `/cyber status|checkpoint|mode …`; offense is the fresh-session default. The theme stays blue in both modes and the mode badge carries the distinction.
-- `cyber_state` for branch-aware engagement scope, objective, mode-specific coverage, evidence references and next steps.
-- 17 registered Pi tools: `github`, `cyber_state`, `cyber_evidence`, `cyber_jobs`, `cyber_browser`, `cyber_knowledge`, and one typed tool per adapter (`nuclei`, `subfinder`, `httpx`, `katana`, `ffuf`, `naabu`, `dnsx`, `uncover`, `vulnx`, `interactsh`, `semgrep`).
+- `/cyber status` and `/cyber checkpoint`; offense is the only mode. Legacy defense checkpoints migrate into the offense brief.
+- `cyber_state` for branch-aware engagement scope, objective, coverage, evidence references and next steps.
+- 18 registered Pi tools: `github`, `cyber_state`, `cyber_evidence`, `cyber_jobs`, `cyber_spec`, `cyber_browser`, `cyber_knowledge`, and one typed tool per adapter (`nuclei`, `subfinder`, `httpx`, `katana`, `ffuf`, `naabu`, `dnsx`, `uncover`, `vulnx`, `interactsh`, `semgrep`).
 - A separate optional AST search/edit extension and a loopback-only Cyberbench fixture with intentionally seeded access-control and file-upload flaws.
-- Specialist task/result contracts and role templates, plus four exact package pins, an isolated profile, explicit DuckDuckGo search configuration and worker spawn caps.
+- Specialist task/result contracts and 12 role templates, plus four exact package pins, an isolated profile, explicit DuckDuckGo search configuration and worker spawn caps.
+- A layered offense specification: `prompts/base.md` (always injected) + `prompts/offense.md` (mode overlay, 25-line cap) + `prompts/offense-full.md` (30-section canonical spec) + `prompts/packages/` (9 on-demand topic packages) + `prompts/overlays/` (16 model-family adaptation blocks). `cyber_spec` serves any of it to the model on demand; `/offensespec [full|package]` loads it into the session.
 
 ---
 
@@ -54,7 +55,7 @@ target or an external scanner:
 - **Evidence store** — schema, persistence, per-row SHA-256, secret-pattern refusal on every write path, list/summary rendering, bounded output.
 - **Job ledger** — `running → succeeded / failed / interrupted / outcome-unknown` transitions, argv-only spawn, timeout kill, signal-exit mapping, counters-only event payloads, secret check on the full argv.
 - **Adapter contracts** — schema validation errors naming the offending instance path, `buildArgs` argv for all 11 adapters, parse tolerance for malformed lines, artifact-kind mapping.
-- **Mode and state** — fresh-session OFFENSE default, guarded switch (busy agent, running tool, queued messages), per-mode coverage isolation, branch/session isolation, corrupt-checkpoint refusal, revision counters.
+- **Mode and state** — offense-only sessions, legacy defense checkpoint migration, branch/session isolation, corrupt-checkpoint refusal, revision counters.
 - **Browser lease** — acquire/release/status, single-owner conflict, `mode: "act"` readiness refusal, export-before-close reminder.
 - **Knowledge layer** — FTS index build, search, staleness marker over the local corpus.
 - **Extension wiring** — pinned Pi extension loader, temporary sessions, theme resolution, AST preview/apply guards.
@@ -111,7 +112,7 @@ remain to be confirmed against the loopback fixture.
 | # | Item | Owner | Notes |
 | --- | --- | --- | --- |
 | 1 | Re-run httpx, katana and nuclei adapters against Cyberbench | Operator | Adapter flags are corrected and contract-tested; end-to-end scanner runs remain unverified |
-| 2 | Configure ffuf wordlist | Operator | Set `CYBER_FFUF_WORDLIST` to an operator-owned wordlist path |
+| 2 | Configure ffuf wordlist for direct Pi launches | Operator | `bun run pi` detects `~/.pi/tools/wordlists/seclists-common.txt`; direct launches can set `CYBER_FFUF_WORDLIST` |
 | 3 | `~/.pi/tools/bin` on `PATH` for direct Pi invocations | Operator | `scripts/pi.sh` sets it for `bun run pi`; direct invocations must add it |
 | 5 | Live target engagement | Operator | Only loopback has been exercised; no external host was touched |
 | 6 | Obscura MCP registration + authenticated browser flow | Operator | `obscura` is installed and validated on `--help`; the MCP server is not registered |
@@ -202,7 +203,7 @@ $ bun src/doctor.ts --json
 }
 ```
 
-Summary lines: **250 pass, 4 skip, 0 fail** across 19 files (1575 `expect()` calls); typecheck
+Summary lines: **260 pass, 4 skip, 0 fail** across 20 files (1891 `expect()` calls); typecheck
 clean; doctor reports **16 `validated` / 8 `cataloged`** tools on `darwin/arm64`.
 
 ---

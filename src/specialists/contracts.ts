@@ -37,7 +37,7 @@ export const ADAPTER_NAMES: readonly string[] = adapters.map((adapter) => adapte
 export const HARNESS_TOOLS: readonly string[] = ["cyber_evidence", "cyber_jobs", "cyber_state", "github"];
 export const CAPABILITIES: readonly string[] = [...ADAPTER_NAMES, ...HARNESS_TOOLS];
 
-export const SpecialistMode = Type.Union([Type.Literal("offense"), Type.Literal("defense")]);
+export const SpecialistMode = Type.Literal("offense");
 export const SpecialistRoleSchema = Type.Union(SPECIALIST_ROLES.map((role) => Type.Literal(role)));
 
 export const SessionLease = Type.Object({
@@ -72,7 +72,7 @@ export const TaskContract = Type.Object({
 export type TaskContractShape = {
   taskId: string;
   engagementId: string;
-  mode: "offense" | "defense";
+  mode: "offense";
   role: SpecialistRole;
   question: string;
   scopeRevision: number;

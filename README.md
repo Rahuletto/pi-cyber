@@ -1,6 +1,6 @@
 # Pi Cyber Harness
 
-A lean Pi extension harness for offense and defense investigation. It adds `/cyber` plus `/offense` and `/defense`, a structured `cyber_state` tool, typed scanner tools, serialized job tracking, evidence storage, browser-session leases, local knowledge search, mode instructions and durable session checkpoints. The theme stays blue in both modes; the mode badge is colored. Pi remains the agent runtime and its native tools and automatic compaction stay available.
+A lean offense-only Pi extension harness. It adds `/cyber status` and `/cyber checkpoint`, a structured `cyber_state` tool, typed scanner tools, serialized job tracking, evidence storage, browser-session leases, local knowledge search, offense instructions and durable session checkpoints. The only theme uses red accents throughout. Pi remains the agent runtime and its native tools and automatic compaction stay available.
 
 See [the design](PI-CYBER-HARNESS-DESIGN.md), [build status](docs/BUILD-STATUS.md), and the [first local engagement](docs/FIRST-ENGAGEMENT.md). No external assessment target is configured. The included Cyberbench target binds only to loopback and is intentionally vulnerable.
 
@@ -45,19 +45,16 @@ PI_CODING_AGENT_DIR=/absolute/path/to/cyber-config \
   --theme /absolute/path/to/this/package/themes
 ```
 
-The package manifest also declares the extension and themes for Pi package loading. Internal prompt files are instruction layers; they are not registered as mode-changing slash templates.
+The package manifest also declares the extension and theme for Pi package loading. Internal prompt files are instruction layers; they are not registered as slash templates.
 
 ## Commands and durable brief
 
 ```text
 /cyber status
 /cyber checkpoint
-/cyber mode offense|defense
-/offense
-/defense
 ```
 
-Fresh sessions default to offense; `mode.json`-less starts are offense, while a session with recorded checkpoints keeps its saved mode. `/cyber mode offense|defense` remains for compatibility, and the top-level `/offense` and `/defense` run the exact same guarded switch. Both modes render the same blue theme; the OFFENSE badge is red and the DEFENSE badge is blue in the status and notice lines. Mode switching requires an idle agent, no running native/nested tools, and no queued messages. Terminal theme restoration failures block subsequent tool calls until corrected; headless sessions require no UI.
+Every fresh session uses offense. Legacy checkpoints recorded in defense are migrated to offense and their coverage, evidence references and next steps are combined into the single engagement brief. There is no mode toggle. The TUI, status badge, selection surfaces, links and syntax highlights use the red-accented `cyber-offense` theme. Terminal theme restoration failures block subsequent tool calls until corrected; headless sessions require no UI.
 
 Ask the coordinator to record the established scope and objective using `cyber_state`, then maintain investigation coverage, evidence references and next steps. Example tool input:
 
@@ -74,17 +71,17 @@ Ask the coordinator to record the established scope and objective using `cyber_s
 }
 ```
 
-Use `{"action":"get"}` first: supplied lists replace prior values. Scope and objective are shared across modes. Coverage, evidence references and next steps are stored separately for each mode. Switching mode preserves the engagement's scope and objective. A mode does not authorize targets or effects. Scope recording is a workflow contract, not an authorization verifier.
+Use `{"action":"get"}` first: supplied lists replace prior values. Scope, objective, coverage, evidence references and next steps are stored in one offense brief. The offense label does not authorize targets or effects. Scope recording is a workflow contract, not an authorization verifier.
 
-Each update and mode change appends a complete versioned snapshot through Pi's session API. `/cyber checkpoint` snapshots only the already recorded brief; it does not summarize unrecorded tool output. Recovery follows the active session branch, including entries before compaction, so changing sessions or navigating the tree cannot inherit a different branch's brief. Pi writes a session file once a conversation exists; commands entered before the first user/assistant message are only held in its in-memory session until then.
+Each update appends a complete versioned snapshot through Pi's session API. `/cyber checkpoint` snapshots only the already recorded brief; it does not summarize unrecorded tool output. Recovery follows the active session branch, including entries before compaction, so changing sessions or navigating the tree cannot inherit a different branch's brief. Pi writes a session file once a conversation exists; commands entered before the first user/assistant message are only held in its in-memory session until then.
 
-The extension preserves Pi's native summarizer, automatic compaction settings and overflow retry. It adds the selected mode instructions at the start of a turn, and an ephemeral current brief to every provider request, including a continuation after compaction. Rehydration is only as complete as the recorded fields. A damaged or unsupported latest checkpoint blocks tool interaction rather than silently restoring stale scope. Use Pi `/tree` to return before that checkpoint, or start a new session and establish scope again.
+The extension preserves Pi's native summarizer, automatic compaction settings and overflow retry. It adds the offense instructions at the start of a turn, and an ephemeral current brief to every provider request, including a continuation after compaction. Rehydration is only as complete as the recorded fields. A damaged or unsupported latest checkpoint blocks tool interaction rather than silently restoring stale scope. Use Pi `/tree` to return before that checkpoint, or start a new session and establish scope again.
 
 ## Tool surface (17 registered Pi tools)
 
 | Tool | Purpose |
 | --- | --- |
-| `cyber_state` | Read or replace the durable engagement brief (scope, objective, per-mode coverage, evidence references, next steps). |
+| `cyber_state` | Read or replace the durable offense engagement brief (scope, objective, coverage, evidence references, next steps). |
 | `cyber_evidence` | Durable SQLite evidence store: `add` / `read` / `findings` / `summary`, with secret refusal and a mermaid lifecycle map on request. |
 | `cyber_jobs` | Typed job runner: `run` an adapter with schema-validated params, `status` a job, `list` the adapter registry. |
 | `cyber_browser` | Exclusive browser lease (Obscura): `acquire` / `release` / `status`. Books the slot; never downloads or launches a browser. |
@@ -106,8 +103,11 @@ The eleven adapter tools share one contract: typed parameters validated against 
 own schema, a serialized job with a durable ledger entry, parsed findings persisted as evidence
 rows, and a fast-fail readiness check (`bin not available: <bin> — run tools/install.sh (state:
 <state>)`). Adapter and validation errors surface verbatim so they can be corrected.
-For `ffuf`, set `CYBER_FFUF_WORDLIST` to an operator-owned wordlist file before calling the
-tool; the path stays outside model-authored parameters.
+`ffuf` uses the locally installed SecLists `common.txt` by default when launched with `bun run
+pi`. Install or refresh it with `bash tools/install-ffuf-wordlist.sh`; the pinned source and
+SHA-256 are verified before it is written to `~/.pi/tools/wordlists/seclists-common.txt`. To
+use another operator-owned list, set `CYBER_FFUF_WORDLIST`. The path stays outside
+model-authored parameters.
 
 ## Native tool install and validation
 
@@ -174,7 +174,7 @@ The six specialist profiles and their task/result contract are available for bou
 
 Store concise sanitized summaries and artifact references in the brief. Ordinary Pi session files and model context are not a secret vault. A partial heuristic rejects common credential patterns, with per-field, list and overall size limits; arbitrary secrets can still evade it. The caller must redact before invoking the tool, since tool arguments themselves can appear in the transcript even when an update is rejected. Evidence references are not evidence ingestion, hashing, existence verification or protected storage.
 
-Mode prompts do not constrain the underlying account's filesystem or network permissions. Native tools retain normal Pi execution and trust behavior. This extension does not enforce target scope in arbitrary shell commands and does not provide an OS sandbox. It blocks mode changes during tracked Pi work; it cannot discover unmanaged background processes or work launched by other runtimes.
+Prompts do not constrain the underlying account's filesystem or network permissions. Native tools retain normal Pi execution and trust behavior. This extension does not enforce target scope in arbitrary shell commands and does not provide an OS sandbox.
 
 `bun run doctor` reads PATH and filesystem metadata only. Its output distinguishes executable presence from validation; it never launches a scanner, browser, REA setup, Java or version probe. A name collision such as Python `httpx` or an unrelated `sg` is not compatibility proof.
 

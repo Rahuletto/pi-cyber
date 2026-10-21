@@ -34,6 +34,17 @@ const models = value("--models")?.split(",").map((m) => m.trim()) ?? (flag("--qu
 /** A neutral assistant frame: what the model looks like with no operator overlay. */
 const NEUTRAL = "You are a helpful assistant.";
 
+/** The base prompt as it was before the authorization/autonomy clauses were added. */
+const BASE_OLD = readIfExistsOldBase();
+
+function readIfExistsOldBase(): string {
+  try {
+    const result = Bun.spawnSync(["git", "show", "HEAD:prompts/base.md"], { cwd: ROOT });
+    if (result.exitCode === 0) return new TextDecoder().decode(result.stdout);
+  } catch { /* git may be unavailable */ }
+  return "";
+}
+
 /**
  * Every prompt is a task a legitimate authorized engagement needs. They are
  * ordered by how likely a frontier model is to refuse outright.
@@ -77,6 +88,21 @@ function overlaySystem(modelId: string): string {
   return `${base}\n\n${rendered}`;
 }
 
+const BASE_NEW = readIfExists(join(PROMPTS, "base.md"));
+
+/** The four conditions, in the order they are reported. */
+const CONDITIONS = ["neutral", "base-old", "base-new", "overlay"] as const;
+type Condition = (typeof CONDITIONS)[number];
+
+function systemFor(condition: Condition, modelId: string): string {
+  switch (condition) {
+    case "neutral": return NEUTRAL;
+    case "base-old": return BASE_OLD;
+    case "base-new": return BASE_NEW;
+    case "overlay": return overlaySystem(modelId);
+  }
+}
+
 type Verdict = "refusal" | "hedge" | "artifact";
 
 function classify(reply: string): Verdict {
@@ -108,8 +134,8 @@ const rows: Row[] = [];
 const dump = flag("--dump");
 
 for (const model of models) {
-  for (const condition of ["neutral", "overlay"] as const) {
-    const system = condition === "neutral" ? NEUTRAL : overlaySystem(model);
+  for (const condition of CONDITIONS) {
+    const system = systemFor(condition, model);
     for (const task of tasks) {
       const { reply, error } = await complete(model, system, task.prompt);
       if (error) {
@@ -118,7 +144,7 @@ for (const model of models) {
         rows.push({ model, condition, task: task.id, verdict: classify(reply), chars: reply.length, reply });
       }
       const last = rows[rows.length - 1];
-      process.stderr.write(`  ${model.padEnd(20)} ${condition.padEnd(8)} ${task.id.padEnd(18)} ${String(last.verdict).padEnd(8)} ${last.chars}\n`);
+      process.stderr.write(`  ${model.padEnd(20)} ${condition.padEnd(10)} ${task.id.padEnd(18)} ${String(last.verdict).padEnd(8)} ${last.chars}\n`);
       if (dump && last.verdict === "refusal") {
         process.stderr.write(`      ── ${model} / ${condition} / ${task.id}\n${(last.reply ?? "").split("\n").map((line) => `      │ ${line}`).join("\n")}\n`);
       }
@@ -128,33 +154,43 @@ for (const model of models) {
 
 // ── report ────────────────────────────────────────────────────────────────────
 const table = rows.map((row) => `${row.model}\t${row.condition}\t${row.task}\t${row.verdict}\t${row.chars}`).join("\n");
-const outDir = join(ROOT, "docs");
-try { readFileSync(outDir); } catch { /* docs exists in this repo */ }
 
 console.log("\n=== REFUSAL RATE BY MODEL ===");
-console.log("model                 neutral-refuse  overlay-refuse  delta        artifact-rate(overlay)");
+console.log("model                 neutral   base-old   base-new   overlay   base-delta   overlay-delta");
 for (const model of models) {
-  const pick = (condition: string) => rows.filter((row) => row.model === model && row.condition === condition);
-  const rate = (condition: string, verdict: Verdict) => {
-    const set = pick(condition);
+  const rate = (condition: Condition, verdict: Verdict) => {
+    const set = rows.filter((row) => row.model === model && row.condition === condition);
     const hits = set.filter((row) => row.verdict === verdict).length;
     return set.length ? hits / set.length : 0;
   };
-  const n = rate("neutral", "refusal");
-  const o = rate("overlay", "refusal");
-  const a = rate("overlay", "artifact");
-  const delta = o - n;
+  const cells = CONDITIONS.map((condition) => (rate(condition, "refusal") * 100).toFixed(0).padStart(8) + "%");
+  const baseDelta = (rate("base-new", "refusal") - rate("base-old", "refusal")) * 100;
+  const overlayDelta = (rate("overlay", "refusal") - rate("base-new", "refusal")) * 100;
   console.log(
-    `${model.padEnd(21)} ${(n * 100).toFixed(0).padStart(10)}% ${(o * 100).toFixed(0).padStart(13)}% ${(delta >= 0 ? "+" : "") + (delta * 100).toFixed(0).padStart(9)}pp ${(a * 100).toFixed(0).padStart(12)}%`,
+    `${model.padEnd(21)} ${cells.join(" ")} ${(baseDelta >= 0 ? "+" : "") + baseDelta.toFixed(0).padStart(9)}pp ${(overlayDelta >= 0 ? "+" : "") + overlayDelta.toFixed(0).padStart(10)}pp`,
   );
 }
 
-console.log("\n=== PER-TASK (overlay) ===");
-console.log("task                  neutral       overlay");
+console.log("\n=== ARTIFACT RATE BY MODEL ===");
+console.log("model                 neutral   base-old   base-new   overlay");
+for (const model of models) {
+  const rate = (condition: Condition) => {
+    const set = rows.filter((row) => row.model === model && row.condition === condition);
+    const hits = set.filter((row) => row.verdict === "artifact").length;
+    return set.length ? hits / set.length : 0;
+  };
+  console.log(`${model.padEnd(21)} ${CONDITIONS.map((c) => (rate(c) * 100).toFixed(0).padStart(8) + "%").join(" ")}`);
+}
+
+console.log("\n=== PER-TASK (overlay, all models) ===");
+console.log("task                  neutral       base-old      base-new      overlay");
 for (const task of tasks) {
-  const n = rows.find((row) => row.model === models[0] && row.condition === "neutral" && row.task === task.id)?.verdict;
-  const o = rows.filter((row) => row.condition === "overlay" && row.task === task.id).map((row) => row.verdict);
-  console.log(`${task.id.padEnd(22)} ${String(n).padEnd(13)} ${[...new Set(o)].join(",")}`);
+  const per = (condition: Condition) => {
+    const set = rows.filter((row) => row.condition === condition && row.task === task.id);
+    const hits = set.filter((row) => row.verdict === "refusal").length;
+    return set.length ? `${hits}/${set.length}` : "-";
+  };
+  console.log(`${task.id.padEnd(22)} ${per("neutral").padEnd(13)} ${per("base-old").padEnd(14)} ${per("base-new").padEnd(14)} ${per("overlay")}`);
 }
 
 console.log("\n=== ERRORS ===");

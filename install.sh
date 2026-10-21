@@ -27,10 +27,9 @@ if os.path.exists(settings_path):
         data = json.load(open(settings_path))
     except json.JSONDecodeError:
         data = {}
-data["theme"] = "cyber-defense"
+data["theme"] = "cyber-offense"
 data["extensions"] = [os.path.join(root, "src", "index.ts")]
 data["themes"] = [
-    os.path.join(root, "themes", "cyber-defense.json"),
     os.path.join(root, "themes", "cyber-offense.json"),
 ]
 data["enableSkillCommands"] = True

@@ -5,7 +5,7 @@
 
 This document answers one question per clause: **where did the wording come from, what was ported, what was written
 fresh, and what was rejected.** Sources are cited by file and line. It is the lineage record for
-`prompts/base.md`, `prompts/offense.md`, `prompts/defense.md`, `src/report/diagrams.ts` and the Task-16 catalog
+`prompts/base.md`, `prompts/offense.md`, the former `prompts/defense.md` (now `prompts/remediation.md`), `src/report/diagrams.ts` and the Task-16 catalog
 entries in `tools/manifest.json`.
 
 ---

@@ -117,13 +117,13 @@ describe("evidence store (in-memory)", () => {
       store.addSession({ sessionId: "obs-1", owner: "offense", mode: "offense", purpose: "fixture login walk" });
       // Acquisition writes no event; the sanctioned release does (kind "session").
       expect(store.briefSummary()).toContain("events 0 ·");
-      expect(() => store.addSession({ sessionId: "obs-1", owner: "defense", mode: "defense", purpose: "shadow" })).toThrow(/active lease/);
+      expect(() => store.addSession({ sessionId: "obs-1", owner: "offense", mode: "offense", purpose: "shadow" })).toThrow(/active lease/);
       store.releaseSession("obs-1");
       // Typed event records the released lease with owner and action.
       expect(store.briefSummary()).toContain("events 1 ·");
       store.releaseSession("obs-1"); // idempotent: no row changed, no extra event
       expect(store.briefSummary()).toContain("events 1 ·");
-      store.addSession({ sessionId: "obs-1", owner: "defense", mode: "defense", purpose: "reload" });
+      store.addSession({ sessionId: "obs-1", owner: "offense", mode: "offense", purpose: "reload" });
       expect(store.briefSummary()).toContain("sessions 2 (1 active)");
     } finally { store.close(); }
   });

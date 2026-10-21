@@ -1,4 +1,4 @@
-export type CyberMode = "offense" | "defense";
+export type CyberMode = "offense";
 export interface ModeBrief { coverage: string[]; evidenceRefs: string[]; nextSteps: string[] }
 export interface CyberState {
   version: 1;
@@ -6,7 +6,7 @@ export interface CyberState {
   mode: CyberMode;
   scope: string[];
   objective: string;
-  modes: Record<CyberMode, ModeBrief>;
+  modes: { offense: ModeBrief };
 }
 export interface StatePatch {
   scope?: string[];
@@ -17,7 +17,7 @@ export interface StatePatch {
 }
 export const STATE_ENTRY = "cyber.state.v1";
 const modeBrief = (): ModeBrief => ({ coverage: [], evidenceRefs: [], nextSteps: [] });
-export const emptyState = (): CyberState => ({ version: 1, revision: 0, mode: "offense", scope: [], objective: "", modes: { offense: modeBrief(), defense: modeBrief() } });
+export const emptyState = (): CyberState => ({ version: 1, revision: 0, mode: "offense", scope: [], objective: "", modes: { offense: modeBrief() } });
 const knownSecrets = /(?:sk-(?:proj-)?[a-zA-Z0-9_-]{20,}|AKIA[A-Z0-9]{16}|-----BEGIN [A-Z ]*PRIVATE KEY-----|\bBearer\s+[a-zA-Z0-9._~+/-]{12,}|\b(?:password|api[_-]?key|access[_-]?token|secret)\s*[:=]\s*\S+|https?:\/\/[^\s/:]+:[^\s@]+@)/i;
 function text(value: unknown, empty = false): string {
   if (typeof value !== "string" || value.length > 2000 || (!empty && !value.trim())) throw new Error("Brief text must be nonempty with length at most 2000 characters.");
@@ -35,7 +35,7 @@ function bounded(state: CyberState): CyberState {
 export function updateState(state: CyberState, patch: StatePatch): CyberState {
   if (typeof patch !== "object" || patch === null || Array.isArray(patch)) throw new Error("Expected a structured state patch.");
   const allowed = ["scope", "objective", "coverage", "evidenceRefs", "nextSteps"];
-  if (Object.keys(patch).some((key) => !allowed.includes(key))) throw new Error("Unknown patch field; change mode with /cyber mode.");
+  if (Object.keys(patch).some((key) => !allowed.includes(key))) throw new Error("Unknown patch field; the engagement mode is fixed to offense.");
   const next = structuredClone(state);
   if (Object.hasOwn(patch, "scope")) next.scope = list(patch.scope);
   if (Object.hasOwn(patch, "objective")) next.objective = text(patch.objective, true);
@@ -45,21 +45,30 @@ export function updateState(state: CyberState, patch: StatePatch): CyberState {
   next.revision++;
   return bounded(next);
 }
-export function switchMode(state: CyberState, mode: CyberMode): CyberState {
-  if (mode !== "offense" && mode !== "defense") throw new Error("Mode must be offense or defense.");
-  return { ...structuredClone(state), mode, revision: state.revision + 1 };
-}
 function parseState(data: unknown): CyberState {
   if (typeof data !== "object" || data === null) throw new Error("Invalid snapshot.");
-  const raw = data as CyberState;
-  if (raw.version !== 1 || !Number.isSafeInteger(raw.revision) || raw.revision < 0 || !["offense", "defense"].includes(raw.mode)) throw new Error("Unsupported snapshot.");
+  const raw = data as Record<string, unknown>;
+  if (raw.version !== 1 || !Number.isSafeInteger(raw.revision) || (raw.revision as number) < 0 || (raw.mode !== "offense" && raw.mode !== "defense")) throw new Error("Unsupported snapshot.");
+  if (typeof raw.modes !== "object" || raw.modes === null || Array.isArray(raw.modes)) throw new Error("Invalid snapshot modes.");
+  const modes = raw.modes as Record<string, unknown>;
+  const readModeBrief = (value: unknown): ModeBrief => {
+    if (typeof value !== "object" || value === null || Array.isArray(value)) throw new Error("Invalid snapshot mode brief.");
+    const brief = value as Record<string, unknown>;
+    return {
+      coverage: list(brief.coverage),
+      evidenceRefs: list(brief.evidenceRefs),
+      nextSteps: list(brief.nextSteps),
+    };
+  };
+  const offense = readModeBrief(modes.offense);
+  const legacyDefense = modes.defense === undefined ? modeBrief() : readModeBrief(modes.defense);
+  const combine = (a: string[], b: string[]) => [...new Set([...a, ...b])];
   const state = emptyState();
-  state.mode = raw.mode;
-  state.revision = raw.revision;
+  state.revision = raw.revision as number;
   state.scope = list(raw.scope);
   state.objective = text(raw.objective, true);
-  for (const mode of ["offense", "defense"] as const) {
-    for (const key of ["coverage", "evidenceRefs", "nextSteps"] as const) state.modes[mode][key] = list(raw.modes?.[mode]?.[key]);
+  for (const key of ["coverage", "evidenceRefs", "nextSteps"] as const) {
+    state.modes.offense[key] = combine(offense[key], legacyDefense[key]);
   }
   return bounded(state);
 }

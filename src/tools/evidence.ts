@@ -51,7 +51,7 @@ const parameters = Type.Object({
   refs: Type.Optional(Type.Array(Type.String({ maxLength: 2000 }), { maxItems: 24, description: "Artifact/proof references associated with the evidence (add)." })),
   sensitivity: Type.Optional(Type.Union(SENSITIVITIES.map((s) => Type.Literal(s)), { description: "Sensitivity label (add). Default: internal." })),
   state: Type.Optional(Type.Union(FINDING_STATES.map((s) => Type.Literal(s)), { description: "Filter findings by state (findings)." })),
-  mode: Type.Optional(Type.Union([Type.Literal("offense"), Type.Literal("defense")], { description: "Mode label to include in the summary (summary)." })),
+  mode: Type.Optional(Type.Literal("offense", { description: "Only supported engagement mode (summary)." })),
   limit: Type.Optional(Type.Number({ minimum: 1, maximum: 50, default: 50, description: "Max rows returned (read, findings); default 50, hard cap 50." })),
   diagram: Type.Optional(Type.Boolean({ description: "Append a mermaid lifecycle map of the returned findings (findings action). Default false — the text result is unchanged without it." })),
 }, { additionalProperties: false });

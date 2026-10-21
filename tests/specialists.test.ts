@@ -60,6 +60,7 @@ describe("specialist task contract", () => {
     expect(() => assertContract({ ...contract(), scopeRevision: -1 })).toThrow(/scopeRevision/);
     expect(() => assertContract({ ...contract(), role: "root" })).toThrow(/role/);
     expect(() => assertContract({ ...contract(), extra: "field" })).toThrow(/extra/);
+    expect(() => assertContract({ ...contract(), mode: "defense" })).toThrow(/mode/);
   });
 
   test("refuses capabilities outside the adapter and harness surface", () => {

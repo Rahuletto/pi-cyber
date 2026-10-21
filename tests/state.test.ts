@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { emptyState, updateState, recoverState, brief, switchMode } from "../src/state.ts";
+import { emptyState, updateState, recoverState, brief } from "../src/state.ts";
 
 describe("durable engagement brief", () => {
   test("fresh sessions default to offense without inventing target authorization", () => {
@@ -8,14 +8,12 @@ describe("durable engagement brief", () => {
     expect(state.scope).toEqual([]);
     expect(brief(state)).toContain("No approved target scope recorded");
   });
-  test("mode switch preserves engagement scope and separates investigative next steps", () => {
+  test("state exposes one offense brief and never accepts a mode patch", () => {
     const state = updateState(emptyState(), { scope: ["owned fixture repository"], objective: "review access control", nextSteps: ["write remediation dossier"] });
-    const defense = updateState(switchMode(state, "defense"), { nextSteps: ["validate approved hypothesis"] });
-    expect(defense.scope).toEqual(["owned fixture repository"]);
-    expect(defense.objective).toBe("review access control");
-    expect(defense.modes.offense.nextSteps).toEqual(["write remediation dossier"]);
-    expect(defense.modes.defense.nextSteps).toEqual(["validate approved hypothesis"]);
-    expect(state.modes.defense.nextSteps).toEqual([]);
+    expect(state.mode).toBe("offense");
+    expect(state.modes.offense.nextSteps).toEqual(["write remediation dossier"]);
+    expect(Object.keys(state.modes)).toEqual(["offense"]);
+    expect(() => updateState(state, { mode: "defense" } as never)).toThrow(/unknown patch field/i);
   });
   test("recovery copies external input and refuses corrupt newest scope snapshots", () => {
     const valid = updateState(emptyState(), { evidenceRefs: ["evidence/request-01.redacted.txt"] });
@@ -35,9 +33,20 @@ describe("durable engagement brief", () => {
     expect(() => updateState(emptyState(), { scope: [""] })).toThrow();
     expect(() => updateState(emptyState(), { mode: "offense" } as never)).toThrow();
   });
-  test("a saved checkpoint keeps its recorded mode; only a fresh start is offense", () => {
-    const saved = switchMode(emptyState(), "defense");
-    const state = recoverState([{ type: "custom", customType: "cyber.state.v1", data: saved }]);
-    expect(state.mode).toBe("defense");
+  test("legacy defense checkpoints migrate all brief fields into the offense-only state", () => {
+    const legacy = {
+      version: 1, revision: 4, mode: "defense", scope: ["owned fixture"], objective: "verify fixes",
+      modes: {
+        offense: { coverage: ["route A"], evidenceRefs: ["evidence/a"], nextSteps: ["map route B"] },
+        defense: { coverage: ["route B"], evidenceRefs: ["evidence/b"], nextSteps: ["retest route A"] },
+      },
+    };
+    const state = recoverState([{ type: "custom", customType: "cyber.state.v1", data: legacy }]);
+    expect(state.mode).toBe("offense");
+    expect(state.modes.offense).toEqual({
+      coverage: ["route A", "route B"], evidenceRefs: ["evidence/a", "evidence/b"],
+      nextSteps: ["map route B", "retest route A"],
+    });
+    expect(Object.keys(state.modes)).toEqual(["offense"]);
   });
 });
