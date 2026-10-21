@@ -3,6 +3,7 @@ import { Type } from "typebox";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { STATE_ENTRY, brief, recoverState, switchMode, updateState, type CyberMode, type CyberState } from "./state.ts";
+import { registerGithubTool } from "./tools/github.ts";
 
 const resource = (path: string) => fileURLToPath(new URL(`../${path}`, import.meta.url));
 const instructions = Object.fromEntries(["base", "offense", "defense"].map((name) => [name, readFileSync(resource(`prompts/${name}.md`), "utf8")]));
@@ -13,6 +14,7 @@ const patchSchema = Type.Object({
 }, { additionalProperties: false });
 
 export default function cyber(pi: ExtensionAPI): void {
+  registerGithubTool(pi);
   const runningTools = new Set<string>();
   let agentRunning = false;
   let visualReady = false;

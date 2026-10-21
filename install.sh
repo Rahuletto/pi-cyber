@@ -33,6 +33,7 @@ data["themes"] = [
     os.path.join(root, "themes", "cyber-defense.json"),
     os.path.join(root, "themes", "cyber-offense.json"),
 ]
+data["enableSkillCommands"] = True
 json.dump(data, open(settings_path, "w"), indent=2)
 open(settings_path, "a").write("\n")
 print(settings_path)
