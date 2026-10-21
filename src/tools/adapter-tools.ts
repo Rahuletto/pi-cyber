@@ -1,5 +1,6 @@
 import type { AgentToolResult, ExtensionAPI, ExtensionToolContext, ToolDefinition } from "@earendil-works/pi-coding-agent";
-import { toolsBinDir } from "./paths.ts";
+import { existsSync } from "node:fs";
+import { defaultWordlistPath, toolsBinDir } from "./paths.ts";
 import { access, constants, readFile, stat } from "node:fs/promises";
 import { homedir } from "node:os";
 import { delimiter, resolve } from "node:path";

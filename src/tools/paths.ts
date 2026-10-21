@@ -27,3 +27,12 @@ export function resolveToolBin(bin: string, env: NodeJS.ProcessEnv = process.env
   const candidate = join(toolsBinDir(env), bin);
   return existsSync(candidate) ? candidate : bin;
 }
+
+/**
+ * The pinned SecLists common wordlist the ffuf adapter fuzzes with. Resolved
+ * from the tools directory so the harness needs no environment setup; the
+ * operator override still wins.
+ */
+export function defaultWordlistPath(env: NodeJS.ProcessEnv = process.env): string {
+  return env.CYBER_FFUF_WORDLIST?.trim() || join(toolsBinDir(env), "..", "wordlists", "seclists-common.txt");
+}

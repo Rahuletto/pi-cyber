@@ -21,15 +21,33 @@ The repository does not include a vulnerable demo target. Use only systems you a
 
 ## Install and launch
 
+One command, on a machine that has [bun](https://bun.sh) and nothing else:
+
 ```sh
-git clone https://github.com/Rahuletto/pi-cyber.git
-cd pi-cyber
-bun install --frozen-lockfile
-bun run packages:check
-bun run pi
+git clone https://github.com/Rahuletto/pi-cyber.git ~/.pi/pi-cyber && ~/.pi/pi-cyber/install.sh
 ```
 
-`bun run pi` launches Pi with this repository's extension and the dedicated profile in `config/cyber`. Provider credentials and settings for this profile are separate from your personal Pi profile. The first launch may require provider sign-in.
+That installs the repository dependencies, the global `pi` CLI, the agent
+configuration (extension, theme, skills, operator commands, the twelve
+specialist roles and the pinned packages), the model catalogue, and the
+digest-pinned scanner toolchain under `~/.pi/scanners`. It then verifies the
+result. The clone is under 1 MB; the toolchain is the large part.
+
+Then just run `pi` — from any directory. The harness resolves its own paths,
+so no launcher, environment variable or working directory is required.
+
+| Env | Effect |
+| --- | --- |
+| `SKIP_TOOLS=1` | Skip the scanner download. |
+| `SKIP_WORDLIST=1` | Skip the ffuf SecLists wordlist. |
+| `SKIP_GLOBAL_PI=1` | Do not install the `pi` CLI. |
+| `CYBER_PROXY_KEY=…` | Write the provider key without the interactive prompt. |
+| `PI_TOOLS_DIR=…` | Install the toolchain elsewhere. |
+
+`./install.sh --check` verifies an existing install and changes nothing.
+
+`bun run pi` is still available and launches the same harness through the
+dedicated profile in `config/cyber`. Provider credentials and settings for this profile are separate from your personal Pi profile. The first launch may require provider sign-in.
 
 To refresh the six selected workflow skills from the pinned `bigpowers` package, run `bun run packages`. The check-only command above does not modify files.
 
@@ -40,6 +58,10 @@ To refresh the six selected workflow skills from the pinned `bigpowers` package,
 | `/cyber status` | Show the current offense brief. |
 | `/cyber checkpoint` | Append the already recorded brief to the Pi session. |
 | `/offensespec [package]` | Load the full offense specification or a focused package. |
+| `/probe <target>` | Bounded read-only surface map with a ranked shortlist. |
+| `/understand <target>` | Comprehension pass: components, flows, trust boundaries, identity, data. |
+| `/drill <target>` | Recursive drill: hypothesise, test, learn, adapt, chain, until a way in is found. |
+| `/dump-report` | Stop the work and write the structured engagement report. |
 | `/subagents` | List specialist profiles discovered by `pi-subagents`. |
 
 Offense is the only workflow; there is no mode toggle. The `cyber_state` tool maintains scope, objective, coverage, evidence references, and next steps. Checkpoints preserve recorded state; they do not summarize unrecorded output.
