@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { STATE_ENTRY, brief, recoverState, switchMode, updateState, type CyberMode, type CyberState } from "./state.ts";
 import { registerGithubTool } from "./tools/github.ts";
 import { registerEvidenceTool } from "./tools/evidence.ts";
+import { registerCyberJobsTool } from "./tools/jobs.ts";
 import { contextLine } from "./evidence/db.ts";
 
 const resource = (path: string) => fileURLToPath(new URL(`../${path}`, import.meta.url));
@@ -18,6 +19,7 @@ const patchSchema = Type.Object({
 export default function cyber(pi: ExtensionAPI): void {
   registerGithubTool(pi);
   registerEvidenceTool(pi);
+  registerCyberJobsTool(pi);
   const runningTools = new Set<string>();
   let agentRunning = false;
   let visualReady = false;

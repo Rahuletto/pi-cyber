@@ -1,0 +1,9 @@
+#!/usr/bin/env bun
+// Fixture stub for Task-6 job-runner tests: prints the subfinder fixture
+// exactly once and exits 0. Never touches the network. Shell-free executable
+// (bun script marked +x), placed onto PATH via the test's env.
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
+const fixture = readFileSync(join(import.meta.dir, "..", "..", "adapters", "subfinder.jsonl"), "utf8");
+await Bun.write(Bun.stdout, fixture.endsWith("\n") ? fixture : `${fixture}\n`);
