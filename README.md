@@ -24,6 +24,13 @@ The repository does not include a vulnerable demo target. Use only systems you a
 One command, on a machine that has [bun](https://bun.sh) and nothing else:
 
 ```sh
+curl -fsSL -H "Authorization: token $(gh auth token)" https://raw.githubusercontent.com/Rahuletto/pi-cyber/main/install.sh | bash
+```
+
+The repository is private, so the raw fetch carries a GitHub token — `gh auth
+login` once on the new machine is enough. On a public fork, drop the header:
+
+```sh
 curl -fsSL https://raw.githubusercontent.com/Rahuletto/pi-cyber/main/install.sh | bash
 ```
 

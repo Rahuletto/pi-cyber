@@ -3,7 +3,8 @@
 # specialist roles, the operator commands, the workflow skills, and the pinned
 # scanner toolchain.
 #
-#   curl -fsSL https://raw.githubusercontent.com/Rahuletto/pi-cyber/main/install.sh | bash
+#   curl -fsSL -H "Authorization: token $(gh auth token)" \
+#     https://raw.githubusercontent.com/Rahuletto/pi-cyber/main/install.sh | bash
 #
 # or, from a clone:
 #   git clone https://github.com/Rahuletto/pi-cyber.git && ~/.pi/pi-cyber/install.sh
@@ -22,6 +23,8 @@
 set -euo pipefail
 
 REPO_URL="${CYBER_REPO_URL:-https://github.com/Rahuletto/pi-cyber}"
+# A private repository needs credentials. The git credential helper or an SSH
+# key is enough for the clone; the raw script fetch is the caller's problem.
 REF="${CYBER_REF:-main}"
 REPO_DIR="${CYBER_REPO_DIR:-$HOME/.pi/pi-cyber}"
 AGENT="${PI_CODING_AGENT_DIR:-$HOME/.pi/agent}"
