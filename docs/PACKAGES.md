@@ -4,8 +4,8 @@ What the cyber harness installs, why, what it risks, and what it deliberately
 leaves out. Source basis: `research/PACKAGES-ORCHESTRATION-RESEARCH.md`,
 `research/PACKAGES-CONTEXT-WEB.md`, `research/PACKAGES-WORKFLOW-SIDECONVERSATIONS.md`
 (source review only, 2026-10-21). The pins below are the versions those notes
-reviewed; the harness pins them as repository dependencies and installs them
-with `bun install --frozen-lockfile` so runtime and manifest agree.
+reviewed; the harness installs them into this repository with `bun add` so the
+runtime and the manifest agree.
 
 ## Installed
 
@@ -75,10 +75,11 @@ instead of downloading a second copy, and the version check in
 
 ## Verification status
 
-Verified offline in this repository: the pins install from the frozen lock;
-`pi list` resolves all four local package paths; the package checker verifies
-the selected skill copies, role files, spawn caps and explicit search config.
-Pi's interactive extension loading, skill discovery, and worker registration
-were not exercised in this run. **Not** verified here (needs a provider and,
-for some paths, network access): an actual child launch, a real search request,
-and any hosted extraction path.
+Verified offline in this repository: the pins resolve and install; Pi resolves
+all four local package sources from the cyber profile; the three extensions
+load with zero errors and zero warnings; the 81 bigpowers skills stay disabled
+while the six selected ones load; pi-subagents discovers the six cyber roles
+with their tool allowlists, spawn depth and the harness extension path
+resolved. **Not** verified here (needs a provider and, for some paths, network
+access): an actual child launch, a real search request, and any hosted
+extraction path.
