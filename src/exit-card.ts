@@ -10,28 +10,17 @@
 import { homedir } from "node:os";
 import { join } from "node:path";
 
-/** ANSI 256-colour. Kept raw so the card needs no dependency on the host theme. */
+/** Matches the `red` token in themes/cyber-offense.json: okhsl(4 82% 62%). */
 const RESET = "\x1b[0m";
-const BANNER_COLOR = "\x1b[38;5;196m";
-const RULE_COLOR = "\x1b[38;5;160m";
+const ACCENT_COLOR = "\x1b[38;2;238;90;137m";
+const RULE_COLOR = "\x1b[38;5;240m";
 const LABEL_COLOR = "\x1b[38;5;244m";
 const VALUE_COLOR = "\x1b[38;5;215m";
-const COMMAND_COLOR = "\x1b[1m\x1b[38;5;196m";
-
-const BANNER = [
-  " ██████╗ ██╗      ██████╗██╗   ██╗██████╗ ███████╗██████╗ ",
-  " ██╔══██╗╚██╗    ██╔════╝╚██╗ ██╔╝██╔══██╗██╔════╝██╔══██╗",
-  " ██████╔╝ ╚██╗   ██║      ╚████╔╝ ██████╔╝█████╗  ██████╔╝",
-  " ██╔═══╝   ██║   ██║       ██╔╝   ██╔══██╗██╔══╝  ██╔══██╗",
-  " ██║       ██║   ╚██████╗  ██║    ██████╔╝███████╗██║  ██║",
-  " ╚═╝      ╚═╝     ╚═════╝ ╚═╝     ╚═════╝ ╚══════╝╚═╝  ╚═╝",
-];
+const WORDMARK = "PI CYBER";
 
 export interface ExitCardDetails {
   /** Session identifier Pi uses to resume this conversation. */
   sessionId: string;
-  /** Absolute path of the persisted session file, when it exists. */
-  sessionFile?: string;
   /** Directory holding the session files. */
   sessionDir?: string;
   /** Working directory the session ran in. */
@@ -61,14 +50,15 @@ export function resumeCommand(details: ExitCardDetails): string {
 /** Render the card. `color` false yields plain text for logs and pipes. */
 export function renderExitCard(details: ExitCardDetails, color = true): string {
   const paint = (text: string, code: string) => (color ? `${code}${text}${RESET}` : text);
-  const width = BANNER[0].length;
+  const resume = `resume  ${resumeCommand(details)}`;
+  const closed = `engagement closed · ${details.sessionId}`;
+  const width = Math.max(WORDMARK.length, closed.length + 2, resume.length + 2);
   const rule = "─".repeat(width);
   const lines: string[] = [];
-  lines.push(BANNER.map((row) => paint(row, BANNER_COLOR)).join("\n"));
+  lines.push(paint(WORDMARK, ACCENT_COLOR));
   lines.push(paint(rule, RULE_COLOR));
   lines.push(`  ${paint("engagement closed", LABEL_COLOR)} ${paint("·", LABEL_COLOR)} ${paint(details.sessionId, VALUE_COLOR)}`);
-  lines.push(`  ${paint("resume  ", LABEL_COLOR)} ${paint(resumeCommand(details), COMMAND_COLOR)}`);
-  if (details.sessionFile) lines.push(`  ${paint("file    ", LABEL_COLOR)} ${paint(details.sessionFile, LABEL_COLOR)}`);
+  lines.push(`  ${paint("resume  ", LABEL_COLOR)} ${paint(resumeCommand(details), ACCENT_COLOR)}`);
   return lines.join("\n");
 }
 

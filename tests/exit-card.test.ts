@@ -4,22 +4,24 @@ import { join } from "node:path";
 import { renderExitCard, resumeCommand } from "../src/exit-card.ts";
 
 describe("exit card", () => {
-  const details = { sessionId: "1f3a9c2b", sessionFile: "/tmp/sessions/1f3a9c2b.jsonl", sessionDir: "/tmp/sessions" };
+  const details = { sessionId: "1f3a9c2b" };
 
-  test("renders the banner, the session id and the resume command", () => {
+  test("renders a clean wordmark, the session id and the resume command", () => {
     const card = renderExitCard(details, false);
+    expect(card).toMatch(/^PI CYBER\n/);
     expect(card).toContain("engagement closed");
     expect(card).toContain("1f3a9c2b");
     expect(card).toContain("resume");
     expect(card).toContain("--session 1f3a9c2b");
-    expect(card).toContain("/tmp/sessions/1f3a9c2b.jsonl");
+    expect(card).not.toContain("file");
+    expect(card).not.toContain(".jsonl");
   });
 
-  test("every banner row is the same width so the block stays aligned", () => {
-    const rows = renderExitCard(details, false).split("\n").slice(0, 6);
-    const widths = new Set(rows.map((row) => row.length));
-    expect(widths.size).toBe(1);
-    expect(rows[0].length).toBeGreaterThan(40);
+  test("the neutral rule spans the content without an oversized block logo", () => {
+    const [wordmark, rule] = renderExitCard(details, false).split("\n");
+    expect(wordmark).toBe("PI CYBER");
+    expect(rule.length).toBeGreaterThan(wordmark.length);
+    expect(rule.length).toBeLessThan(60);
   });
 
   test("plain mode carries no ANSI escapes", () => {
@@ -28,8 +30,8 @@ describe("exit card", () => {
     expect(card).not.toMatch(/\x1b\[/);
   });
 
-  test("colour mode wraps the banner in the escape sequence", () => {
-    expect(renderExitCard(details, true)).toMatch(/\x1b\[38;5;196m/);
+  test("colour mode uses the offense theme red token", () => {
+    expect(renderExitCard(details, true)).toMatch(/\x1b\[38;2;238;90;137m/);
   });
 
   test("the resume command carries --session-dir only outside the default directory", () => {

@@ -116,7 +116,7 @@ export default function cyber(pi: ExtensionAPI): void {
     const manager = ctx.sessionManager;
     const sessionId = manager.getSessionId();
     if (!sessionId) return;
-    writeExitCard({ sessionId, sessionFile: manager.getSessionFile(), sessionDir: manager.getSessionDir(), cwd: manager.getCwd() });
+    writeExitCard({ sessionId, sessionDir: manager.getSessionDir(), cwd: manager.getCwd() });
   });
   // No compaction override: Pi retains its native summarizer and overflow retry.
   pi.on("before_agent_start", (event, ctx) => {
