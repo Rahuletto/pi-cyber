@@ -21,6 +21,12 @@ export interface ToolEntry {
   version: string;
   disposition: Disposition;
   note?: string;
+  /** GitHub release asset filename to install (installer hint); absent = installer picks via its darwin/arm64 matcher. */
+  artifact?: string;
+  /** Pinned SHA-256; null = no digest recorded yet, record on the first verified download (never mutated manifest.json — frozen in manifest.resolved.json). */
+  sha256?: string | null;
+  /** Probe flag for validate.sh (e.g. "-version"); absent = validate.sh applies its per-tool default map. */
+  versionFlag?: string;
 }
 
 export interface Manifest {
@@ -31,6 +37,9 @@ export interface Manifest {
 export const DEFAULT_STATE_FILE = resolve(homedir(), ".pi", "tools", "state.json");
 
 const DEFAULT_MANIFEST_FILE = new URL("../../tools/manifest.json", import.meta.url);
+
+const KNOWN_ENTRY_KEYS = new Set(["name", "category", "repo", "version", "disposition", "note", "artifact", "sha256", "versionFlag"]);
+const SHA256_RE = /^[0-9a-f]{64}$/i;
 
 function failWhere(message: string, detail: string): never {
   throw new TypeError(`manifest: ${message} (${detail})`);
@@ -46,9 +55,21 @@ function isToolEntry(row: unknown): ToolEntry {
   const entry = row as Record<string, unknown>;
   expectString("entry", "name", entry.name, true);
   const name = entry.name as string;
+  for (const key of Object.keys(entry)) {
+    if (!KNOWN_ENTRY_KEYS.has(key)) {
+      failWhere(`unknown key "${key}"; expected one of ${[...KNOWN_ENTRY_KEYS].sort().join("|")}`, name);
+    }
+  }
   expectString(name, "version", entry.version, true);
   expectString(name, "repo", entry.repo, false);
   expectString(name, "note", entry.note, false);
+  expectString(name, "artifact", entry.artifact, false);
+  expectString(name, "versionFlag", entry.versionFlag, false);
+  if (entry.sha256 !== undefined && entry.sha256 !== null) {
+    if (typeof entry.sha256 !== "string" || !SHA256_RE.test(entry.sha256)) {
+      failWhere('field "sha256" must be a 64-hex digest or null', name);
+    }
+  }
   if (typeof entry.category !== "string" || !(TOOL_CATEGORIES as readonly string[]).includes(entry.category)) {
     failWhere(`unknown category "${String(entry.category)}"; expected one of ${TOOL_CATEGORIES.join("|")}`, name);
   }
@@ -63,10 +84,14 @@ function isToolEntry(row: unknown): ToolEntry {
   };
   if (typeof entry.repo === "string") parsed.repo = entry.repo;
   if (typeof entry.note === "string") parsed.note = entry.note;
+  if (typeof entry.artifact === "string") parsed.artifact = entry.artifact;
+  if (entry.sha256 === null) parsed.sha256 = null;
+  else if (typeof entry.sha256 === "string") parsed.sha256 = entry.sha256;
+  if (typeof entry.versionFlag === "string") parsed.versionFlag = entry.versionFlag;
   return parsed;
 }
 
-/** Bun JSON.parse loader with hand-rolled schema validation. Throws on unknown category or disposition, duplicates, malformed shape. */
+/** Bun JSON.parse loader with hand-rolled schema validation. Throws on unknown keys, unknown category or disposition, duplicates, malformed shape. */
 export async function loadManifest(path: string | URL = DEFAULT_MANIFEST_FILE): Promise<Manifest> {
   let raw: unknown;
   try {

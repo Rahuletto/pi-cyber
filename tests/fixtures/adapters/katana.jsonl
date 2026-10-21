@@ -1,0 +1,1 @@
+{"timestamp":"2026-10-21T09:00:00Z","request":{"body":"","endpoint":"https://api.example.com/admin","header":{"User-Agent":"katana"},"method":"GET"},"response":{"body":"","header":{"Content-Type":"text/html"},"status_code":200},"event":"page"}

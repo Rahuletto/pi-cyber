@@ -50,6 +50,30 @@ test("loadManifest rejects a duplicate name", async () => {
   await expect(loadManifest(path)).rejects.toThrow(/duplicate tool name.*ffuf/);
 });
 
+test("loadManifest is strict about unknown keys (ledgered Task-2 deferral resolved)", async () => {
+  const path = resolve(directories[0], "unknown-key.json");
+  const row = entry({ name: "probe" }) as Record<string, unknown>;
+  row.veresion = "9.9.9"; // deliberately misspelled to prove silent-drop is gone
+  await writeFile(path, JSON.stringify({ tools: [row] }));
+  await expect(loadManifest(path)).rejects.toThrow(/unknown key "veresion"/);
+});
+
+test("loadManifest parses the typed installer fields and rejects a malformed sha256", async () => {
+  const good = resolve(directories[0], "fields.json");
+  await writeFile(good, JSON.stringify({
+    tools: [entry({ name: "httpx", sha256: null }), { ...entry({ name: "subfinder" }), sha256: "A".repeat(64), versionFlag: "-version" }],
+  }));
+  const manifest = await loadManifest(good);
+  const tool = manifest.tools.find((t) => t.name === "subfinder");
+  expect(tool?.versionFlag).toBe("-version");
+  expect(tool?.sha256?.length).toBe(64);
+  expect(manifest.tools.find((t) => t.name === "httpx")?.sha256).toBeNull();
+
+  const bad = resolve(directories[0], "bad-sha.json");
+  await writeFile(bad, JSON.stringify({ tools: [{ ...entry({ name: "ffuf" }), sha256: "deadbeef" }] }));
+  await expect(loadManifest(bad)).rejects.toThrow(/sha256.*64-hex/);
+});
+
 test("toolStates stays cataloged with no state file and an empty PATH", async () => {
   const manifest = await loadManifest();
   const states = await toolStates(manifest, resolve(directories[0], "missing.json"), "");

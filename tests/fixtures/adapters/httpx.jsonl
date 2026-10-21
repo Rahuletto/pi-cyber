@@ -1,0 +1,1 @@
+{"timestamp":"2026-10-21T09:00:00Z","method":"GET","url":"https://api.example.com/login","host":"api.example.com","path":"/login","input":"api.example.com","scheme":"https","port":443,"time":"312ms","a":["203.0.113.7"],"status_code":200,"content_length":1834,"webserver":"nginx","content_type":"text/html; charset=utf-8","title":"Sign in","tech":["HSTS","Bootstrap"]}
