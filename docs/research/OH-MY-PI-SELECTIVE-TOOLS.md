@@ -6,7 +6,7 @@ Research date: 2026-10-21. Upstream checked: [can1357/oh-my-pi](https://github.c
 
 This project pins `@earendil-works/pi-coding-agent` 1.3.0 in `package.json`. Pi's default tools are `read`, `bash`, `edit`, and `write`; `grep`, `find`, and `ls` are also built in but off by default, and can be enabled through tool selection. These provide file access, shell execution, exact edits/writes, content search, glob file discovery, and listing. Therefore do not create cyber-package substitutes for these generic operations. Set a deliberate Pi tool allowlist/profile instead. Pi's extension API can register additional tools; adding one runs inside Pi with the operating-system user's permissions.
 
-Sources: [Pi v1.3.0 README](https://github.com/earendil-works/pi/blob/v1.3.0/packages/coding-agent/README.md), [tool registry at v1.3.0](https://github.com/earendil-works/pi/blob/v1.3.0/packages/coding-agent/src/core/tools/index.ts), [Pi v1.3.0 extension guide](https://github.com/earendil-works/pi/blob/v1.3.0/packages/coding-agent/docs/extensions.md), [project package manifest](../package.json).
+Sources: [Pi v1.3.0 README](https://github.com/earendil-works/pi/blob/v1.3.0/packages/coding-agent/README.md), [tool registry at v1.3.0](https://github.com/earendil-works/pi/blob/v1.3.0/packages/coding-agent/src/core/tools/index.ts), [Pi v1.3.0 extension guide](https://github.com/earendil-works/pi/blob/v1.3.0/packages/coding-agent/docs/extensions.md), [project package manifest](../../package.json).
 
 ## Candidate capabilities
 

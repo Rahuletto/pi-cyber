@@ -18,7 +18,7 @@ import { binReadiness } from "./adapter-tools.ts";
  * - release { sessionId }      — give the lease back.
  * - status                     — who holds the lease right now.
  *
- * Lease discipline (docs/REA-LIGHT.md, research/BROWSER-REA-TOOLS.md):
+ * Lease discipline (docs/REA-LIGHT.md, docs/research/BROWSER-REA-TOOLS.md):
  * - Acquiring NEVER downloads a browser and NEVER launches one. Nothing in
  *   this file spawns a process. A second browser is never fetched silently;
  *   a missing browser is an operator decision (operator runs tools/install.sh).

@@ -6,7 +6,7 @@
     "name": "Subfinder",
     "upstream": "https://github.com/projectdiscovery/subfinder",
     "section": "ProjectDiscovery and adjacent pipeline tools",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 53,
     "columns": [
       "[Subfinder](https://github.com/projectdiscovery/subfinder)",
@@ -23,7 +23,7 @@
     "name": "httpx",
     "upstream": "https://github.com/projectdiscovery/httpx",
     "section": "ProjectDiscovery and adjacent pipeline tools",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 54,
     "columns": [
       "[httpx](https://github.com/projectdiscovery/httpx)",
@@ -40,7 +40,7 @@
     "name": "Nuclei",
     "upstream": "https://github.com/projectdiscovery/nuclei",
     "section": "ProjectDiscovery and adjacent pipeline tools",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 55,
     "columns": [
       "[Nuclei](https://github.com/projectdiscovery/nuclei)",
@@ -57,7 +57,7 @@
     "name": "Katana",
     "upstream": "https://github.com/projectdiscovery/katana",
     "section": "ProjectDiscovery and adjacent pipeline tools",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 56,
     "columns": [
       "[Katana](https://github.com/projectdiscovery/katana)",
@@ -74,7 +74,7 @@
     "name": "dnsx",
     "upstream": "https://github.com/projectdiscovery/dnsx",
     "section": "ProjectDiscovery and adjacent pipeline tools",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 57,
     "columns": [
       "[dnsx](https://github.com/projectdiscovery/dnsx)",
@@ -91,7 +91,7 @@
     "name": "Naabu",
     "upstream": "https://github.com/projectdiscovery/naabu",
     "section": "ProjectDiscovery and adjacent pipeline tools",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 58,
     "columns": [
       "[Naabu](https://github.com/projectdiscovery/naabu)",
@@ -108,7 +108,7 @@
     "name": "Tlsx",
     "upstream": "https://github.com/projectdiscovery/tlsx",
     "section": "ProjectDiscovery and adjacent pipeline tools",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 59,
     "columns": [
       "[Tlsx](https://github.com/projectdiscovery/tlsx)",
@@ -125,7 +125,7 @@
     "name": "Uncover",
     "upstream": "https://github.com/projectdiscovery/uncover",
     "section": "ProjectDiscovery and adjacent pipeline tools",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 60,
     "columns": [
       "[Uncover](https://github.com/projectdiscovery/uncover)",
@@ -142,7 +142,7 @@
     "name": "ASNMap",
     "upstream": "https://github.com/projectdiscovery/asnmap",
     "section": "ProjectDiscovery and adjacent pipeline tools",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 61,
     "columns": [
       "[ASNMap](https://github.com/projectdiscovery/asnmap)",
@@ -159,7 +159,7 @@
     "name": "Alterx",
     "upstream": "https://github.com/projectdiscovery/alterx",
     "section": "ProjectDiscovery and adjacent pipeline tools",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 62,
     "columns": [
       "[Alterx](https://github.com/projectdiscovery/alterx)",
@@ -176,7 +176,7 @@
     "name": "Interactsh",
     "upstream": "https://github.com/projectdiscovery/interactsh",
     "section": "ProjectDiscovery and adjacent pipeline tools",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 63,
     "columns": [
       "[Interactsh](https://github.com/projectdiscovery/interactsh)",
@@ -193,7 +193,7 @@
     "name": "ProjectDiscovery vulnx",
     "upstream": "https://github.com/projectdiscovery/vulnx",
     "section": "ProjectDiscovery and adjacent pipeline tools",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 64,
     "columns": [
       "[ProjectDiscovery vulnx](https://github.com/projectdiscovery/vulnx)",
@@ -210,7 +210,7 @@
     "name": "OWASP Amass",
     "upstream": "https://github.com/owasp-amass/amass",
     "section": "Discovery, crawling, and content enumeration",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 70,
     "columns": [
       "[OWASP Amass](https://github.com/owasp-amass/amass)",
@@ -227,7 +227,7 @@
     "name": "SpiderFoot",
     "upstream": "https://github.com/smicallef/spiderfoot",
     "section": "Discovery, crawling, and content enumeration",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 71,
     "columns": [
       "[SpiderFoot](https://github.com/smicallef/spiderfoot)",
@@ -244,7 +244,7 @@
     "name": "reconFTW",
     "upstream": "https://github.com/six2dez/reconftw",
     "section": "Discovery, crawling, and content enumeration",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 72,
     "columns": [
       "[reconFTW](https://github.com/six2dez/reconftw)",
@@ -261,7 +261,7 @@
     "name": "ffuf",
     "upstream": "https://github.com/ffuf/ffuf",
     "section": "Discovery, crawling, and content enumeration",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 73,
     "columns": [
       "[ffuf](https://github.com/ffuf/ffuf)",
@@ -278,7 +278,7 @@
     "name": "feroxbuster",
     "upstream": "https://github.com/epi052/feroxbuster",
     "section": "Discovery, crawling, and content enumeration",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 74,
     "columns": [
       "[feroxbuster](https://github.com/epi052/feroxbuster)",
@@ -295,7 +295,7 @@
     "name": "Gobuster",
     "upstream": "https://github.com/OJ/gobuster",
     "section": "Discovery, crawling, and content enumeration",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 75,
     "columns": [
       "[Gobuster](https://github.com/OJ/gobuster)",
@@ -312,7 +312,7 @@
     "name": "Dirsearch",
     "upstream": "https://github.com/maurosoria/dirsearch",
     "section": "Discovery, crawling, and content enumeration",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 76,
     "columns": [
       "[Dirsearch](https://github.com/maurosoria/dirsearch)",
@@ -329,7 +329,7 @@
     "name": "Arjun",
     "upstream": "https://github.com/s0md3v/Arjun",
     "section": "Discovery, crawling, and content enumeration",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 77,
     "columns": [
       "[Arjun](https://github.com/s0md3v/Arjun)",
@@ -346,7 +346,7 @@
     "name": "gau",
     "upstream": "https://github.com/lc/gau",
     "section": "Discovery, crawling, and content enumeration",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 78,
     "columns": [
       "[gau](https://github.com/lc/gau)",
@@ -363,7 +363,7 @@
     "name": "waybackurls",
     "upstream": "https://github.com/tomnomnom/waybackurls",
     "section": "Discovery, crawling, and content enumeration",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 79,
     "columns": [
       "[waybackurls](https://github.com/tomnomnom/waybackurls)",
@@ -380,7 +380,7 @@
     "name": "Gospider",
     "upstream": "https://github.com/jaeles-project/gospider",
     "section": "Discovery, crawling, and content enumeration",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 80,
     "columns": [
       "[Gospider](https://github.com/jaeles-project/gospider)",
@@ -397,7 +397,7 @@
     "name": "Hakrawler",
     "upstream": "https://github.com/hakluke/hakrawler",
     "section": "Discovery, crawling, and content enumeration",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 81,
     "columns": [
       "[Hakrawler](https://github.com/hakluke/hakrawler)",
@@ -414,7 +414,7 @@
     "name": "gowitness",
     "upstream": "https://github.com/sensepost/gowitness",
     "section": "Discovery, crawling, and content enumeration",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 82,
     "columns": [
       "[gowitness](https://github.com/sensepost/gowitness)",
@@ -431,7 +431,7 @@
     "name": "EyeWitness",
     "upstream": "https://github.com/RedSiege/EyeWitness",
     "section": "Discovery, crawling, and content enumeration",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 83,
     "columns": [
       "[EyeWitness](https://github.com/RedSiege/EyeWitness)",
@@ -448,7 +448,7 @@
     "name": "Subzy",
     "upstream": "https://github.com/PentestPad/subzy",
     "section": "Discovery, crawling, and content enumeration",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 84,
     "columns": [
       "[Subzy](https://github.com/PentestPad/subzy)",
@@ -465,7 +465,7 @@
     "name": "dnsrecon",
     "upstream": "https://github.com/darkoperator/dnsrecon",
     "section": "Discovery, crawling, and content enumeration",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 85,
     "columns": [
       "[dnsrecon](https://github.com/darkoperator/dnsrecon)",
@@ -482,7 +482,7 @@
     "name": "shuffledns",
     "upstream": "https://github.com/projectdiscovery/shuffledns",
     "section": "Discovery, crawling, and content enumeration",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 86,
     "columns": [
       "[shuffledns](https://github.com/projectdiscovery/shuffledns)",
@@ -499,7 +499,7 @@
     "name": "MassDNS",
     "upstream": "https://github.com/blechschmidt/massdns",
     "section": "Discovery, crawling, and content enumeration",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 87,
     "columns": [
       "[MassDNS](https://github.com/blechschmidt/massdns)",
@@ -516,7 +516,7 @@
     "name": "PureDNS",
     "upstream": "https://github.com/d3mondev/puredns",
     "section": "Discovery, crawling, and content enumeration",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 88,
     "columns": [
       "[PureDNS](https://github.com/d3mondev/puredns)",
@@ -533,7 +533,7 @@
     "name": "Nmap",
     "upstream": "https://github.com/nmap/nmap",
     "section": "Network, TLS, and server checks",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 94,
     "columns": [
       "[Nmap](https://github.com/nmap/nmap)",
@@ -550,7 +550,7 @@
     "name": "RustScan",
     "upstream": "https://github.com/RustScan/RustScan",
     "section": "Network, TLS, and server checks",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 95,
     "columns": [
       "[RustScan](https://github.com/RustScan/RustScan)",
@@ -567,7 +567,7 @@
     "name": "testssl.sh",
     "upstream": "https://github.com/testssl/testssl.sh",
     "section": "Network, TLS, and server checks",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 96,
     "columns": [
       "[testssl.sh](https://github.com/testssl/testssl.sh)",
@@ -584,7 +584,7 @@
     "name": "Nikto",
     "upstream": "https://github.com/sullo/nikto",
     "section": "Network, TLS, and server checks",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 97,
     "columns": [
       "[Nikto](https://github.com/sullo/nikto)",
@@ -601,7 +601,7 @@
     "name": "WhatWeb",
     "upstream": "https://github.com/urbanadventurer/WhatWeb",
     "section": "Network, TLS, and server checks",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 98,
     "columns": [
       "[WhatWeb](https://github.com/urbanadventurer/WhatWeb)",
@@ -618,7 +618,7 @@
     "name": "Wappalyzer CLI",
     "upstream": "https://github.com/wappalyzer/wappalyzer",
     "section": "Network, TLS, and server checks",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 99,
     "columns": [
       "[Wappalyzer CLI](https://github.com/wappalyzer/wappalyzer)",
@@ -635,7 +635,7 @@
     "name": "OWASP ZAP",
     "upstream": "https://github.com/zaproxy/zap",
     "section": "Web proxy and API testing",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 105,
     "columns": [
       "[OWASP ZAP](https://github.com/zaproxy/zap)",
@@ -652,7 +652,7 @@
     "name": "Burp Suite",
     "upstream": "https://portswigger.net/burp",
     "section": "Web proxy and API testing",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 106,
     "columns": [
       "[Burp Suite](https://portswigger.net/burp)",
@@ -669,7 +669,7 @@
     "name": "Schemathesis",
     "upstream": "https://github.com/schemathesis/schemathesis",
     "section": "Web proxy and API testing",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 107,
     "columns": [
       "[Schemathesis](https://github.com/schemathesis/schemathesis)",
@@ -686,7 +686,7 @@
     "name": "RESTler",
     "upstream": "https://github.com/microsoft/restler-fuzzer",
     "section": "Web proxy and API testing",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 108,
     "columns": [
       "[RESTler](https://github.com/microsoft/restler-fuzzer)",
@@ -703,7 +703,7 @@
     "name": "Kiterunner",
     "upstream": "https://github.com/assetnote/kiterunner",
     "section": "Web proxy and API testing",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 109,
     "columns": [
       "[Kiterunner](https://github.com/assetnote/kiterunner)",
@@ -720,7 +720,7 @@
     "name": "Postman CLI",
     "upstream": "https://github.com/postmanlabs/postman-cli",
     "section": "Web proxy and API testing",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 110,
     "columns": [
       "[Postman CLI](https://github.com/postmanlabs/postman-cli)",
@@ -737,7 +737,7 @@
     "name": "GraphQL Cop",
     "upstream": "https://github.com/dolevf/GraphQL-Cop",
     "section": "Web proxy and API testing",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 111,
     "columns": [
       "[GraphQL Cop](https://github.com/dolevf/GraphQL-Cop)",
@@ -754,7 +754,7 @@
     "name": "mitmproxy",
     "upstream": "https://github.com/mitmproxy/mitmproxy",
     "section": "Web proxy and API testing",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 112,
     "columns": [
       "[mitmproxy](https://github.com/mitmproxy/mitmproxy)",
@@ -771,7 +771,7 @@
     "name": "crt.sh",
     "upstream": "https://crt.sh/",
     "section": "Additional A-poc web/recon entries and supporting utilities",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 118,
     "columns": [
       "[crt.sh](https://crt.sh/)",
@@ -788,7 +788,7 @@
     "name": "Shodan",
     "upstream": "https://github.com/achillean/shodan-python",
     "section": "Additional A-poc web/recon entries and supporting utilities",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 119,
     "columns": [
       "[Shodan](https://github.com/achillean/shodan-python)",
@@ -805,7 +805,7 @@
     "name": "TruffleHog",
     "upstream": "https://github.com/trufflesecurity/trufflehog",
     "section": "Additional A-poc web/recon entries and supporting utilities",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 120,
     "columns": [
       "[TruffleHog](https://github.com/trufflesecurity/trufflehog)",
@@ -822,7 +822,7 @@
     "name": "GitHub secret scanning alternatives: Gitleaks",
     "upstream": "https://github.com/gitleaks/gitleaks",
     "section": "Additional A-poc web/recon entries and supporting utilities",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 121,
     "columns": [
       "[GitHub secret scanning alternatives: Gitleaks](https://github.com/gitleaks/gitleaks)",
@@ -839,7 +839,7 @@
     "name": "Subdomain takeover verification: tko-subs",
     "upstream": "https://github.com/anshumanbh/tko-subs",
     "section": "Additional A-poc web/recon entries and supporting utilities",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 122,
     "columns": [
       "[Subdomain takeover verification: tko-subs](https://github.com/anshumanbh/tko-subs)",
@@ -856,7 +856,7 @@
     "name": "Caido",
     "upstream": "https://github.com/caido/caido",
     "section": "Community-discovered candidates (11 additions)",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 130,
     "columns": [
       "[Caido](https://github.com/caido/caido)",
@@ -873,7 +873,7 @@
     "name": "sqlmap",
     "upstream": "https://github.com/sqlmapproject/sqlmap",
     "section": "Community-discovered candidates (11 additions)",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 131,
     "columns": [
       "[sqlmap](https://github.com/sqlmapproject/sqlmap)",
@@ -890,7 +890,7 @@
     "name": "jwt_tool",
     "upstream": "https://github.com/ticarpi/jwt_tool",
     "section": "Community-discovered candidates (11 additions)",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 132,
     "columns": [
       "[jwt_tool](https://github.com/ticarpi/jwt_tool)",
@@ -907,7 +907,7 @@
     "name": "XSStrike",
     "upstream": "https://github.com/s0md3v/XSStrike",
     "section": "Community-discovered candidates (11 additions)",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 133,
     "columns": [
       "[XSStrike](https://github.com/s0md3v/XSStrike)",
@@ -924,7 +924,7 @@
     "name": "gf",
     "upstream": "https://github.com/tomnomnom/gf",
     "section": "Community-discovered candidates (11 additions)",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 134,
     "columns": [
       "[gf](https://github.com/tomnomnom/gf)",
@@ -941,7 +941,7 @@
     "name": "LinkFinder",
     "upstream": "https://github.com/GerbenJavado/LinkFinder",
     "section": "Community-discovered candidates (11 additions)",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 135,
     "columns": [
       "[LinkFinder](https://github.com/GerbenJavado/LinkFinder)",
@@ -958,7 +958,7 @@
     "name": "GoTestWAF",
     "upstream": "https://github.com/wallarm/gotestwaf",
     "section": "Community-discovered candidates (11 additions)",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 136,
     "columns": [
       "[GoTestWAF](https://github.com/wallarm/gotestwaf)",
@@ -975,7 +975,7 @@
     "name": "Semgrep",
     "upstream": "https://github.com/semgrep/semgrep",
     "section": "Community-discovered candidates (11 additions)",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 137,
     "columns": [
       "[Semgrep](https://github.com/semgrep/semgrep)",
@@ -992,7 +992,7 @@
     "name": "Pinakastra (formerly SubHunterX)",
     "upstream": "https://github.com/who0xac/Pinakastra",
     "section": "Community-discovered candidates (11 additions)",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 138,
     "columns": [
       "[Pinakastra (formerly SubHunterX)](https://github.com/who0xac/Pinakastra)",
@@ -1009,7 +1009,7 @@
     "name": "VulnX by pradip676",
     "upstream": "https://github.com/pradip676/vulnx",
     "section": "Community-discovered candidates (11 additions)",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 139,
     "columns": [
       "[VulnX by pradip676](https://github.com/pradip676/vulnx)",
@@ -1026,7 +1026,7 @@
     "name": "Vulnx by anouarbensaad",
     "upstream": "https://github.com/anouarbensaad/vulnx",
     "section": "Community-discovered candidates (11 additions)",
-    "source": "research/RECON-WEB-TOOLS.md",
+    "source": "docs/research/RECON-WEB-TOOLS.md",
     "line": 140,
     "columns": [
       "[Vulnx by anouarbensaad](https://github.com/anouarbensaad/vulnx)",
@@ -1043,7 +1043,7 @@
     "name": "Semgrep",
     "upstream": "https://semgrep.dev/docs/cli-reference/",
     "section": "Source, dependency, and secret review",
-    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "source": "docs/research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
     "line": 15,
     "columns": [
       "[Semgrep](https://semgrep.dev/docs/cli-reference/) **(Source-reviewed)** \u2014 source patterns, SAST, and supported dependency/config checks.",
@@ -1060,7 +1060,7 @@
     "name": "CodeQL CLI",
     "upstream": "https://codeql.github.com/docs/codeql-overview/system-requirements/",
     "section": "Source, dependency, and secret review",
-    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "source": "docs/research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
     "line": 16,
     "columns": [
       "[CodeQL CLI](https://codeql.github.com/docs/codeql-overview/system-requirements/) **(Source-reviewed)** \u2014 semantic source analysis and query packs.",
@@ -1077,7 +1077,7 @@
     "name": "Trivy",
     "upstream": "https://github.com/aquasecurity/trivy",
     "section": "Source, dependency, and secret review",
-    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "source": "docs/research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
     "line": 17,
     "columns": [
       "[Trivy](https://github.com/aquasecurity/trivy) **(Source-reviewed)** \u2014 source, image, filesystem, SBOM, IaC, and vulnerability review.",
@@ -1094,7 +1094,7 @@
     "name": "osv-scanner",
     "upstream": "https://github.com/google/osv-scanner",
     "section": "Source, dependency, and secret review",
-    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "source": "docs/research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
     "line": 18,
     "columns": [
       "[osv-scanner](https://github.com/google/osv-scanner) **(Source-reviewed)** \u2014 dependency lockfile and source vulnerability matching against OSV.",
@@ -1111,7 +1111,7 @@
     "name": "Gitleaks",
     "upstream": "https://github.com/gitleaks/gitleaks",
     "section": "Source, dependency, and secret review",
-    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "source": "docs/research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
     "line": 19,
     "columns": [
       "[Gitleaks](https://github.com/gitleaks/gitleaks) **(Source-reviewed)** \u2014 detect likely secrets in working trees and Git history.",
@@ -1128,7 +1128,7 @@
     "name": "Betterleaks",
     "upstream": "https://github.com/betterleaks/betterleaks",
     "section": "Source, dependency, and secret review",
-    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "source": "docs/research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
     "line": 20,
     "columns": [
       "[Betterleaks](https://github.com/betterleaks/betterleaks) **(Source-reviewed)** \u2014 secret-scanning project from the Gitleaks author.",
@@ -1145,7 +1145,7 @@
     "name": "TruffleHog",
     "upstream": "https://github.com/trufflesecurity/trufflehog",
     "section": "Source, dependency, and secret review",
-    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "source": "docs/research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
     "line": 21,
     "columns": [
       "[TruffleHog](https://github.com/trufflesecurity/trufflehog) **(Source-reviewed)** \u2014 local/remote-source and cloud secret detection with verification.",
@@ -1162,7 +1162,7 @@
     "name": "Syft",
     "upstream": "https://github.com/anchore/syft",
     "section": "Source, dependency, and secret review",
-    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "source": "docs/research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
     "line": 22,
     "columns": [
       "[Syft](https://github.com/anchore/syft) **(Source-reviewed)** \u2014 generate software bills of materials from directories, images, and archives.",
@@ -1179,7 +1179,7 @@
     "name": "Grype",
     "upstream": "https://github.com/anchore/grype",
     "section": "Source, dependency, and secret review",
-    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "source": "docs/research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
     "line": 23,
     "columns": [
       "[Grype](https://github.com/anchore/grype) **(Source-reviewed)** \u2014 find known vulnerabilities in SBOMs and filesystems.",
@@ -1196,7 +1196,7 @@
     "name": "Prowler",
     "upstream": "https://docs.prowler.com/",
     "section": "Cloud, IAM, infrastructure, and Kubernetes",
-    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "source": "docs/research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
     "line": 29,
     "columns": [
       "[Prowler](https://docs.prowler.com/) **(Source-reviewed)** \u2014 cloud and SaaS posture checks, compliance mappings, account findings.",
@@ -1213,7 +1213,7 @@
     "name": "ScoutSuite",
     "upstream": "https://github.com/nccgroup/ScoutSuite",
     "section": "Cloud, IAM, infrastructure, and Kubernetes",
-    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "source": "docs/research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
     "line": 30,
     "columns": [
       "[ScoutSuite](https://github.com/nccgroup/ScoutSuite) **(Source-reviewed)** \u2014 point-in-time multi-cloud configuration audit.",
@@ -1230,7 +1230,7 @@
     "name": "Steampipe",
     "upstream": "https://steampipe.io/docs",
     "section": "Cloud, IAM, infrastructure, and Kubernetes",
-    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "source": "docs/research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
     "line": 31,
     "columns": [
       "[Steampipe](https://steampipe.io/docs) **(Source-reviewed)** \u2014 query cloud APIs as SQL tables; useful for reusable audit packs and evidence joins.",
@@ -1247,7 +1247,7 @@
     "name": "Checkov",
     "upstream": "https://www.checkov.io/1.Welcome/Quick%20Start.html",
     "section": "Cloud, IAM, infrastructure, and Kubernetes",
-    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "source": "docs/research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
     "line": 32,
     "columns": [
       "[Checkov](https://www.checkov.io/1.Welcome/Quick%20Start.html) **(Source-reviewed)** \u2014 IaC policy scanning for Terraform and other deployment formats.",
@@ -1264,7 +1264,7 @@
     "name": "KICS",
     "upstream": "https://docs.kics.io/latest/results/",
     "section": "Cloud, IAM, infrastructure, and Kubernetes",
-    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "source": "docs/research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
     "line": 33,
     "columns": [
       "[KICS](https://docs.kics.io/latest/results/) **(Source-reviewed)** \u2014 query-based misconfiguration scanning for IaC and deployment files.",
@@ -1281,7 +1281,7 @@
     "name": "kube-bench",
     "upstream": "https://github.com/aquasecurity/kube-bench",
     "section": "Cloud, IAM, infrastructure, and Kubernetes",
-    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "source": "docs/research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
     "line": 34,
     "columns": [
       "[kube-bench](https://github.com/aquasecurity/kube-bench) **(Source-reviewed)** \u2014 check Kubernetes node/control-plane configuration against CIS benchmarks.",
@@ -1298,7 +1298,7 @@
     "name": "kubeaudit",
     "upstream": "https://github.com/Shopify/kubeaudit",
     "section": "Cloud, IAM, infrastructure, and Kubernetes",
-    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "source": "docs/research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
     "line": 35,
     "columns": [
       "[kubeaudit](https://github.com/Shopify/kubeaudit) **(Source-reviewed)** \u2014 review Kubernetes resources for common security controls.",
@@ -1315,7 +1315,7 @@
     "name": "KubeLinter",
     "upstream": "https://docs.kubelinter.io/",
     "section": "Cloud, IAM, infrastructure, and Kubernetes",
-    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "source": "docs/research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
     "line": 36,
     "columns": [
       "[KubeLinter](https://docs.kubelinter.io/) **(Source-reviewed)** \u2014 lint Kubernetes YAML and Helm charts for security/readiness checks.",
@@ -1332,7 +1332,7 @@
     "name": "Sigma rules",
     "upstream": "https://github.com/SigmaHQ/sigma",
     "section": "Detection content, endpoint inventory, and host triage",
-    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "source": "docs/research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
     "line": 42,
     "columns": [
       "[Sigma rules](https://github.com/SigmaHQ/sigma) **(Source-reviewed)** \u2014 portable log-detection rule content.",
@@ -1349,7 +1349,7 @@
     "name": "pySigma / Sigma CLI",
     "upstream": "https://github.com/SigmaHQ/pySigma",
     "section": "Detection content, endpoint inventory, and host triage",
-    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "source": "docs/research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
     "line": 43,
     "columns": [
       "[pySigma / Sigma CLI](https://github.com/SigmaHQ/pySigma) **(Source-reviewed)** \u2014 parse/process Sigma and translate to supported query languages.",
@@ -1366,7 +1366,7 @@
     "name": "YARA",
     "upstream": "https://yara.readthedocs.io/en/stable/gettingstarted.html",
     "section": "Detection content, endpoint inventory, and host triage",
-    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "source": "docs/research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
     "line": 44,
     "columns": [
       "[YARA](https://yara.readthedocs.io/en/stable/gettingstarted.html) **(Source-reviewed)** \u2014 scan files/directories/processes using rule sets.",
@@ -1383,7 +1383,7 @@
     "name": "YARA-X",
     "upstream": "https://virustotal.github.io/yara-x/docs/intro/installation/",
     "section": "Detection content, endpoint inventory, and host triage",
-    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "source": "docs/research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
     "line": 45,
     "columns": [
       "[YARA-X](https://virustotal.github.io/yara-x/docs/intro/installation/) **(Source-reviewed)** \u2014 newer YARA-compatible engine and rule scanning.",
@@ -1400,7 +1400,7 @@
     "name": "osquery",
     "upstream": "https://github.com/osquery/osquery",
     "section": "Detection content, endpoint inventory, and host triage",
-    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "source": "docs/research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
     "line": 46,
     "columns": [
       "[osquery](https://github.com/osquery/osquery) **(Source-reviewed)** \u2014 local SQL inventory and event-backed system queries, including macOS tables.",
@@ -1417,7 +1417,7 @@
     "name": "Fleet",
     "upstream": "https://fleetdm.com/guides/enroll-hosts",
     "section": "Detection content, endpoint inventory, and host triage",
-    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "source": "docs/research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
     "line": 47,
     "columns": [
       "[Fleet](https://fleetdm.com/guides/enroll-hosts) **(Source-reviewed)** \u2014 manage osquery hosts, query packs, inventory, and results.",
@@ -1434,7 +1434,7 @@
     "name": "Velociraptor",
     "upstream": "https://docs.velociraptor.app/docs/deployment/offline_collections/",
     "section": "Detection content, endpoint inventory, and host triage",
-    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "source": "docs/research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
     "line": 48,
     "columns": [
       "[Velociraptor](https://docs.velociraptor.app/docs/deployment/offline_collections/) **(Source-reviewed)** \u2014 DFIR collection, endpoint hunts, VQL, artifact packaging.",
@@ -1451,7 +1451,7 @@
     "name": "Volatility 3",
     "upstream": "https://volatility3.readthedocs.io/en/stable/getting-started-mac-tutorial.html",
     "section": "Detection content, endpoint inventory, and host triage",
-    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "source": "docs/research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
     "line": 49,
     "columns": [
       "[Volatility 3](https://volatility3.readthedocs.io/en/stable/getting-started-mac-tutorial.html) **(Source-reviewed)** \u2014 memory-image analysis.",
@@ -1468,7 +1468,7 @@
     "name": "Chainsaw",
     "upstream": "https://github.com/WithSecureOpenSource/chainsaw/wiki/Usage",
     "section": "Detection content, endpoint inventory, and host triage",
-    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "source": "docs/research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
     "line": 50,
     "columns": [
       "[Chainsaw](https://github.com/WithSecureOpenSource/chainsaw/wiki/Usage) **(Source-reviewed)** \u2014 hunt Windows EVTX files with Sigma and native rules.",
@@ -1485,7 +1485,7 @@
     "name": "Hayabusa",
     "upstream": "https://github.com/Yamato-Security/hayabusa",
     "section": "Detection content, endpoint inventory, and host triage",
-    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "source": "docs/research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
     "line": 51,
     "columns": [
       "[Hayabusa](https://github.com/Yamato-Security/hayabusa) **(Source-reviewed)** \u2014 Windows event-log timeline, threat hunting, and detection.",
@@ -1502,7 +1502,7 @@
     "name": "Plaso / log2timeline",
     "upstream": "https://github.com/log2timeline/plaso",
     "section": "Detection content, endpoint inventory, and host triage",
-    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "source": "docs/research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
     "line": 52,
     "columns": [
       "[Plaso / log2timeline](https://github.com/log2timeline/plaso) **(Source-reviewed)** \u2014 normalize filesystem/log artifacts into a forensic timeline.",
@@ -1519,7 +1519,7 @@
     "name": "TShark",
     "upstream": "https://www.wireshark.org/docs/man-pages/tshark.html",
     "section": "Packet, network, and log analysis",
-    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "source": "docs/research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
     "line": 58,
     "columns": [
       "[TShark](https://www.wireshark.org/docs/man-pages/tshark.html) **(Source-reviewed)** \u2014 decode, filter, capture, and export packet data.",
@@ -1536,7 +1536,7 @@
     "name": "Zeek",
     "upstream": "https://docs.zeek.org/en/current/install.html",
     "section": "Packet, network, and log analysis",
-    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "source": "docs/research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
     "line": 59,
     "columns": [
       "[Zeek](https://docs.zeek.org/en/current/install.html) **(Source-reviewed)** \u2014 network security monitoring and protocol metadata from PCAP/live traffic.",
@@ -1553,7 +1553,7 @@
     "name": "Suricata",
     "upstream": "https://docs.suricata.io/en/latest/",
     "section": "Packet, network, and log analysis",
-    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "source": "docs/research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
     "line": 60,
     "columns": [
       "[Suricata](https://docs.suricata.io/en/latest/) **(Source-reviewed)** \u2014 signature/behavior network IDS and offline PCAP analysis.",
@@ -1570,7 +1570,7 @@
     "name": "Arkime",
     "upstream": "https://arkime.com/",
     "section": "Packet, network, and log analysis",
-    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "source": "docs/research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
     "line": 61,
     "columns": [
       "[Arkime](https://arkime.com/) **(Source-reviewed)** \u2014 searchable packet capture and session metadata at scale.",
@@ -1587,7 +1587,7 @@
     "name": "Nmap",
     "upstream": "https://nmap.org/book/inst-macosx.html",
     "section": "Authorized offense and application assessment candidates",
-    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "source": "docs/research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
     "line": 67,
     "columns": [
       "[Nmap](https://nmap.org/book/inst-macosx.html) **(Source-reviewed)** \u2014 authorized service discovery and network assessment.",
@@ -1604,7 +1604,7 @@
     "name": "OWASP ZAP",
     "upstream": "https://www.zaproxy.org/docs/desktop/cmdline/",
     "section": "Authorized offense and application assessment candidates",
-    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "source": "docs/research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
     "line": 68,
     "columns": [
       "[OWASP ZAP](https://www.zaproxy.org/docs/desktop/cmdline/) **(Source-reviewed)** \u2014 web application proxy, passive analysis, and scoped active testing.",
@@ -1621,7 +1621,7 @@
     "name": "Nuclei",
     "upstream": "https://docs.projectdiscovery.io/tools/nuclei/overview",
     "section": "Authorized offense and application assessment candidates",
-    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "source": "docs/research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
     "line": 69,
     "columns": [
       "[Nuclei](https://docs.projectdiscovery.io/tools/nuclei/overview) **(Source-reviewed)** \u2014 template-driven verification of known web/service issues.",
@@ -1638,7 +1638,7 @@
     "name": "Metasploit Framework",
     "upstream": "https://docs.metasploit.com/docs/using-metasploit/getting-started/nightly-installers.html",
     "section": "Authorized offense and application assessment candidates",
-    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "source": "docs/research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
     "line": 70,
     "columns": [
       "[Metasploit Framework](https://docs.metasploit.com/docs/using-metasploit/getting-started/nightly-installers.html) **(Source-reviewed)** \u2014 broad vulnerability validation and lab exercise framework.",
@@ -1655,7 +1655,7 @@
     "name": "Sliver",
     "upstream": "https://github.com/BishopFox/sliver",
     "section": "Authorized offense and application assessment candidates",
-    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "source": "docs/research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
     "line": 71,
     "columns": [
       "[Sliver](https://github.com/BishopFox/sliver) **(Source-reviewed)** \u2014 specialist adversary-emulation server/client and endpoint agent framework.",
@@ -1672,7 +1672,7 @@
     "name": "BloodHound CE",
     "upstream": "https://github.com/SpecterOps/BloodHound/tree/main/examples/docker-compose",
     "section": "Network, directory, and identity review",
-    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "source": "docs/research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
     "line": 77,
     "columns": [
       "[BloodHound CE](https://github.com/SpecterOps/BloodHound/tree/main/examples/docker-compose) **(Source-reviewed)** \u2014 graph and analyze directory identity relationships.",
@@ -1689,7 +1689,7 @@
     "name": "SharpHound",
     "upstream": "https://github.com/SpecterOps/SharpHound",
     "section": "Network, directory, and identity review",
-    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "source": "docs/research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
     "line": 78,
     "columns": [
       "[SharpHound](https://github.com/SpecterOps/SharpHound) **(Source-reviewed)** \u2014 collect Active Directory relationship data for BloodHound.",
@@ -1706,7 +1706,7 @@
     "name": "Impacket",
     "upstream": "https://github.com/fortra/impacket",
     "section": "Network, directory, and identity review",
-    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "source": "docs/research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
     "line": 79,
     "columns": [
       "[Impacket](https://github.com/fortra/impacket) **(Source-reviewed)** \u2014 protocol library and utility suite for SMB, MSRPC, Kerberos, LDAP, and packet formats.",
@@ -1723,7 +1723,7 @@
     "name": "NetExec",
     "upstream": "https://github.com/Pennyw0rth/NetExec",
     "section": "Network, directory, and identity review",
-    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "source": "docs/research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
     "line": 80,
     "columns": [
       "[NetExec](https://github.com/Pennyw0rth/NetExec) **(Source-reviewed)** \u2014 inventory and assessment of authorized SMB/LDAP/WinRM/SSH service estates.",
@@ -1740,7 +1740,7 @@
     "name": "Certipy",
     "upstream": "https://github.com/ly4k/Certipy",
     "section": "Network, directory, and identity review",
-    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "source": "docs/research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
     "line": 81,
     "columns": [
       "[Certipy](https://github.com/ly4k/Certipy) **(Source-reviewed)** \u2014 assess Active Directory Certificate Services configuration and evidence.",
@@ -1757,7 +1757,7 @@
     "name": "OpenLDAP ldapsearch",
     "upstream": "https://www.openldap.org/doc/admin/",
     "section": "Network, directory, and identity review",
-    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "source": "docs/research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
     "line": 82,
     "columns": [
       "[OpenLDAP ldapsearch](https://www.openldap.org/doc/admin/) **(Source-reviewed)** \u2014 query LDAP directory attributes with explicit filters/base/scope.",
@@ -1774,7 +1774,7 @@
     "name": "ldapdomaindump",
     "upstream": "https://github.com/dirkjanm/ldapdomaindump",
     "section": "Network, directory, and identity review",
-    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "source": "docs/research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
     "line": 83,
     "columns": [
       "[ldapdomaindump](https://github.com/dirkjanm/ldapdomaindump) **(Source-reviewed)** \u2014 turn authorized AD LDAP reads into domain/user/group/computer reports.",
@@ -1791,7 +1791,7 @@
     "name": "enum4linux-ng",
     "upstream": "https://github.com/cddmp/enum4linux-ng",
     "section": "Network, directory, and identity review",
-    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "source": "docs/research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
     "line": 84,
     "columns": [
       "[enum4linux-ng](https://github.com/cddmp/enum4linux-ng) **(Source-reviewed)** \u2014 SMB/NetBIOS/RPC/LDAP inventory of Windows/Samba hosts.",
@@ -1808,7 +1808,7 @@
     "name": "MITRE CALDERA",
     "upstream": "https://caldera.readthedocs.io/en/latest/",
     "section": "Controlled exercise and validation frameworks",
-    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "source": "docs/research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
     "line": 90,
     "columns": [
       "[MITRE CALDERA](https://caldera.readthedocs.io/en/latest/) **(Source-reviewed)** \u2014 orchestrate ATT&CK emulation and test detection coverage.",
@@ -1825,7 +1825,7 @@
     "name": "Atomic Red Team / Invoke-AtomicRedTeam",
     "upstream": "https://www.atomicredteam.io/docs/invoke-atomicredteam/getting-started",
     "section": "Controlled exercise and validation frameworks",
-    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "source": "docs/research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
     "line": 91,
     "columns": [
       "[Atomic Red Team / Invoke-AtomicRedTeam](https://www.atomicredteam.io/docs/invoke-atomicredteam/getting-started) **(Source-reviewed)** \u2014 small, ATT&CK-mapped tests to validate telemetry and controls.",
@@ -1842,7 +1842,7 @@
     "name": "Stratus Red Team",
     "upstream": "https://stratus-red-team.cloud/",
     "section": "Controlled exercise and validation frameworks",
-    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "source": "docs/research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
     "line": 92,
     "columns": [
       "[Stratus Red Team](https://stratus-red-team.cloud/) **(Source-reviewed)** \u2014 cloud control-plane behavior emulation for detection validation.",
@@ -1859,7 +1859,7 @@
     "name": "Prelude Operator",
     "upstream": "https://github.com/preludeorg",
     "section": "Controlled exercise and validation frameworks",
-    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "source": "docs/research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
     "line": 93,
     "columns": [
       "[Prelude Operator](https://github.com/preludeorg) **(Catalog-only)** \u2014 possible assessment-plan and telemetry platform candidate.",
@@ -1876,7 +1876,7 @@
     "name": "PurpleSharp",
     "upstream": "https://www.purplesharp.com/en/latest/",
     "section": "Controlled exercise and validation frameworks",
-    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "source": "docs/research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
     "line": 94,
     "columns": [
       "[PurpleSharp](https://www.purplesharp.com/en/latest/) **(Source-reviewed)** \u2014 Windows AD adversary simulation that produces telemetry for blue-team testing.",
@@ -1893,7 +1893,7 @@
     "name": "REA CLI + MCP",
     "upstream": "https://github.com/morluto/rea",
     "section": "Tool and capability inventory",
-    "source": "research/BROWSER-REA-TOOLS.md",
+    "source": "docs/research/BROWSER-REA-TOOLS.md",
     "line": 61,
     "columns": [
       "1",
@@ -1910,7 +1910,7 @@
     "name": "Obscura",
     "upstream": "https://github.com/h4ckf0r0day/obscura",
     "section": "Tool and capability inventory",
-    "source": "research/BROWSER-REA-TOOLS.md",
+    "source": "docs/research/BROWSER-REA-TOOLS.md",
     "line": 62,
     "columns": [
       "2",
@@ -1927,7 +1927,7 @@
     "name": "Apple command-line developer tools",
     "upstream": "https://developer.apple.com/documentation/xcode",
     "section": "Tool and capability inventory",
-    "source": "research/BROWSER-REA-TOOLS.md",
+    "source": "docs/research/BROWSER-REA-TOOLS.md",
     "line": 63,
     "columns": [
       "3",
@@ -1944,7 +1944,7 @@
     "name": "LLDB",
     "upstream": "https://lldb.llvm.org/",
     "section": "Tool and capability inventory",
-    "source": "research/BROWSER-REA-TOOLS.md",
+    "source": "docs/research/BROWSER-REA-TOOLS.md",
     "line": 64,
     "columns": [
       "4",
@@ -1961,7 +1961,7 @@
     "name": "Ghidra",
     "upstream": "https://github.com/NationalSecurityAgency/ghidra",
     "section": "Tool and capability inventory",
-    "source": "research/BROWSER-REA-TOOLS.md",
+    "source": "docs/research/BROWSER-REA-TOOLS.md",
     "line": 65,
     "columns": [
       "5",
@@ -1978,7 +1978,7 @@
     "name": "Hopper",
     "upstream": "https://www.hopperapp.com/",
     "section": "Tool and capability inventory",
-    "source": "research/BROWSER-REA-TOOLS.md",
+    "source": "docs/research/BROWSER-REA-TOOLS.md",
     "line": 66,
     "columns": [
       "6",
@@ -1995,7 +1995,7 @@
     "name": "IDA",
     "upstream": "https://hex-rays.com/ida-pro/",
     "section": "Tool and capability inventory",
-    "source": "research/BROWSER-REA-TOOLS.md",
+    "source": "docs/research/BROWSER-REA-TOOLS.md",
     "line": 67,
     "columns": [
       "7",
@@ -2012,7 +2012,7 @@
     "name": "Frida",
     "upstream": "https://frida.re/docs/home/",
     "section": "Tool and capability inventory",
-    "source": "research/BROWSER-REA-TOOLS.md",
+    "source": "docs/research/BROWSER-REA-TOOLS.md",
     "line": 68,
     "columns": [
       "8",
@@ -2029,7 +2029,7 @@
     "name": "Rizin",
     "upstream": "https://rizin.re/",
     "section": "Tool and capability inventory",
-    "source": "research/BROWSER-REA-TOOLS.md",
+    "source": "docs/research/BROWSER-REA-TOOLS.md",
     "line": 69,
     "columns": [
       "9",
@@ -2046,7 +2046,7 @@
     "name": "radare2",
     "upstream": "https://rada.re/n/",
     "section": "Tool and capability inventory",
-    "source": "research/BROWSER-REA-TOOLS.md",
+    "source": "docs/research/BROWSER-REA-TOOLS.md",
     "line": 70,
     "columns": [
       "10",
@@ -2063,7 +2063,7 @@
     "name": "LLVM",
     "upstream": "https://llvm.org/docs/CommandGuide/llvm-objdump.html",
     "section": "Tool and capability inventory",
-    "source": "research/BROWSER-REA-TOOLS.md",
+    "source": "docs/research/BROWSER-REA-TOOLS.md",
     "line": 71,
     "columns": [
       "11",
@@ -2080,7 +2080,7 @@
     "name": "Swift compiler and symbol tools",
     "upstream": "https://www.swift.org/documentation/",
     "section": "Tool and capability inventory",
-    "source": "research/BROWSER-REA-TOOLS.md",
+    "source": "docs/research/BROWSER-REA-TOOLS.md",
     "line": 72,
     "columns": [
       "12",
@@ -2097,7 +2097,7 @@
     "name": "Managed PE/CLI inspection",
     "upstream": "https://github.com/morluto/rea",
     "section": "Tool and capability inventory",
-    "source": "research/BROWSER-REA-TOOLS.md",
+    "source": "docs/research/BROWSER-REA-TOOLS.md",
     "line": 73,
     "columns": [
       "13",
@@ -2114,7 +2114,7 @@
     "name": "JADX",
     "upstream": "https://github.com/skylot/jadx",
     "section": "Tool and capability inventory",
-    "source": "research/BROWSER-REA-TOOLS.md",
+    "source": "docs/research/BROWSER-REA-TOOLS.md",
     "line": 74,
     "columns": [
       "14",
@@ -2131,7 +2131,7 @@
     "name": "Apktool",
     "upstream": "https://apktool.org/",
     "section": "Tool and capability inventory",
-    "source": "research/BROWSER-REA-TOOLS.md",
+    "source": "docs/research/BROWSER-REA-TOOLS.md",
     "line": 75,
     "columns": [
       "15",
@@ -2148,7 +2148,7 @@
     "name": "Android Platform Tools / adb",
     "upstream": "https://developer.android.com/tools",
     "section": "Tool and capability inventory",
-    "source": "research/BROWSER-REA-TOOLS.md",
+    "source": "docs/research/BROWSER-REA-TOOLS.md",
     "line": 76,
     "columns": [
       "16",
@@ -2165,7 +2165,7 @@
     "name": "Binwalk",
     "upstream": "https://github.com/ReFirmLabs/binwalk",
     "section": "Tool and capability inventory",
-    "source": "research/BROWSER-REA-TOOLS.md",
+    "source": "docs/research/BROWSER-REA-TOOLS.md",
     "line": 77,
     "columns": [
       "17",
@@ -2182,7 +2182,7 @@
     "name": "Unblob",
     "upstream": "https://github.com/onekey-sec/unblob",
     "section": "Tool and capability inventory",
-    "source": "research/BROWSER-REA-TOOLS.md",
+    "source": "docs/research/BROWSER-REA-TOOLS.md",
     "line": 78,
     "columns": [
       "18",
@@ -2199,7 +2199,7 @@
     "name": "7-Zip",
     "upstream": "https://www.7-zip.org/",
     "section": "Tool and capability inventory",
-    "source": "research/BROWSER-REA-TOOLS.md",
+    "source": "docs/research/BROWSER-REA-TOOLS.md",
     "line": 79,
     "columns": [
       "19",
@@ -2216,7 +2216,7 @@
     "name": "mitmproxy",
     "upstream": "https://docs.mitmproxy.org/",
     "section": "Tool and capability inventory",
-    "source": "research/BROWSER-REA-TOOLS.md",
+    "source": "docs/research/BROWSER-REA-TOOLS.md",
     "line": 80,
     "columns": [
       "20",
@@ -2233,7 +2233,7 @@
     "name": "Wireshark / tshark",
     "upstream": "https://www.wireshark.org/docs/man-pages/tshark.html",
     "section": "Tool and capability inventory",
-    "source": "research/BROWSER-REA-TOOLS.md",
+    "source": "docs/research/BROWSER-REA-TOOLS.md",
     "line": 81,
     "columns": [
       "21",
@@ -2250,7 +2250,7 @@
     "name": "Charles Proxy",
     "upstream": "https://www.charlesproxy.com/",
     "section": "Tool and capability inventory",
-    "source": "research/BROWSER-REA-TOOLS.md",
+    "source": "docs/research/BROWSER-REA-TOOLS.md",
     "line": 82,
     "columns": [
       "22",
@@ -2267,7 +2267,7 @@
     "name": "Proxyman",
     "upstream": "https://proxyman.com/",
     "section": "Tool and capability inventory",
-    "source": "research/BROWSER-REA-TOOLS.md",
+    "source": "docs/research/BROWSER-REA-TOOLS.md",
     "line": 83,
     "columns": [
       "23",
@@ -2284,7 +2284,7 @@
     "name": "Apple Console / unified logging",
     "upstream": "https://developer.apple.com/documentation/os/logging",
     "section": "Tool and capability inventory",
-    "source": "research/BROWSER-REA-TOOLS.md",
+    "source": "docs/research/BROWSER-REA-TOOLS.md",
     "line": 84,
     "columns": [
       "24",
@@ -2301,7 +2301,7 @@
     "name": "Web Platform Tests",
     "upstream": "https://github.com/web-platform-tests/wpt",
     "section": "Tool and capability inventory",
-    "source": "research/BROWSER-REA-TOOLS.md",
+    "source": "docs/research/BROWSER-REA-TOOLS.md",
     "line": 85,
     "columns": [
       "25",
@@ -2318,7 +2318,7 @@
     "name": "CAI",
     "upstream": "https://github.com/aliasrobotics/cai",
     "section": "Source-reviewed candidates",
-    "source": "research/ECOSYSTEM-PATTERNS.md",
+    "source": "docs/research/ECOSYSTEM-PATTERNS.md",
     "line": 17,
     "columns": [
       "[CAI](https://github.com/aliasrobotics/cai)",
@@ -2335,7 +2335,7 @@
     "name": "PentestGPT",
     "upstream": "https://github.com/GreyDGL/PentestGPT",
     "section": "Source-reviewed candidates",
-    "source": "research/ECOSYSTEM-PATTERNS.md",
+    "source": "docs/research/ECOSYSTEM-PATTERNS.md",
     "line": 18,
     "columns": [
       "[PentestGPT](https://github.com/GreyDGL/PentestGPT)",
@@ -2352,7 +2352,7 @@
     "name": "Strix",
     "upstream": "https://github.com/usestrix/strix",
     "section": "Source-reviewed candidates",
-    "source": "research/ECOSYSTEM-PATTERNS.md",
+    "source": "docs/research/ECOSYSTEM-PATTERNS.md",
     "line": 19,
     "columns": [
       "[Strix](https://github.com/usestrix/strix)",
@@ -2369,7 +2369,7 @@
     "name": "Shannon",
     "upstream": "https://github.com/KeygraphHQ/shannon",
     "section": "Source-reviewed candidates",
-    "source": "research/ECOSYSTEM-PATTERNS.md",
+    "source": "docs/research/ECOSYSTEM-PATTERNS.md",
     "line": 20,
     "columns": [
       "[Shannon](https://github.com/KeygraphHQ/shannon)",
@@ -2386,7 +2386,7 @@
     "name": "PentAGI",
     "upstream": "https://github.com/vxcontrol/pentagi",
     "section": "Source-reviewed candidates",
-    "source": "research/ECOSYSTEM-PATTERNS.md",
+    "source": "docs/research/ECOSYSTEM-PATTERNS.md",
     "line": 21,
     "columns": [
       "[PentAGI](https://github.com/vxcontrol/pentagi)",
@@ -2403,7 +2403,7 @@
     "name": "HexStrike AI",
     "upstream": "https://github.com/0x4m4/hexstrike-ai",
     "section": "Source-reviewed candidates",
-    "source": "research/ECOSYSTEM-PATTERNS.md",
+    "source": "docs/research/ECOSYSTEM-PATTERNS.md",
     "line": 22,
     "columns": [
       "[HexStrike AI](https://github.com/0x4m4/hexstrike-ai)",
@@ -2420,7 +2420,7 @@
     "name": "Interactsh",
     "upstream": "https://github.com/projectdiscovery/interactsh",
     "section": "Source-reviewed candidates",
-    "source": "research/ECOSYSTEM-PATTERNS.md",
+    "source": "docs/research/ECOSYSTEM-PATTERNS.md",
     "line": 23,
     "columns": [
       "[Interactsh](https://github.com/projectdiscovery/interactsh)",
@@ -2437,7 +2437,7 @@
     "name": "Obscura",
     "upstream": "https://github.com/h4ckf0r0day/obscura",
     "section": "Source-reviewed candidates",
-    "source": "research/ECOSYSTEM-PATTERNS.md",
+    "source": "docs/research/ECOSYSTEM-PATTERNS.md",
     "line": 24,
     "columns": [
       "[Obscura](https://github.com/h4ckf0r0day/obscura)",
@@ -2454,7 +2454,7 @@
     "name": "REA",
     "upstream": "https://github.com/morluto/rea",
     "section": "Source-reviewed candidates",
-    "source": "research/ECOSYSTEM-PATTERNS.md",
+    "source": "docs/research/ECOSYSTEM-PATTERNS.md",
     "line": 25,
     "columns": [
       "[REA](https://github.com/morluto/rea) \u00b7 [rea.tools](https://rea.tools/)",
@@ -2471,7 +2471,7 @@
     "name": "Wazuh",
     "upstream": "https://github.com/wazuh/wazuh",
     "section": "Source-reviewed candidates",
-    "source": "research/ECOSYSTEM-PATTERNS.md",
+    "source": "docs/research/ECOSYSTEM-PATTERNS.md",
     "line": 26,
     "columns": [
       "[Wazuh](https://github.com/wazuh/wazuh)",
@@ -2488,7 +2488,7 @@
     "name": "MISP",
     "upstream": "https://github.com/MISP/MISP",
     "section": "Source-reviewed candidates",
-    "source": "research/ECOSYSTEM-PATTERNS.md",
+    "source": "docs/research/ECOSYSTEM-PATTERNS.md",
     "line": 27,
     "columns": [
       "[MISP](https://github.com/MISP/MISP)",
@@ -2505,7 +2505,7 @@
     "name": "DFIR Companion",
     "upstream": "https://github.com/hasamba/DFIR-Companion",
     "section": "Source-reviewed candidates",
-    "source": "research/ECOSYSTEM-PATTERNS.md",
+    "source": "docs/research/ECOSYSTEM-PATTERNS.md",
     "line": 28,
     "columns": [
       "[DFIR Companion](https://github.com/hasamba/DFIR-Companion)",
@@ -2522,7 +2522,7 @@
     "name": "CyberChef",
     "upstream": "https://github.com/gchq/CyberChef",
     "section": "Source-reviewed candidates",
-    "source": "research/ECOSYSTEM-PATTERNS.md",
+    "source": "docs/research/ECOSYSTEM-PATTERNS.md",
     "line": 29,
     "columns": [
       "[CyberChef](https://github.com/gchq/CyberChef)",

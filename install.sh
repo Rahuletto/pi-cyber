@@ -99,7 +99,15 @@ fi
 # ── agent configuration ──────────────────────────────────────────────────────
 step "agent configuration"
 mkdir -p "$AGENT"
-[[ -f "$ROOT/config/models.json" ]] && cp "$ROOT/config/models.json" "$AGENT/models.json"
+if [[ -f "$ROOT/config/models.json" ]]; then
+  cp "$ROOT/config/models.json" "$AGENT/models.json"
+  say "installed $AGENT/models.json"
+else
+  # The catalogue is operator-owned and git-ignored: provider endpoints and key
+  # sources never live in the repository.
+  say "no config/models.json in the repository — it is operator-owned and git-ignored"
+  say "  write one to $AGENT/models.json to register a provider and its models"
+fi
 
 python3 - "$AGENT/settings.json" "$ROOT" <<'PY'
 import json, os, sys

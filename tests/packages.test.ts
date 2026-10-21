@@ -7,7 +7,7 @@ import { MAX_CONCURRENT_CHILDREN, MAX_TOTAL_SPAWNS_PER_RUN } from "../src/specia
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const PROFILE = join(ROOT, "config", "cyber");
 
-/** Pinned versions come from research/PACKAGES-*.md; the manifest must not float them. */
+/** Pinned versions come from docs/research/PACKAGES-*.md; the manifest must not float them. */
 const EXPECTED = {
   "pi-subagents": "0.79.2",
   "pi-web-access": "0.43.0",

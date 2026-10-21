@@ -49,8 +49,13 @@ describe("offense specification tree", () => {
     }
   });
 
-  test("every model in the catalogue routes to an overlay that exists", () => {
-    const models = JSON.parse(readFileSync(join(ROOT, "config/models.json"), "utf8"));
+  // The catalogue is operator-owned and git-ignored (provider endpoints and key
+  // sources never live in the repository). A checkout without one cannot assert
+  // overlay routing, so the invariant is skipped rather than failed.
+  const CATALOGUE = join(ROOT, "config/models.json");
+
+  test.skipIf(!existsSync(CATALOGUE))("every model in the catalogue routes to an overlay that exists", () => {
+    const models = JSON.parse(readFileSync(CATALOGUE, "utf8"));
     const ids: string[] = [];
     for (const provider of Object.values(models.providers as Record<string, { models: { id: string }[] }>)) {
       for (const model of provider.models) ids.push(model.id);

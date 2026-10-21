@@ -14,7 +14,7 @@ are deliberately deferred (operator decision, 2026-10-21), so deep decompilation
 revisited. Native-lane work is limited to inspection of Mach-O structure, symbols, strings, DWARF info,
 load commands, architecture slices, code signatures, gatekeeper state, and controlled dynamic sessions in
 LLDB. No REA run of any kind was performed during this build-out: the lane's state derives entirely from
-the parent design docs (`PI-CYBER-RESEARCH-PLAN.md`, `research/BROWSER-REA-TOOLS.md`); it is a
+the parent design docs (`RESEARCH-PLAN.md`, `research/BROWSER-REA-TOOLS.md`); it is a
 research-only posture, and nothing in this repo has exercised the REA skill, server, or its analysis paths
 on a real target.
 

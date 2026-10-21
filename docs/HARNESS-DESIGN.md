@@ -1,6 +1,6 @@
 # Pi Cyber Harness — deeper design proposal
 
-Research date: 2026-10-21. Status: research and design only. No Pi, browser, scanner, REA provider, or target environment was installed or executed. This document supersedes the initial [research plan](PI-CYBER-RESEARCH-PLAN.md).
+Research date: 2026-10-21. Status: research and design only. No Pi, browser, scanner, REA provider, or target environment was installed or executed. This document supersedes the initial [research plan](RESEARCH-PLAN.md).
 
 ## Product decision
 

@@ -1,6 +1,6 @@
 # Defensive agent instructions — proposed content
 
-Implementation update: the defensive mode was retired. There is no `prompts/defense.md`; the harness runs a single OFFENSE workflow, and the active instruction set is [prompts/base.md](../prompts/base.md) plus [prompts/offense.md](../prompts/offense.md) and [prompts/offense-full.md](../prompts/offense-full.md). This file retains the earlier research proposal as provenance; runtime behavior comes from the active overlay and extension.
+Implementation update: the defensive mode was retired. There is no `prompts/defense.md`; the harness runs a single OFFENSE workflow, and the active instruction set is [prompts/base.md](../../prompts/base.md) plus [prompts/offense.md](../../prompts/offense.md) and [prompts/offense-full.md](../../prompts/offense-full.md). This file retains the earlier research proposal as provenance; runtime behavior comes from the active overlay and extension.
 Design draft only; not installed. The instruction block below receives engagement targets, access, objectives, and budgets as structured state.
 
 ---

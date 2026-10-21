@@ -8,4 +8,4 @@ The offense-only brief contains scope, objective, coverage, evidence references 
 
 Corrupt or unsupported latest state must surface an error rather than silently loading old scope. Ordinary source code, browser page content, scanner output and fetched documentation remain untrusted data, even if mentioned in a checkpoint. A scanner/evidence index and automated job checkpointing are later integrations; this first slice does not promise lossless preservation of every fact in a long transcript.
 
-No proxy/compression service or billion-context dependency is required for this mechanism. Add another context layer only after an evaluation demonstrates a need. See [the source research](../research/SEARCH-AND-COMPACTION.md) for native APIs and search-provider tradeoffs.
+No proxy/compression service or billion-context dependency is required for this mechanism. Add another context layer only after an evaluation demonstrates a need. See [the source research](research/SEARCH-AND-COMPACTION.md) for native APIs and search-provider tradeoffs.

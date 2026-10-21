@@ -1,6 +1,6 @@
 # Lean cyber tool selection
 
-The full [candidate inventory](../TOOLS.md) covers 149 source-linked rows with overlap. That breadth stays in documentation; it does not become 149 tools in every model request.
+The full [candidate inventory](TOOLS.md) covers 149 source-linked rows with overlap. That breadth stays in documentation; it does not become 149 tools in every model request.
 
 ## Default runtime surface
 

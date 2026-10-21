@@ -8,7 +8,7 @@
 
 **Tech Stack:** Bun + TypeScript, `bun:sqlite` (zero deps), Pi 1.3.0 extension API (pattern: `src/index.ts`), pi-subagents 0.79.x, pi-web-access 0.4x.
 
-**Spec:** `docs/superpowers/specs/2026-10-21-pi-cyber-toolchain-buildout-spec.md`
+**Spec:** `specs/2026-10-21-pi-cyber-toolchain-buildout-spec.md`
 
 ## Global Constraints
 
@@ -321,7 +321,7 @@ Content requirements per file (hard spec — write actual final prose, do not le
 ### Task 16: Adopt-as-own catalog work (ports, not installs)
 
 **Files:**
-- Create: `research/PROMPT-SOURCE-CORPUS.md` — notes from Piebald-AI/claude-code-system-prompts (security-review methodology, three-state code-review verification, background-agent state classifiers, coordinator/worker instructions, autonomous-action security monitor), shanraisshan/claude-code-best-practice (layered rules), mapped to which plan task consumes each
+- Create: `docs/research/PROMPT-SOURCE-CORPUS.md` — notes from Piebald-AI/claude-code-system-prompts (security-review methodology, three-state code-review verification, background-agent state classifiers, coordinator/worker instructions, autonomous-action security monitor), shanraisshan/claude-code-best-practice (layered rules), mapped to which plan task consumes each
 - Create: `src/reporting/diagrams.ts` — mermaid generators for finding chains, route-role coverage matrices, attack-path graphs
 - Modify: `tools/manifest.toml` — add `understand-anything` (on-demand, comprehension lane); record Piebald + awesome-claude-code as catalog-only design sources
 - Test: `tests/reporting.test.ts`

@@ -123,7 +123,7 @@ bash tools/install-ffuf-wordlist.sh
 
 The launcher uses `~/.pi/scanners/wordlists/seclists-common.txt` automatically. Set `CYBER_FFUF_WORDLIST` to use another operator-managed list.
 
-`TOOLS.md` catalogs 149 researched candidates. It is documentation, not an install manifest or callable-tool registry. Search it through `cyber_knowledge` after rebuilding the `doc` source; candidates need a registered adapter and an available binary before Pi can invoke them. For example, ZAP and Nmap are cataloged, but this extension does not currently expose them as typed adapter tools.
+`docs/TOOLS.md` catalogs 149 researched candidates. It is documentation, not an install manifest or callable-tool registry. Search it through `cyber_knowledge` after rebuilding the `doc` source; candidates need a registered adapter and an available binary before Pi can invoke them. For example, ZAP and Nmap are cataloged, but this extension does not currently expose them as typed adapter tools.
 
 ## Specialist agents and extensions
 
@@ -147,7 +147,7 @@ The six project skills are `survey-context`, `research-first`, `plan-work`, `dev
 
 ## Instructions, data, and limits
 
-At the start of a model turn, the extension injects `prompts/base.md`, `prompts/offense.md`, and a model-family overlay. The full specification and focused instruction packages are loaded on request. `cyber_knowledge` indexes project docs, research, the root `TOOLS.md` catalog, and the configured skills directory after an explicit rebuild.
+At the start of a model turn, the extension injects `prompts/base.md`, `prompts/offense.md`, and a model-family overlay. The full specification and focused instruction packages are loaded on request. `cyber_knowledge` indexes project docs, research, the `docs/TOOLS.md` catalog, and the configured skills directory after an explicit rebuild.
 
 Engagement state is stored in the Pi session. Evidence and job records use local SQLite storage under `config/cyber` by default; the knowledge index is a separate rebuildable local database. These paths are ignored by Git. Treat evidence and session files as potentially sensitive and manage their retention accordingly.
 
@@ -170,5 +170,9 @@ Tests use temporary sessions, fake scanner executables, parser fixtures, and loc
 - `config/cyber/` — dedicated Pi profile, specialist definitions, and selected workflow skills.
 - `agents/` — detailed specialist playbooks referenced by the profile definitions.
 - `tools/` — pinned binary catalog, installer, validator, and wordlist installer.
-- `research/` and `TOOLS.md` — tool research and candidate inventory.
+- `scripts/` — package installer and launcher.
+- `themes/` — the Pi theme.
+- `docs/` — harness design, research notes, plans, specs, and the tool catalogue.
+- `docs/research/` and `docs/TOOLS.md` — tool research and candidate inventory.
+- `install.sh` — the one-command installer.
 - `tests/` — adapter, extension, persistence, and parser fixtures.

@@ -1,6 +1,6 @@
 # Offensive agent instructions — proposed content
 
-Implementation update: the active, further refined overlay is [prompts/offense.md](../prompts/offense.md). This file retains the earlier research proposal; runtime behavior comes from the active overlay and extension.
+Implementation update: the active, further refined overlay is [prompts/offense.md](../../prompts/offense.md). This file retains the earlier research proposal; runtime behavior comes from the active overlay and extension.
 Design draft only; not installed. The block below is intended to become the offense-mode instruction overlay. Engagement-specific targets, objectives, permissions, and budgets are supplied separately as structured state.
 
 ---

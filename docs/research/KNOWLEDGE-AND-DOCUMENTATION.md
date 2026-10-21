@@ -1,6 +1,6 @@
 # Cyber knowledge and documentation research
 
-Research date: 2026-10-21. Proposal only. Sources were read through web research; no corpus, search service, MCP server, or browser was installed. This is the documentation component of the [harness design](../PI-CYBER-HARNESS-DESIGN.md).
+Research date: 2026-10-21. Proposal only. Sources were read through web research; no corpus, search service, MCP server, or browser was installed. This is the documentation component of the [harness design](../HARNESS-DESIGN.md).
 
 ## The capability to build
 

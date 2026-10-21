@@ -1,7 +1,7 @@
 # Pi Cyber Harness — toolchain buildout spec
 
 Date: 2026-10-21. Status: approved-direction spec, awaiting implementation plan.
-Builds on: [PI-CYBER-HARNESS-DESIGN.md](../../../PI-CYBER-HARNESS-DESIGN.md), [BUILD-STATUS.md](../../BUILD-STATUS.md), [TOOL-SELECTION.md](../../TOOL-SELECTION.md), research/ index (149-candidate catalog).
+Builds on: [PI-CYBER-HARNESS-DESIGN.md](../HARNESS-DESIGN.md), [BUILD-STATUS.md](../BUILD-STATUS.md), [TOOL-SELECTION.md](../TOOL-SELECTION.md), docs/research/ index (149-candidate catalog).
 
 ## 1. Goal
 

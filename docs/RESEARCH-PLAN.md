@@ -1,6 +1,6 @@
 # Pi Cyber: research and proposed build plan
 
-Superseded by [the deeper extension-harness design](PI-CYBER-HARNESS-DESIGN.md), which incorporates Obscura, REA, specialist agents, offense/defense modes, and the expanded tool research. Retained as the initial research snapshot.
+Superseded by [the deeper extension-harness design](HARNESS-DESIGN.md), which incorporates Obscura, REA, specialist agents, offense/defense modes, and the expanded tool research. Retained as the initial research snapshot.
 
 Research date: 2026-10-21. Status: proposal only; no Pi installation, tool installation, extension implementation, or target testing performed.
 

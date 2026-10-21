@@ -1,10 +1,10 @@
 # Cyber harness research index
 
-Research date: 2026-10-21. The controlling proposal is [Pi Cyber Harness](../PI-CYBER-HARNESS-DESIGN.md). The original [initial plan](../PI-CYBER-RESEARCH-PLAN.md) is retained as a superseded snapshot.
+Research date: 2026-10-21. The controlling proposal is [Pi Cyber Harness](../HARNESS-DESIGN.md). The original [initial plan](../RESEARCH-PLAN.md) is retained as a superseded snapshot.
 
 ## Read in this order
 
-1. [Harness design](../PI-CYBER-HARNESS-DESIGN.md): offense/defense modes, specialist contracts, six extension entry points, browser/session ownership, native adapters, evidence, and milestones.
+1. [Harness design](../HARNESS-DESIGN.md): offense/defense modes, specialist contracts, six extension entry points, browser/session ownership, native adapters, evidence, and milestones.
 2. [Recon/web/API catalog](RECON-WEB-TOOLS.md): reconnaissance, discovery, HTTP/TLS, API testing, OAST, vulnerability intelligence, proxy alternatives, and Reddit discovery ledger.
 3. [Defense/cloud/identity catalog](DEFENSE-CLOUD-IDENTITY-TOOLS.md): source/supply chain, cloud/IaC, endpoint/log/PCAP analysis, directory tools, and exercise frameworks. Includes A-poc category screening and selection reasons.
 4. [Browser/REA research](BROWSER-REA-TOOLS.md): Obscura MCP/CDP and fidelity, Mac binary-analysis providers, REA skill/server matching, retained Evidence, and platform-specific limitations.
@@ -13,7 +13,7 @@ Research date: 2026-10-21. The controlling proposal is [Pi Cyber Harness](../PI-
 7. Package evaluations: [orchestration/research](PACKAGES-ORCHESTRATION-RESEARCH.md), [context/web access](PACKAGES-CONTEXT-WEB.md), and [engineering/side conversations](PACKAGES-WORKFLOW-SIDECONVERSATIONS.md). These evaluate the user's proposed packages and the discovered pi-subagents dependency without installing them.
 8. [Offense instruction proposal](OFFENSE-INSTRUCTIONS-PROPOSAL.md): an environment-neutral active investigation, exploitation, chaining, and objective-pursuit overlay, not installed agent configuration.
 9. [Defense instruction proposal](DEFENSE-INSTRUCTIONS-PROPOSAL.md) and [testing/implementation handoff requirements](TESTING-COVERAGE-AND-HANDOFF.md): role coverage through real sign-in, confirmed vulnerability evidence, secret handling, and an implementation-ready remediation dossier.
-10. [Prompt source corpus](../docs/PROMPT-SOURCE-CORPUS.md): lineage for the base/offense/defense overlays and the diagrammatic reporting helpers — the source each section was mined from, what was ported, what was written fresh, and what was rejected.
+10. [Prompt source corpus](../PROMPT-SOURCE-CORPUS.md): lineage for the base/offense/defense overlays and the diagrammatic reporting helpers — the source each section was mined from, what was ported, what was written fresh, and what was rejected.
 
 ## How to interpret the catalog
 
@@ -36,7 +36,7 @@ A-poc's catalog was screened by category and used to discover relevant projects.
 
 Exact releases, licenses, signatures/digests, architecture-specific dependencies, credential/service limits, parser fixtures, native host behavior, browser security fidelity, and worker resource use need verification during implementation. Source-reviewed does not waive these checks.
 
-The initial research involved no installations or target scans. Local implementation has since begun: consult [README](../README.md) and [build status](../docs/BUILD-STATUS.md) for verified runtime behavior. The research reports remain source-review records, not proof that their external tools were installed or tested.
+The initial research involved no installations or target scans. Local implementation has since begun: consult [README](../../README.md) and [build status](../BUILD-STATUS.md) for verified runtime behavior. The research reports remain source-review records, not proof that their external tools were installed or tested.
 
 ## Implementation follow-up research
 
@@ -44,4 +44,4 @@ The initial research involved no installations or target scans. Local implementa
 - [CloakBrowser versus Obscura](CLOAKBROWSER-COMPARISON.md).
 - [Free search and native compaction](SEARCH-AND-COMPACTION.md).
 - [Selective oh-my-pi tools](OH-MY-PI-SELECTIVE-TOOLS.md).
-- [Lean selection](../docs/TOOL-SELECTION.md).
+- [Lean selection](../TOOL-SELECTION.md).

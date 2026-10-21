@@ -20,7 +20,7 @@ import { fileURLToPath } from "node:url";
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const PROFILE = join(ROOT, "config", "cyber");
 
-/** Package identity and pin come from research/PACKAGES-*.md; keep them exact. */
+/** Package identity and pin come from docs/research/PACKAGES-*.md; keep them exact. */
 export const EXPECTED_PACKAGES = [
   { name: "pi-subagents", version: "0.79.2", role: "worker engine" },
   { name: "pi-web-access", version: "0.43.0", role: "search and extraction" },
@@ -119,7 +119,7 @@ function main(): number {
   const checkOnly = process.argv.includes("--check");
   const checks = checkPackages();
   let failed = false;
-  console.log("pi-cyber package check (pins from research/PACKAGES-*.md)");
+  console.log("pi-cyber package check (pins from docs/research/PACKAGES-*.md)");
   for (const check of checks) {
     if (check.ok) {
       console.log(`  ok       ${check.name}@${check.expected} -> ${check.path}`);
