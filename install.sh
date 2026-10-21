@@ -3,23 +3,77 @@
 # specialist roles, the operator commands, the workflow skills, and the pinned
 # scanner toolchain.
 #
+#   curl -fsSL https://raw.githubusercontent.com/Rahuletto/pi-cyber/main/install.sh | bash
+#
+# or, from a clone:
 #   git clone https://github.com/Rahuletto/pi-cyber.git && ~/.pi/pi-cyber/install.sh
 #
 # Requires bun on PATH. Everything else is fetched or written by this script.
 #
 # Env:
+#   SKIP_DEPS=1       skip `bun install` in the repository
+#   CYBER_REPO_URL    repository base (default the GitHub project)
+#   CYBER_REF         branch or tag to fetch (default main)
+#   CYBER_REPO_DIR    where to unpack the repository (default ~/.pi/pi-cyber)
 #   SKIP_TOOLS=1      skip the scanner download (~1GB, needs network)
 #   SKIP_GLOBAL_PI=1  do not `bun add -g` the Pi CLI
 #   SKIP_WORDLIST=1   do not install the ffuf SecLists wordlist
 #   --check           verify an existing install, change nothing
 set -euo pipefail
 
-ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+REPO_URL="${CYBER_REPO_URL:-https://github.com/Rahuletto/pi-cyber}"
+REF="${CYBER_REF:-main}"
+REPO_DIR="${CYBER_REPO_DIR:-$HOME/.pi/pi-cyber}"
 AGENT="${PI_CODING_AGENT_DIR:-$HOME/.pi/agent}"
 PI_VERSION="${PI_VERSION:-1.3.0}"
 TOOLS_DIR="${PI_TOOLS_DIR:-$HOME/.pi/scanners}"
 CHECK_ONLY=0
 [[ "${1:-}" == "--check" ]] && CHECK_ONLY=1
+
+# --- bootstrap ---------------------------------------------------------------
+# Piped from curl there is no script on disk and no repository next to it, so
+# fetch the tree first and re-run from the unpacked copy.
+bootstrap() {
+  if [[ "${CYBER_BOOTSTRAPPED:-0}" == "1" ]]; then
+    echo "pi-cyber: could not fetch the repository. Clone it manually:" >&2
+    echo "  git clone $REPO_URL $REPO_DIR && $REPO_DIR/install.sh" >&2
+    exit 1
+  fi
+  local tarball="${CYBER_REPO_TARBALL:-$REPO_URL/archive/refs/heads/$REF.tar.gz}"
+  local tmp
+  tmp="$(mktemp -d)"
+  trap 'rm -rf "$tmp"' EXIT
+  echo "pi-cyber: fetching $tarball"
+  if ! curl -fsSL "$tarball" -o "$tmp/repo.tar.gz"; then
+    echo "pi-cyber: download failed" >&2
+    exit 1
+  fi
+  tar -xzf "$tmp/repo.tar.gz" -C "$tmp"
+  local extracted
+  extracted="$(find "$tmp" -mindepth 1 -maxdepth 1 -type d | head -1)"
+  if [[ -z "$extracted" ]]; then
+    echo "pi-cyber: the archive did not contain a directory" >&2
+    exit 1
+  fi
+  mkdir -p "$(dirname "$REPO_DIR")"
+  rm -rf "$REPO_DIR"
+  mv "$extracted" "$REPO_DIR"
+  echo "pi-cyber: unpacked to $REPO_DIR"
+  CYBER_BOOTSTRAPPED=1 bash "$REPO_DIR/install.sh" "$@"
+}
+
+# Resolve the script path before deciding whether the repository is present.
+# Piped from curl there is no script on disk, so $0 is the shell and the
+# bootstrap takes over.
+SOURCE="${BASH_SOURCE[0]:-$0}"
+if [[ -f "$SOURCE" ]]; then
+  SOURCE="$(cd -- "$(dirname -- "$SOURCE")" && pwd -P)/$(basename -- "$SOURCE")"
+fi
+if [[ ! -f "$SOURCE" || ! -f "$(dirname -- "$SOURCE")/package.json" ]]; then
+  bootstrap "$@"
+fi
+
+ROOT="$(dirname -- "$SOURCE")"
 
 say() { printf '  %s\n' "$*"; }
 step() { printf '\n== %s\n' "$*"; }
@@ -34,8 +88,12 @@ say "tools    $TOOLS_DIR"
 
 if [[ $CHECK_ONLY -eq 0 ]]; then
   step "repository dependencies"
-  (cd "$ROOT" && bun install --frozen-lockfile)
-  say "installed"
+  if [[ "${SKIP_DEPS:-0}" == "1" ]]; then
+    say "skipped (SKIP_DEPS=1)"
+  else
+    (cd "$ROOT" && bun install --frozen-lockfile)
+    say "installed"
+  fi
 
   step "global Pi CLI"
   if [[ "${SKIP_GLOBAL_PI:-0}" == "1" ]]; then

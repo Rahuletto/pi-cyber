@@ -24,6 +24,13 @@ The repository does not include a vulnerable demo target. Use only systems you a
 One command, on a machine that has [bun](https://bun.sh) and nothing else:
 
 ```sh
+curl -fsSL https://raw.githubusercontent.com/Rahuletto/pi-cyber/main/install.sh | bash
+```
+
+The script fetches the repository itself when it is piped, so there is no
+clone step. From a clone the same script works directly:
+
+```sh
 git clone https://github.com/Rahuletto/pi-cyber.git ~/.pi/pi-cyber && ~/.pi/pi-cyber/install.sh
 ```
 
@@ -38,7 +45,9 @@ so no launcher, environment variable or working directory is required.
 
 | Env | Effect |
 | --- | --- |
+| `SKIP_DEPS=1` | Skip `bun install` in the repository. |
 | `SKIP_TOOLS=1` | Skip the scanner download. |
+| `CYBER_REPO_URL` / `CYBER_REF` | Fetch the harness from another fork or tag. |
 | `SKIP_WORDLIST=1` | Skip the ffuf SecLists wordlist. |
 | `SKIP_GLOBAL_PI=1` | Do not install the `pi` CLI. |
 | `CYBER_PROXY_KEY=…` | Write the provider key without the interactive prompt. |
