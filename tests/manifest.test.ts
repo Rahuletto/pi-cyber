@@ -32,6 +32,24 @@ test("loadManifest reads the real catalog with required fields and no duplicates
   expect(nmap?.note).toContain("x86_64-only");
 });
 
+test("loadManifest records the catalog-only design sources and the on-demand comprehension lane", async () => {
+  const manifest = await loadManifest();
+  const byName = new Map(manifest.tools.map((tool) => [tool.name, tool]));
+  // Task 16: understand-anything is cataloged/on-demand, never installed.
+  expect(byName.get("understand-anything")?.disposition).toBe("on-demand");
+  expect(byName.get("understand-anything")?.note).toContain("never installed");
+  // Task 16: Piebald + awesome-claude-code are catalog-only design sources.
+  for (const name of ["piebald-claude-code-system-prompts", "awesome-claude-code"]) {
+    expect(byName.get(name)?.disposition).toBe("reference");
+    expect(byName.get(name)?.note).toContain("never installed");
+  }
+  // A design source is never part of the install plan.
+  const core = manifest.tools.filter((tool) => tool.disposition === "core").map((tool) => tool.name);
+  expect(core).not.toContain("understand-anything");
+  expect(core).not.toContain("piebald-claude-code-system-prompts");
+  expect(core).not.toContain("awesome-claude-code");
+});
+
 test("loadManifest rejects an unknown category", async () => {
   const path = resolve(directories[0], "bad-category.json");
   await writeFile(path, JSON.stringify({ tools: [entry({ category: "hax" as never })] }));
