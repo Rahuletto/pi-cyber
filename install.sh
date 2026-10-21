@@ -32,33 +32,23 @@ CHECK_ONLY=0
 
 # --- bootstrap ---------------------------------------------------------------
 # Piped from curl there is no script on disk and no repository next to it, so
-# fetch the tree first and re-run from the unpacked copy.
+# clone the tree first and re-run from the clone.
 bootstrap() {
   if [[ "${CYBER_BOOTSTRAPPED:-0}" == "1" ]]; then
     echo "pi-cyber: could not fetch the repository. Clone it manually:" >&2
     echo "  git clone $REPO_URL $REPO_DIR && $REPO_DIR/install.sh" >&2
     exit 1
   fi
-  local tarball="${CYBER_REPO_TARBALL:-$REPO_URL/archive/refs/heads/$REF.tar.gz}"
-  local tmp
-  tmp="$(mktemp -d)"
-  trap 'rm -rf "$tmp"' EXIT
-  echo "pi-cyber: fetching $tarball"
-  if ! curl -fsSL "$tarball" -o "$tmp/repo.tar.gz"; then
-    echo "pi-cyber: download failed" >&2
-    exit 1
-  fi
-  tar -xzf "$tmp/repo.tar.gz" -C "$tmp"
-  local extracted
-  extracted="$(find "$tmp" -mindepth 1 -maxdepth 1 -type d | head -1)"
-  if [[ -z "$extracted" ]]; then
-    echo "pi-cyber: the archive did not contain a directory" >&2
-    exit 1
-  fi
   mkdir -p "$(dirname "$REPO_DIR")"
-  rm -rf "$REPO_DIR"
-  mv "$extracted" "$REPO_DIR"
-  echo "pi-cyber: unpacked to $REPO_DIR"
+  if [[ -d "$REPO_DIR/.git" ]]; then
+    echo "pi-cyber: updating $REPO_DIR"
+    git -C "$REPO_DIR" fetch --depth 1 origin "$REF"
+    git -C "$REPO_DIR" reset --hard "origin/$REF"
+  else
+    echo "pi-cyber: cloning $REPO_URL@$REF into $REPO_DIR"
+    rm -rf "$REPO_DIR"
+    git clone --depth 1 --branch "$REF" "$REPO_URL" "$REPO_DIR"
+  fi
   CYBER_BOOTSTRAPPED=1 bash "$REPO_DIR/install.sh" "$@"
 }
 
