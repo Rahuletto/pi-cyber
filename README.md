@@ -1,221 +1,140 @@
-# Pi Cyber Harness
+# Pi Cyber
 
-A lean offense-only Pi extension harness. It adds `/cyber status` and `/cyber checkpoint`, a structured `cyber_state` tool, typed scanner tools, serialized job tracking, evidence storage, browser-session leases, local knowledge search, offense instructions and durable session checkpoints. The only theme uses red accents throughout. Pi remains the agent runtime and its native tools and automatic compaction stay available.
+Pi Cyber is a local-first security assessment harness for [Pi](https://pi.dev/). It adds an offense-only workflow, durable engagement notes, a typed scanner toolset, searchable project references, and specialist profiles. It is designed to help an operator conduct authorized assessments; it does not grant authorization or sandbox the host.
 
-See [the design](PI-CYBER-HARNESS-DESIGN.md), [build status](docs/BUILD-STATUS.md), and the [first local engagement](docs/FIRST-ENGAGEMENT.md). No external assessment target is configured. The included Cyberbench target binds only to loopback and is intentionally vulnerable.
+## What it provides
 
-## Run locally
+- One offense workflow with a red-accented Pi theme and durable session checkpoints.
+- Typed Pi tools for the installed scanner adapters, job tracking, evidence, browser leases, GitHub lookups, and local documentation search.
+- A pinned installer and readiness checks for supported command-line tools.
+- Twelve specialist profiles available through `pi-subagents`.
+- Six project workflow skills and an indexed research catalog.
 
-Requires Bun for the development scripts. Pi 1.3.0 officially specifies Node >=22.19.0; this workspace's Node command is a Bun shim. The implementation and SDK fixtures were verified with Bun 1.4.3, not an independent Node installation or a live provider.
+The repository does not include a vulnerable demo target. Use only systems you are authorized to assess.
+
+## Requirements
+
+- macOS or Linux. Binary availability depends on the individual tool and platform.
+- [Bun](https://bun.sh/) for installation, scripts, tests, and the `bun:sqlite` runtime.
+- Pi CLI 1.3.0 or compatible. This repository pins the Pi package at 1.3.0.
+- A Pi-supported model provider configured in the dedicated profile before model-backed work or specialist runs.
+
+## Install and launch
 
 ```sh
+git clone https://github.com/Rahuletto/pi-cyber.git
+cd pi-cyber
 bun install --frozen-lockfile
-bun run typecheck
-bun test
-bun run doctor
+bun run packages:check
 bun run pi
 ```
 
-`bun run pi` adds the installer's bin directory to `PATH` because the job runner spawns
-binaries by name. If you launch Pi directly instead, add it yourself:
+`bun run pi` launches Pi with this repository's extension and the dedicated profile in `config/cyber`. Provider credentials and settings for this profile are separate from your personal Pi profile. The first launch may require provider sign-in.
 
-```sh
-export PATH="$HOME/.pi/tools/bin:$PATH"
-```
+To refresh the six selected workflow skills from the pinned `bigpowers` package, run `bun run packages`. The check-only command above does not modify files.
 
-Check pinned package wiring and refresh the selected profile skills after installation:
+## Commands
 
-```sh
-bun run packages
-# read-only verification: bun run packages:check
-```
-
-The exact package pins are installed by `bun install --frozen-lockfile` and loaded only through `config/cyber`; see [package setup and limits](docs/PACKAGES.md). The profile checker does not copy personal provider credentials.
-
-`bun run pi` uses the local pinned Pi CLI and defaults `PI_CODING_AGENT_DIR` to `config/cyber` in this directory. It explicitly loads this extension, preserving existing personal Pi configuration. Set `PI_CODING_AGENT_DIR` explicitly to choose another dedicated directory. Configure provider login there; this project does not copy personal credentials. Pi still uses its normal project trust and project instructions.
-
-`scripts/pi.sh` changes to the repository root, then runs `node_modules/.bin/pi -e src/index.ts`. It forwards no other CLI arguments; the AST extension is added with the `AST` environment variable, not with a flag.
-
-For use from another project directory, provide absolute paths:
-
-```sh
-PI_CODING_AGENT_DIR=/absolute/path/to/cyber-config \
-  /absolute/path/to/this/package/node_modules/.bin/pi \
-  -e /absolute/path/to/this/package/src/index.ts \
-  --theme /absolute/path/to/this/package/themes
-```
-
-The package manifest also declares the extension and theme for Pi package loading. Internal prompt files are instruction layers; they are not registered as slash templates.
-
-## Commands and durable brief
-
-```text
-/cyber status
-/cyber checkpoint
-```
-
-Every fresh session uses offense. Legacy checkpoints recorded in defense are migrated to offense and their coverage, evidence references and next steps are combined into the single engagement brief. There is no mode toggle. The TUI, status badge, selection surfaces, links and syntax highlights use the red-accented `cyber-offense` theme. Terminal theme restoration failures block subsequent tool calls until corrected; headless sessions require no UI.
-
-Ask the coordinator to record the established scope and objective using `cyber_state`, then maintain investigation coverage, evidence references and next steps. Example tool input:
-
-```json
-{
-  "action": "update",
-  "patch": {
-    "scope": ["operator-approved local fixture repository"],
-    "objective": "Investigate access control and prepare remediation guidance",
-    "coverage": ["Signed-out route checked; member/admin identities unavailable"],
-    "evidenceRefs": ["evidence/route-01.redacted.txt"],
-    "nextSteps": ["Obtain authorized role fixtures and trace the affected handler"]
-  }
-}
-```
-
-Use `{"action":"get"}` first: supplied lists replace prior values. Scope, objective, coverage, evidence references and next steps are stored in one offense brief. The offense label does not authorize targets or effects. Scope recording is a workflow contract, not an authorization verifier.
-
-Each update appends a complete versioned snapshot through Pi's session API. `/cyber checkpoint` snapshots only the already recorded brief; it does not summarize unrecorded tool output. Recovery follows the active session branch, including entries before compaction, so changing sessions or navigating the tree cannot inherit a different branch's brief. Pi writes a session file once a conversation exists; commands entered before the first user/assistant message are only held in its in-memory session until then.
-
-The extension preserves Pi's native summarizer, automatic compaction settings and overflow retry. It adds the offense instructions at the start of a turn, and an ephemeral current brief to every provider request, including a continuation after compaction. Rehydration is only as complete as the recorded fields. A damaged or unsupported latest checkpoint blocks tool interaction rather than silently restoring stale scope. Use Pi `/tree` to return before that checkpoint, or start a new session and establish scope again.
-
-## Tool surface (17 registered Pi tools)
-
-| Tool | Purpose |
+| Command | Purpose |
 | --- | --- |
-| `cyber_state` | Read or replace the durable offense engagement brief (scope, objective, coverage, evidence references, next steps). |
-| `cyber_evidence` | Durable SQLite evidence store: `add` / `read` / `findings` / `summary`, with secret refusal and a mermaid lifecycle map on request. |
-| `cyber_jobs` | Typed job runner: `run` an adapter with schema-validated params, `status` a job, `list` the adapter registry. |
-| `cyber_browser` | Exclusive browser lease (Obscura): `acquire` / `release` / `status`. Books the slot; never downloads or launches a browser. |
-| `cyber_knowledge` | Local-corpus FTS over skills, research, docs, and the root `TOOLS.md` candidate inventory: `search` / `stats` / `rebuild`. Never rebuilds implicitly. |
-| `github` | `gh` CLI lookups — `search`, `read`, `cve`, `issues`, `prs` — executed through an argv array, never a shell string. |
-| `subfinder` | Passive subdomain enumeration for one domain. |
-| `httpx` | HTTP probe / fingerprinting of target URLs. |
-| `dnsx` | DNS record resolution for given domains. |
-| `katana` | JS-aware crawl of targets up to a configured depth. |
-| `naabu` | TCP port scan of given hosts. |
-| `nuclei` | Template-driven vulnerability scan with severity and template filters. |
-| `ffuf` | Content enumeration against one URL target (requires an operator wordlist). |
-| `uncover` | Search-index queries (Shodan, Censys, …) for one query. |
-| `vulnx` | CVE advisory lookup and analysis. |
-| `interactsh` | OOB callback client — runs until the job timeout and records received events. |
-| `semgrep` | Static analysis of local paths with a pinned rule set. |
+| `/cyber status` | Show the current offense brief. |
+| `/cyber checkpoint` | Append the already recorded brief to the Pi session. |
+| `/offensespec [package]` | Load the full offense specification or a focused package. |
+| `/subagents` | List specialist profiles discovered by `pi-subagents`. |
 
-The eleven adapter tools share one contract: typed parameters validated against the adapter's
-own schema, a serialized job with a durable ledger entry, parsed findings persisted as evidence
-rows, and a fast-fail readiness check (`bin not available: <bin> — run tools/install.sh (state:
-<state>)`). Adapter and validation errors surface verbatim so they can be corrected.
-`ffuf` uses the locally installed SecLists `common.txt` by default when launched with `bun run
-pi`. Install or refresh it with `bash tools/install-ffuf-wordlist.sh`; the pinned source and
-SHA-256 are verified before it is written to `~/.pi/tools/wordlists/seclists-common.txt`. To
-use another operator-owned list, set `CYBER_FFUF_WORDLIST`. The path stays outside
-model-authored parameters.
+Offense is the only workflow; there is no mode toggle. The `cyber_state` tool maintains scope, objective, coverage, evidence references, and next steps. Checkpoints preserve recorded state; they do not summarize unrecorded output.
 
-## Native tool install and validation
+## Pi tools
 
-`tools/manifest.json` is the reviewed catalog (23 entries). `tools/install.sh` resolves pinned
-releases, verifies SHA-256, installs into `$PI_TOOLS_DIR/bin` (default `~/.pi/tools/bin`) and
-records `installed` in `$PI_TOOLS_DIR/state.json`; `tools/validate.sh` probes the installed
-binaries only (no network) and promotes them to `validated`. The reviewed manifest is never
-mutated — frozen pins live in `tools/manifest.resolved.json`.
+The extension registers 18 custom tools. Pi's own built-in tools and tools supplied by optional extensions are separate.
 
-```sh
-bash tools/install.sh -n     # dry run: prints the plan, downloads nothing
-bash tools/install.sh        # install the 17 core entries
-bash tools/validate.sh       # probe installed binaries, promote to validated
-bun run doctor               # report PATH presence + recorded state per tool
-```
+| Tool | Function |
+| --- | --- |
+| `cyber_state` | Read or update the durable offense brief. |
+| `cyber_spec` | Load the full specification or one of its focused packages. |
+| `cyber_evidence` | Store and retrieve sanitized evidence references, findings, and summaries. |
+| `cyber_jobs` | List adapters, run a typed job, and inspect job status. |
+| `cyber_browser` | Acquire, release, and inspect an exclusive browser lease; it does not launch a browser. |
+| `cyber_knowledge` | Search, inspect, and explicitly rebuild the local skills, research, and documentation index. |
+| `github` | Perform supported GitHub lookups through the `gh` executable. |
+| `subfinder` | Passive subdomain discovery. |
+| `dnsx` | Resolve DNS records. |
+| `httpx` | Probe and fingerprint HTTP targets. |
+| `katana` | Crawl web targets. |
+| `naabu` | Scan TCP ports. |
+| `nuclei` | Run template-based vulnerability checks. |
+| `ffuf` | Fuzz one URL using an operator-provided wordlist. |
+| `uncover` | Query supported search-index providers. |
+| `vulnx` | Query vulnerability intelligence. |
+| `interactsh` | Run an out-of-band callback client. |
+| `semgrep` | Scan local source paths with a selected ruleset. |
 
-The doctor reads PATH metadata and the operator state file. It never executes a tool and never
-proves target behavior; an executable named `httpx` may be unrelated. On this host 16 tools
-are `validated` and 8 catalog entries are `cataloged` — see [build status](docs/BUILD-STATUS.md)
-for the per-tool list, the `help-ok` marker probes and the install paths that remain open.
+The eleven adapter tools use typed parameters and route execution through the job runner. Their presence in Pi does not prove that a binary is installed, compatible, authenticated, or able to reach a target. Use the readiness checks below and inspect each job result.
 
-## Local fixture
-
-`fixtures/cyberbench/` is a deliberately vulnerable local HTTP app used as a deterministic
-offline target. It binds `127.0.0.1` only (port `4747`, `CYBERBENCH_PORT` to override), keeps
-state in in-memory sqlite, and seeds two identities (`member/memberpw` — tenant `alpha`, and
-`admin/adminpw` — tenant `beta`).
+### Tool installation and readiness
 
 ```sh
-bun fixtures/cyberbench/app.ts
-# → cyberbench: http://127.0.0.1:4747 (local fixture only — never deploy)
-
-bun test tests/fixtures/cyberbench.smoke.test.ts   # boots in-process on a free port, then closes
+bun run doctor              # read PATH and recorded readiness state
+bash tools/install.sh       # download pinned core binaries; requires network access
+bash tools/validate.sh      # probe installed binaries and update readiness state
 ```
 
-Its seeded faults are an IDOR on `/api/balance`, a missing role check on `/api/admin/users`, a
-tenant-boundary IDOR on `/api/orders`, an unvalidated upload filename on `/api/upload` and a
-secret disclosure on `/debug/session`. Every fault is tagged `// seeded-vuln:` in `app.ts`.
-The fixture must never be deployed and must never be pointed at another host.
+The installer verifies release digests and writes binaries under `~/.pi/tools/bin` by default. Set `PI_TOOLS_DIR` to use another location. The doctor is read-only and does not execute tools. The validator performs a bounded version or help probe; that is not an end-to-end target test.
 
-## Skills index
+Install the pinned SecLists common web-content wordlist for `ffuf` separately:
 
-Two skill sources are visible to the profile:
-
-- `config/cyber/skills` — six skills copied verbatim from the pinned `bigpowers` package
-  (`survey-context`, `research-first`, `plan-work`, `develop-tdd`, `verify-work`, `audit-code`).
-  `scripts/install-packages.ts` refreshes them; the copies are committed so the profile works
-  without re-running the installer. See [SKILLS-NOTICE](config/cyber/SKILLS-NOTICE.md).
-- `~/.agents/skills` — the host's skill collection (88 directories on this host), of which 49
-  match the `mukul975/anthropic-cybersecurity-skills` catalog. These are installed on the host,
-  not vendored into this repository; this project neither pins nor mirrors them.
-
-## Investigation behavior
-
-Offense follows objective-driven discovery, deep enumeration, discriminating active validation, confirmed path chaining and relevant authorized post-access investigation. It separates prerequisites and hypotheses from demonstrated access and impact. It persists through routine failures while respecting the engagement's budget and stop conditions.
-
-Defense investigates with the same evidence discipline. Its default output is an implementation-ready remediation dossier with reproduction, affected roles/routes, root cause, proposed correction, implementation scope, regression cases and retest criteria. It applies changes when implementation is part of the task, and distinguishes proposed, applied and verified outcomes.
-
-The six specialist profiles and their task/result contract are available for bounded delegation when `pi-subagents` is installed in the dedicated profile. Definitions do not prove that workers inherit all parent context or that the host enforces budgets, isolation or cancellation; verify those behaviors before relying on them. See [package setup and limits](docs/PACKAGES.md).
-
-`cyber_knowledge` searches the local skills, research and documentation index after an explicit rebuild. It does not mirror every OWASP or cybersecurity document and does not fetch or rebuild content automatically. `cyber_browser` coordinates one active owner for a browser session; it does not install or sandbox an external browser. Scanner tools use typed parameters and the job runner; their availability and validation state are reported separately by `bun run doctor`.
-
-## Evidence and execution boundaries
-
-Store concise sanitized summaries and artifact references in the brief. Ordinary Pi session files and model context are not a secret vault. A partial heuristic rejects common credential patterns, with per-field, list and overall size limits; arbitrary secrets can still evade it. The caller must redact before invoking the tool, since tool arguments themselves can appear in the transcript even when an update is rejected. Evidence references are not evidence ingestion, hashing, existence verification or protected storage.
-
-Prompts do not constrain the underlying account's filesystem or network permissions. Native tools retain normal Pi execution and trust behavior. This extension does not enforce target scope in arbitrary shell commands and does not provide an OS sandbox.
-
-`bun run doctor` reads PATH and filesystem metadata only. Its output distinguishes executable presence from validation; it never launches a scanner, browser, REA setup, Java or version probe. A name collision such as Python `httpx` or an unrelated `sg` is not compatibility proof.
-
-## Optional structural search and staged edits
-
-`AST=1 bun run pi` explicitly loads [the separate AST extension](src/ast-extension.ts) alongside the cyber foundation. The default launcher and `pi.extensions` manifest omit it. The engine, `@ast-grep/napi` **0.51.0**, is an exact optional dependency; its native code is loaded only when an AST tool executes. `bun install --omit=optional` keeps it out of a foundation-only installation. No global install, shell search command, project ast-grep configuration, custom parser loading or LSP service is involved. From another project, add `-e /absolute/path/to/this/package/src/ast-extension.ts` to the Pi invocation above; that project's working directory becomes the workspace boundary.
-
-The bundled supported languages are `javascript` (`.js`, `.jsx`, `.mjs`, `.cjs`), `typescript` (`.ts`, `.mts`, `.cts`), `tsx`, `css` and `html` (`.html`, `.htm`). An explicit `language` selects one of these parsers for another filename. Other languages are reported as unsupported; no parser is installed on demand. The implementation follows the official [ast-grep JavaScript API](https://ast-grep.github.io/guide/api-usage/js-api.html).
-
-`ast_grep` accepts explicit workspace files, a structural `pat`, an optional `language`, and a match `limit`:
-
-```json
-{"paths":["src/handler.ts"],"pat":"console.log($A)","limit":20}
+```sh
+bash tools/install-ffuf-wordlist.sh
 ```
 
-Results include relative paths, one-based line/column positions, matched syntax, engine-resolved named captures, parser diagnostics, skipped files and truncation. Columns use the engine's JavaScript UTF-16 indexing. `$NAME` and `$$$NAME` capture syntax; `$_` and `$$$` act as anonymous engine wildcards. Search accepts 1–32 files, at most 256 KiB per file and 2 MiB of source per call, and at most 100 returned matches. Each snippet/capture is clipped to 1,000 UTF-16 units and the whole result to 64 KiB; `truncated` also signals omitted diagnostics or skipped-file records. Directories, glob expansion and symlink paths are refused.
+The launcher uses `~/.pi/tools/wordlists/seclists-common.txt` automatically. Set `CYBER_FFUF_WORDLIST` to use another operator-managed list.
 
-`ast_edit` previews operations against the same original syntax tree in **one file**. Named captures come from the AST engine; substitutions preserve the captured source span, including comments and Unicode. An empty `out` deletes the matched node. For example:
+`TOOLS.md` catalogs 149 researched candidates. It is documentation, not an install manifest or callable-tool registry. Search it through `cyber_knowledge` after rebuilding the `doc` source; candidates need a registered adapter and an available binary before Pi can invoke them. For example, ZAP and Nmap are cataloged, but this extension does not currently expose them as typed adapter tools.
 
-```json
-{"action":"preview","path":"src/handler.ts","ops":[{"pat":"console.log($$$ARGS)","out":"logger($$$ARGS)"}]}
+## Specialist agents and extensions
+
+The dedicated profile loads `pi-subagents`, which exposes a `subagent` tool and discovers these twelve project roles:
+
+`auth`, `backdoor`, `exfil`, `offensive-operator`, `recon`, `reverse`, `reviewer`, `secrets`, `source-remediation`, `validation`, `vulnerability-research`, and `web-api`.
+
+The profiles declare role-specific instructions and tool lists, and request the cyber extension in child sessions. Profile limits are two concurrent children, eight spawns per run, and sixteen per session; scheduled runs are disabled. `src/specialists/contracts.ts` defines task/result validators, but they are not wired around the `pi-subagents` launch and return path, so they are not runtime enforcement. A real specialist run requires a configured provider/model and makes another model call. Verify provider behavior before relying on cancellation, isolation, or cost ceilings.
+
+The profile also loads:
+
+| Package | Configuration |
+| --- | --- |
+| `pi-web-access` | DuckDuckGo search with explicit fetches; hosted extraction and browser cookies are disabled. |
+| `pi-btw` | Optional side conversations. It is not the specialist engine. |
+| `bigpowers` | Pinned as a package, but its extension is disabled. Six selected skills are copied into `config/cyber/skills`. |
+
+Feynman is not installed; only selected research workflow ideas informed the project. Obscura's binary is in the tool manifest, but `cyber_browser` only manages a lease and does not install or drive an Obscura browser session. Configure a compatible browser integration separately if you need browser control.
+
+The six project skills are `survey-context`, `research-first`, `plan-work`, `develop-tdd`, `verify-work`, and `audit-code`. They are available in the dedicated Pi profile. Some upstream workflow steps refer to project scripts or capsule files not included here; follow only steps supported by this repository.
+
+## Instructions, data, and limits
+
+At the start of a model turn, the extension injects `prompts/base.md`, `prompts/offense.md`, and a model-family overlay. The full specification and focused instruction packages are loaded on request. `cyber_knowledge` indexes project docs, research, the root `TOOLS.md` catalog, and the configured skills directory after an explicit rebuild.
+
+Engagement state is stored in the Pi session. Evidence and job records use local SQLite storage under `config/cyber` by default; the knowledge index is a separate rebuildable local database. These paths are ignored by Git. Treat evidence and session files as potentially sensitive and manage their retention accordingly.
+
+Prompt instructions and typed tools are not an operating-system sandbox or a general authorization boundary. Native Pi shell and file tools retain their normal behavior. The harness cannot enforce target scope for arbitrary shell commands or tools outside its adapters. Establish authorized scope before testing and keep sensitive artifacts out of committed files.
+
+## Development checks
+
+```sh
+bun run typecheck
+bun test
+AST=1 bun run pi             # opt in to the separate AST extension
 ```
 
-Preview writes nothing and returns an opaque `proposalId`, before/after changes and SHA-256 hashes. Apply that exact proposal with a separate invocation:
+Tests use temporary sessions, fake scanner executables, parser fixtures, and local-only unit fixtures. They do not establish live provider behavior or validate an external target. The optional AST extension registers `ast_grep` and `ast_edit`; it is not loaded by the default launcher.
 
-```json
-{"action":"apply","proposalId":"<ID returned by preview>"}
-```
+## Project map
 
-Apply checks the original content hash, mode, file identity, canonical workspace path, session and active branch, then uses a same-directory atomic rename preserving file mode. Symlink components, hardlinks, overlapping replacements, unknown replacement captures, parser-error inputs and parser-error outputs are refused. Missing tokens are conservatively treated as parse errors. Files must be plain UTF-8 without a BOM. Edits allow at most 8 operations and 100 total matches; an oversized preview is refused instead of creating a partial proposal. Proposals are held in memory, with at most eight pending, and expire on session replacement, tree navigation or extension restart. Normal forward session progress can retain a proposal. There is no multi-file transaction, semantic-refactoring guarantee or rollback service.
-
-Use this in a workspace under a single writer's control: the final recheck and rename cannot form a compare-and-swap against another process modifying the file or its parent directories. This is not an OS sandbox. Loading the extension is deliberate tool availability; mode instructions do not authorize modifications. Apply when implementation is part of the task. AST matches and parseable output establish syntactic evidence only; review the diff and run the project's compiler, linter and tests.
-
-Before/after records remain in the ordinary tool result; the extension adds no automatic evidence or session entries. Tool arguments and results can still enter Pi's normal transcript and provider context. Select sanitized source and redact credentials before persisting or sharing results.
-
-## Verification
-
-Tests run without a model, external target or external scanner. They exercise the pinned Pi extension loader and temporary sessions, typed adapter/job/evidence paths, browser lease transitions, knowledge FTS over fixtures, specialist contracts, the loopback Cyberbench app and reporting utilities.
-
-Interactive terminal appearance, a native Node runtime, provider calls, live automatic token-threshold compaction, pi-subagents and external tools remain untested. Themes derive from Pi 1.3.0's complete dark theme, retaining its success/error/warning semantics; light-terminal visual QA remains open. Dependency lifecycle scripts are not required for these checks and were left blocked by Bun.
-
-Optional AST tests use the actual pinned Pi loader, the installed native ast-grep engine, and temporary files. They cover structural capture matching, unchanged previews, Unicode/comment-preserving substitutions, mode-preserving apply, parser and missing-token failures, overlap, stale/session/branch rejection, workspace containment and response/source limits. Native AST execution was verified on this host; other engine platform binaries remain untested.
-
-The baseline suite result on this host (2026-10-21) was 250 pass / 4 skip / 0 fail across 19 files. After correcting the adapter flags and ffuf wordlist wiring, the latest full run passed **259 tests, 4 skipped, 0 failed across 20 files**, and `tsc --noEmit` passed. Scanner reruns against the fixture remain an operator check; no external target, real browser or provider call was involved. See [docs/BUILD-STATUS.md](docs/BUILD-STATUS.md).
+- `src/` — Pi extension, typed tools, adapters, job runner, state, evidence, and knowledge index.
+- `prompts/` — runtime instructions and focused operator specification packages.
+- `config/cyber/` — dedicated Pi profile, specialist definitions, and selected workflow skills.
+- `agents/` — detailed specialist playbooks referenced by the profile definitions.
+- `tools/` — pinned binary catalog, installer, validator, and wordlist installer.
+- `research/` and `TOOLS.md` — tool research and candidate inventory.
+- `tests/` — adapter, extension, persistence, and parser fixtures.

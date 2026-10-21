@@ -25,8 +25,9 @@ instead of downloading a second copy, and the version check in
 
 - **pi-subagents** is Pi's supported child-session engine. A custom worker
   engine would duplicate lifecycle and result handoff machinery before there is
-  evidence it is needed. The harness keeps its own task contract
-  (`src/specialists/contracts.ts`) on top of it and lowers the spawn budget.
+  evidence it is needed. The harness defines task/result validators in
+  `src/specialists/contracts.ts`, but these helpers are not wired into the
+  package's launch/return path and must not be treated as runtime enforcement.
 - **pi-web-access** is the source-led research lane: bounded search plus
   explicit fetch, with `source_check` for passage provenance. It complements
   Obscura (search/extraction versus rendered interaction) and does not replace
@@ -70,16 +71,15 @@ instead of downloading a second copy, and the version check in
 | `@kontextmind/kxm` | Adds a hub, a separate CLI/Runtime, tokens and project state — a service plane for cross-harness coordination that this single-process harness does not need. Revisit only if durable coordination across harnesses becomes a requirement. |
 | `@companion-ai/feynman` (full stack) | Its CLI owns the whole Pi stack, its roles are academic-research oriented, and it bundles PostHog telemetry. Its planning/verification patterns are the useful part; the package is not. |
 | bigpowers extension + 75 other skills | The extension is a workflow guardrail implemented by string matching, not an authorization boundary; the full lifecycle (`orchestrate-project`, release ceremonies, the 94% audit gate) does not belong in an assessment run. Only six skills are exposed. |
-| pi-subagents built-in agents (`scout`, `researcher`, `worker`, …) | They stay available but are not advertised to the coordinator; the six cyber roles are the intended roster. |
+| pi-subagents built-in agents (`scout`, `researcher`, `worker`, …) | They stay available; the 12 cyber roles are the project-specific roster. |
 | Anthropic-Cybersecurity-Skills copies | The 48 curated skills are already installed in `~/.agents/skills` and Pi loads them natively — copying them into the profile would duplicate them. |
 
 ## Verification status
 
-Verified offline in this repository: the pins resolve and install; Pi resolves
-all four local package sources from the cyber profile; the three extensions
-load with zero errors and zero warnings; the 81 bigpowers skills stay disabled
-while the six selected ones load; pi-subagents discovers the six cyber roles
-with their tool allowlists, spawn depth and the harness extension path
-resolved. **Not** verified here (needs a provider and, for some paths, network
-access): an actual child launch, a real search request, and any hosted
-extraction path.
+Verified in this checkout: all four package pins and profile paths exist;
+`pi-subagents` discovers the 12 profile roles and resolves their cyber
+extension paths; the six selected workflow skills are present in the profile.
+The `TaskContract` and `TaskResult` helper validators have unit coverage but
+are not connected to specialist dispatch or result handling. A provider-backed
+specialist spawn and web request still require live credentials and are not
+verified by package-path checks.

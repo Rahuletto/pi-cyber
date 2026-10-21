@@ -466,7 +466,9 @@ function filesForSource(source: KnowledgeSource, paths: KnowledgePaths): Candida
   const docs = listMarkdownFiles([paths.docsDir]);
   // The root catalog is intentionally kept at TOOLS.md, but make it part of
   // the same searchable documentation corpus exposed by cyber_knowledge.
-  const toolCatalog = join(repoRoot(), "TOOLS.md");
+  // Derive it from the configured docs root, not the module's repo root, so a
+  // sandboxed or overridden knowledge path never indexes files outside it.
+  const toolCatalog = join(dirname(paths.docsDir), "TOOLS.md");
   if (existsSync(toolCatalog) && !docs.some((file) => file.path === toolCatalog)) {
     docs.push({ path: toolCatalog, mtimeMs: statSync(toolCatalog).mtimeMs });
   }

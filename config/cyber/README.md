@@ -14,7 +14,7 @@ personal profile in `~/.pi/agent` stays untouched.
 | `settings.json` | Pi package loader | Declares the four reviewed packages as **local** sources (`../../node_modules/...`), so the bun-installed copies in this repository are used instead of a second download. |
 | `web-search.json` | pi-web-access | Explicit search provider, `workflow: "none"`, no curator, no browser cookies, no hosted extraction. |
 | `extensions/subagent/config.json` | pi-subagents | Spawn caps: 2 concurrent children, 8 spawns per run, 16 per session, scheduled runs off. |
-| `agents/*.md` | pi-subagents | The six cyber specialist roles (user-scope agent discovery). |
+| `agents/*.md` | pi-subagents | Twelve cyber specialist profiles (user-scope agent discovery). |
 | `skills/` | Pi skill loader | The six selected bigpowers skills (copied from the pinned package). |
 | `SKILLS-NOTICE.md` | — | Provenance for the copied skills. |
 

@@ -164,7 +164,7 @@ Legend: **P** = ported (idea or wording carried over), **F** = written fresh for
 | Task 10 — specialists | Worker task/result contracts, bounded questions, spawn caps and six role templates (`src/specialists/contracts.ts`; `agents/*.md`); runtime inheritance and enforcement still require operator validation. |
 | Task 13 — prompt refinement | the three overlays + `tests/prompts.test.ts` |
 | Task 16 — diagrammatic reporting + catalog | `src/report/diagrams.ts` (+ `src/reporting/diagrams.ts` alias), `tools/manifest.json` entries, `docs/PROMPT-SOURCE-CORPUS.md` |
-| Task 17 — engagement docs | this corpus as the lineage record; the diagrammatic-first rule as the house style for `docs/FIRST-ENGAGEMENT.md` and `docs/BUILD-STATUS.md` |
+| Task 17 — engagement docs | this corpus as the lineage record; the diagrammatic-first rule as the house style for engagement documentation (the Cyberbench walkthrough was later removed) and `docs/BUILD-STATUS.md` |
 
 ---
 

@@ -5,3 +5,7 @@ node_modules
 dist
 # Derived knowledge index (rebuildable with the cyber_knowledge rebuild action)
 config/cyber/knowledge/
+config/cyber/evidence/
+config/cyber/sessions/
+config/cyber/auth.json
+config/cyber/oauth.json
