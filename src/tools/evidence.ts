@@ -10,6 +10,7 @@ import {
   type Sensitivity,
 } from "../evidence/db.ts";
 import { SECRET_REFUSAL_MESSAGE } from "../evidence/secrets.ts";
+import { findingsMap } from "../report/diagrams.ts";
 
 /**
  * `cyber_evidence` — the model-facing surface of the durable evidence store.
@@ -18,6 +19,10 @@ import { SECRET_REFUSAL_MESSAGE } from "../evidence/secrets.ts";
  * findings (finding-state list), summary (bounded brief). Results are clipped
  * at 24 KiB and capped at 50 rows before re-entering the model context. The
  * store refuses raw-secrets on every write path.
+ *
+ * The `findings` action takes an OPTIONAL `diagram` flag (default false, so
+ * the default behaviour is unchanged): when true, a mermaid lifecycle map of
+ * the returned findings is appended to the text result.
  */
 
 const MAX_OUTPUT_CHARS = 24 * 1024;
@@ -48,6 +53,7 @@ const parameters = Type.Object({
   state: Type.Optional(Type.Union(FINDING_STATES.map((s) => Type.Literal(s)), { description: "Filter findings by state (findings)." })),
   mode: Type.Optional(Type.Union([Type.Literal("offense"), Type.Literal("defense")], { description: "Mode label to include in the summary (summary)." })),
   limit: Type.Optional(Type.Number({ minimum: 1, maximum: 50, default: 50, description: "Max rows returned (read, findings); default 50, hard cap 50." })),
+  diagram: Type.Optional(Type.Boolean({ description: "Append a mermaid lifecycle map of the returned findings (findings action). Default false — the text result is unchanged without it." })),
 }, { additionalProperties: false });
 
 type EvidenceParams = Static<typeof parameters>;
@@ -82,7 +88,7 @@ const evidenceTool: ToolDefinition<typeof parameters> = {
   description:
     "Durable evidence store for the engagement (SQLite, one file per engagement). " +
     "Actions: add (persist evidence text with artifact references), read (recent evidence rows), " +
-    "findings (finding-state list), summary (brief counts and recent events). " +
+    "findings (finding-state list; add diagram=true for a mermaid lifecycle map), summary (brief counts and recent events). " +
     "Raw secrets are refused; store redacted artifact references instead.",
   promptSnippet:
     "Use cyber_evidence to durably persist investigation evidence and findings across compaction; " +
@@ -120,6 +126,15 @@ const evidenceTool: ToolDefinition<typeof parameters> = {
         return { content: [{ type: "text", text: clipOutput(renderEvidenceRows(rows)) }], details: { action: "read", rows: rows.length, path: store.path } };
       }
       const rows = store.listFindings({ state: params.state as FindingState | undefined, limit: params.limit ?? MAX_ROWS });
+      if (params.diagram) {
+        // Diagrammatic reporting (Task 16): the mermaid lifecycle map is
+        // appended to the text result; the default path above is untouched.
+        const graph = findingsMap(rows);
+        return {
+          content: [{ type: "text", text: clipOutput(`${renderFindingRows(rows)}\n\n${graph}`) }],
+          details: { action: "findings", rows: rows.length, path: store.path, diagram: true },
+        };
+      }
       return { content: [{ type: "text", text: clipOutput(renderFindingRows(rows)) }], details: { action: "findings", rows: rows.length, path: store.path } };
     } catch (error) {
       // Surface the canonical refusal without a raw stack dump.

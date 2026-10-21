@@ -351,4 +351,39 @@ describe("tool surface: cyber_evidence", () => {
       expect(capped).toHaveLength(50);
     } finally { store.close(); }
   });
+
+  test("findings action is unchanged without the diagram flag and appends a mermaid map with it", async () => {
+    const dir = tempDir();
+    const evidenceBackup = process.env.CYBER_EVIDENCE_DIR;
+    const engagementBackup = process.env.CYBER_ENGAGEMENT_ID;
+    process.env.CYBER_EVIDENCE_DIR = dir;
+    process.env.CYBER_ENGAGEMENT_ID = "diagram-test";
+    const ctx = {} as ExtensionToolContext;
+    try {
+      const store = openEvidence();
+      try {
+        store.addFinding({ title: "IDOR on /api/orders", evidenceIds: [], impact: "cross-tenant read", state: "confirmed", confidence: 0.8 });
+        store.addFinding({ title: "Missing CSP", evidenceIds: [], impact: "none", state: "candidate" });
+      } finally { store.close(); }
+
+      const plain = await definition.execute("t", { action: "findings" }, undefined, undefined, ctx);
+      expect(plain.content[0].text).toContain("IDOR on /api/orders");
+      expect(plain.content[0].text).not.toContain("```mermaid");
+      expect((plain.details as Record<string, unknown>).diagram).toBeUndefined();
+
+      const diagramed = await definition.execute("t", { action: "findings", diagram: true }, undefined, undefined, ctx);
+      const text = diagramed.content[0].text!;
+      expect(text).toContain("```mermaid");
+      expect(text).toContain("flowchart LR");
+      expect(text).toContain("confirmed");
+      expect(text).toContain("candidate");
+      expect(text).toContain("needs-validation");
+      expect((diagramed.details as Record<string, unknown>).diagram).toBe(true);
+    } finally {
+      if (evidenceBackup === undefined) delete process.env.CYBER_EVIDENCE_DIR;
+      else process.env.CYBER_EVIDENCE_DIR = evidenceBackup;
+      if (engagementBackup === undefined) delete process.env.CYBER_ENGAGEMENT_ID;
+      else process.env.CYBER_ENGAGEMENT_ID = engagementBackup;
+    }
+  });
 });
