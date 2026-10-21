@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pi cyber harness proposal</title>
+<style>
+*{box-sizing:border-box}body{margin:0;color:var(--foreground,#17212b);font:14px/1.55 var(--font-sans,system-ui)}button{font:inherit;cursor:pointer}.intro{color:var(--muted-foreground,#566372);margin:0 0 12px}.switch{display:flex;gap:8px;margin-bottom:14px}.switch button{border:1px solid var(--border,#cbd5df);border-radius:8px;padding:8px 18px;background:transparent;color:inherit}.switch button[aria-pressed=true]{background:var(--mode-bg,#8b1e2d);color:#fff;border-color:var(--mode-accent,#ff7777)}#mode-panel{border-color:var(--mode-accent,#ff7777)}#mode-label{color:var(--mode-accent,#ff7777);font-weight:700}.panel{padding:18px;background:var(--card,#f3f6fa);border:1px solid var(--border,#d8e0e8);border-radius:var(--radius,12px)}h2,h3,p{margin:0}h2{font-size:18px}h3{font-size:14px}.flow{margin:9px 0 0;color:var(--muted-foreground,#526175)}.label{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-foreground,#526175);margin-bottom:5px}.connector{text-align:center;color:var(--muted-foreground,#526175);padding:8px}.roles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.role{border:1px solid var(--border,#d8e0e8);border-radius:8px;padding:12px}.role p{font-size:12px;color:var(--muted-foreground,#526175);margin-top:3px}.tools{display:grid;grid-template-columns:1fr 1fr;gap:10px}.tools p{font-size:12px;margin-top:6px}.shared{margin-top:12px;font-size:12px}.foot{color:var(--muted-foreground,#526175);font-size:12px;margin-top:12px}a{color:var(--primary,#265c93)}@media(max-width:480px){.roles{grid-template-columns:1fr 1fr}.tools{grid-template-columns:1fr}.panel{padding:16px}}
+</style>
+<body>
+<p class="intro">Design proposal · Pi extensions · native Mac execution · specialists start on demand</p>
+<div class="switch" role="group" aria-label="Explore proposed operating mode">
+<button id="offense" aria-pressed="true">Offense</button><button id="defense" aria-pressed="false">Defense</button>
+</div>
+<section class="panel" id="mode-panel" aria-live="polite">
+<div class="label" id="mode-label">Offense · one coordinator</div><h2 id="objective">Investigate paths to a scoped objective</h2>
+<p class="flow" id="flow">Discover → map → form hypotheses → validate → document impact</p>
+</section>
+<div class="connector" aria-hidden="true">↓ bounded tasks · selected capabilities · evidence references ↓</div>
+<div class="roles" id="roles"></div>
+<div class="connector" aria-hidden="true">↓ native adapters and MCP integrations ↓</div>
+<div class="tools">
+<section class="panel"><h3>Discovery and validation</h3><p>uncover · Subfinder · dnsx · httpx · Nmap · Katana · Nuclei · Interactsh · vulnx</p></section>
+<section class="panel"><h3>Browser, analysis, and knowledge</h3><p>Obscura · REA + native engines · source tools · OWASP/reference search · live documentation</p></section>
+</div>
+<section class="panel shared"><h3>Shared evidence, separate execution state</h3><p>Real sign-in and signed-out/member/admin route coverage are tracked. Findings, fix handoffs, retests, and citations remain connected. Browser identities and mutable analysis sessions have one owner. Switching modes checkpoints or stops existing work before changing capabilities.</p></section>
+<p class="foot">Large catalog, small active tool set. Capability labels distinguish documented support, native host verification, and platform limits. Nothing installed or tested against targets.</p>
+<script>
+const modes={offense:{title:'Investigate paths to a scoped objective',flow:'Enumerate → probe → validate exploitation → chain weaknesses → pursue objective',roles:[['Recon analyst','Asset provenance and surface mapping'],['Web/API analyst','Browser flows and trust boundaries'],['Vulnerability researcher','Affected versions and advisory evidence'],['Offensive operator','Active validation and evidence-backed chains'],['Reverse engineer','Shipped artifacts and behavior'],['Evidence reviewer','Challenge confidence and impact']]},defense:{title:'Find weaknesses and prepare precise fixes',flow:'Probe → reproduce → trace cause → document fix → define retest',roles:[['Recon analyst','Asset inventory and exposure changes'],['Remediation engineer','Root causes and implementation handoffs'],['Cloud/identity analyst','Configuration and permission review'],['Detection/DFIR analyst','Logs, packets, timelines, and rules'],['Reverse engineer','Verify behavior of shipped builds'],['Evidence reviewer','Check fixes and regression evidence']]}};
+function show(mode){const m=modes[mode];document.documentElement.style.setProperty('--mode-accent',mode==='offense'?'#ff7777':'#78b6ff');document.documentElement.style.setProperty('--mode-bg',mode==='offense'?'#8b1e2d':'#1b4f94');document.getElementById('mode-label').textContent=mode.toUpperCase()+' · one coordinator';document.getElementById('objective').textContent=m.title;document.getElementById('flow').textContent=m.flow;document.getElementById('roles').replaceChildren(...m.roles.map(([title,desc])=>{const el=document.createElement('section');el.className='role';const h=document.createElement('h3');h.textContent=title;const p=document.createElement('p');p.textContent=desc;el.append(h,p);return el}));for(const key of Object.keys(modes))document.getElementById(key).setAttribute('aria-pressed',String(key===mode));}
+for(const mode of Object.keys(modes))document.getElementById(mode).addEventListener('click',()=>show(mode));show('offense');
+console.log('mode definitions',Object.keys(modes).length,'roles per mode',modes.offense.roles.length,modes.defense.roles.length);
+</script>
+</body></html>

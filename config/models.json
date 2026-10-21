@@ -1,0 +1,1084 @@
+{
+  "$schema": "https://pi.dev/schemas/models.schema.json",
+  "providers": {
+    "aimylove": {
+      "name": "Ai-Proxy",
+      "baseUrl": "https://aimylove.cflover.workers.dev/v1",
+      "api": "openai-completions",
+      "apiKey": "!cat ~/.config/opencode/aimylove.key",
+      "models": [
+        {
+          "id": "claude-sonnet-4-6",
+          "name": "Claude Sonnet 4.6 · Lyzo",
+          "contextWindow": 250000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "grok-4-7",
+          "name": "Grok 4.7 · Lyzo",
+          "contextWindow": 500000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "grok-4-7-low",
+          "name": "Grok 4.7 Low · Lyzo",
+          "contextWindow": 500000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "grok-4-7-medium",
+          "name": "Grok 4.7 Medium · Lyzo",
+          "contextWindow": 500000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "grok-4-7-high",
+          "name": "Grok 4.7 High · Lyzo",
+          "contextWindow": 500000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "grok-4-7-max",
+          "name": "Grok 4.7 Max · Lyzo",
+          "contextWindow": 500000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "grok-4-7-cyber",
+          "name": "Grok 4.7 Cyber · Lyzo",
+          "contextWindow": 500000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "grok-4-7-cyber-low",
+          "name": "Grok 4.7 Cyber Low · Lyzo",
+          "contextWindow": 500000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "grok-4-7-cyber-medium",
+          "name": "Grok 4.7 Cyber Medium · Lyzo",
+          "contextWindow": 500000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "grok-4-7-cyber-high",
+          "name": "Grok 4.7 Cyber High · Lyzo",
+          "contextWindow": 500000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "grok-4-7-cyber-max",
+          "name": "Grok 4.7 Cyber Max · Lyzo",
+          "contextWindow": 500000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "grok-4-7-fast",
+          "name": "Grok 4.7 Fast · Lyzo",
+          "contextWindow": 500000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "grok-4-7-fast-cyber",
+          "name": "Grok 4.7 Fast Cyber · Lyzo",
+          "contextWindow": 500000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "grok-4-7-low-cyber",
+          "name": "Grok 4.7 Low Cyber · Lyzo",
+          "contextWindow": 500000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "grok-4-7-medium-cyber",
+          "name": "Grok 4.7 Medium Cyber · Lyzo",
+          "contextWindow": 500000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "grok-4-7-high-cyber",
+          "name": "Grok 4.7 High Cyber · Lyzo",
+          "contextWindow": 500000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "grok-4-7-max-cyber",
+          "name": "Grok 4.7 Max Cyber · Lyzo",
+          "contextWindow": 500000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "grok-4-6",
+          "name": "Grok 4.6 · Lyzo",
+          "contextWindow": 500000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "grok-4-6-low",
+          "name": "Grok 4.6 Low · Lyzo",
+          "contextWindow": 500000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "grok-4-6-medium",
+          "name": "Grok 4.6 Medium · Lyzo",
+          "contextWindow": 500000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "grok-4-6-high",
+          "name": "Grok 4.6 High · Lyzo",
+          "contextWindow": 500000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "grok-4-6-max",
+          "name": "Grok 4.6 Max · Lyzo",
+          "contextWindow": 500000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "grok-4-6-cyber",
+          "name": "Grok 4.6 Cyber · Lyzo",
+          "contextWindow": 500000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "grok-4-6-cyber-low",
+          "name": "Grok 4.6 Cyber Low · Lyzo",
+          "contextWindow": 500000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "grok-4-6-cyber-medium",
+          "name": "Grok 4.6 Cyber Medium · Lyzo",
+          "contextWindow": 500000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "grok-4-6-cyber-high",
+          "name": "Grok 4.6 Cyber High · Lyzo",
+          "contextWindow": 500000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "grok-4-6-cyber-max",
+          "name": "Grok 4.6 Cyber Max · Lyzo",
+          "contextWindow": 500000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "grok-4-6-low-cyber",
+          "name": "Grok 4.6 Low Cyber · Lyzo",
+          "contextWindow": 500000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "grok-4-6-medium-cyber",
+          "name": "Grok 4.6 Medium Cyber · Lyzo",
+          "contextWindow": 500000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "grok-4-6-high-cyber",
+          "name": "Grok 4.6 High Cyber · Lyzo",
+          "contextWindow": 500000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "grok-4-6-max-cyber",
+          "name": "Grok 4.6 Max Cyber · Lyzo",
+          "contextWindow": 500000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "grok-4-5",
+          "name": "Grok 4.5 · Lyzo",
+          "contextWindow": 500000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "grok-4-5-cyber",
+          "name": "Grok 4.5 Cyber · Lyzo",
+          "contextWindow": 500000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "grok-4-5-latest",
+          "name": "Grok 4.5 Latest · Lyzo",
+          "contextWindow": 500000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "grok-4-5-latest-cyber",
+          "name": "Grok 4.5 Latest Cyber · Lyzo",
+          "contextWindow": 500000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "grok-latest",
+          "name": "Grok Latest · Lyzo",
+          "contextWindow": 500000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "grok-latest-cyber",
+          "name": "Grok Latest Cyber · Lyzo",
+          "contextWindow": 500000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "composer",
+          "name": "Composer · Lyzo",
+          "contextWindow": 500000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "composer-cyber",
+          "name": "Composer Cyber · Lyzo",
+          "contextWindow": 500000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "composer-2-5",
+          "name": "Composer 2.5 · Lyzo",
+          "contextWindow": 500000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "composer-2-5-cyber",
+          "name": "Composer 2.5 Cyber · Lyzo",
+          "contextWindow": 500000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "composer-2-5-fast",
+          "name": "Composer 2.5 Fast · Lyzo",
+          "contextWindow": 500000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "composer-2-5-fast-cyber",
+          "name": "Composer 2.5 Fast Cyber · Lyzo",
+          "contextWindow": 500000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "cursor-grok-4-5",
+          "name": "Cursor Grok 4.5 · Lyzo",
+          "contextWindow": 500000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "cursor-grok-4-5-cyber",
+          "name": "Cursor Grok 4.5 Cyber · Lyzo",
+          "contextWindow": 500000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "grok-composer-2-5",
+          "name": "Grok Composer 2.5 · Lyzo",
+          "contextWindow": 500000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "grok-composer-2-5-cyber",
+          "name": "Grok Composer 2.5 Cyber · Lyzo",
+          "contextWindow": 500000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "cortex-4-7-cyber-high",
+          "name": "Cortex 4.7 Cyber High · Lyzo",
+          "contextWindow": 500000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "cortex-4-6",
+          "name": "Cortex 4.6 · Lyzo",
+          "contextWindow": 500000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "cortex-4-6-high",
+          "name": "Cortex 4.6 High · Lyzo",
+          "contextWindow": 500000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "mimo-v2-5-pro",
+          "name": "MiMo V2.5 Pro · Sixth",
+          "contextWindow": 200000,
+          "maxTokens": 32000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "claude-opus-4-6",
+          "name": "Claude Opus 4.6 · AINative",
+          "contextWindow": 200000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "claude-opus-4-5",
+          "name": "Claude Opus 4.5 · AINative",
+          "contextWindow": 200000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "claude-sonnet-4-5",
+          "name": "Claude Sonnet 4.5 · AINative",
+          "contextWindow": 200000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "claude-opus-4",
+          "name": "Claude Opus 4 · AINative",
+          "contextWindow": 200000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "gpt-5",
+          "name": "GPT-5 · AINative",
+          "contextWindow": 400000,
+          "maxTokens": 128000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "gpt-5-mini",
+          "name": "GPT-5 Mini · AINative",
+          "contextWindow": 400000,
+          "maxTokens": 128000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "gpt-5-3-codex",
+          "name": "GPT-5.3 Codex · AINative",
+          "contextWindow": 400000,
+          "maxTokens": 128000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "gpt-4o",
+          "name": "GPT-4o · AINative",
+          "contextWindow": 128000,
+          "maxTokens": 16384,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "gpt-4o-mini",
+          "name": "GPT-4o Mini · AINative",
+          "contextWindow": 128000,
+          "maxTokens": 16384,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "o3",
+          "name": "o3 · AINative",
+          "contextWindow": 200000,
+          "maxTokens": 100000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "o1",
+          "name": "o1 · AINative",
+          "contextWindow": 200000,
+          "maxTokens": 100000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "deepseek-v4-pro",
+          "name": "DeepSeek V4 Pro · AINative",
+          "contextWindow": 256000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "deepseek-v4-flash",
+          "name": "DeepSeek V4 Flash · AINative",
+          "contextWindow": 256000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "deepseek-4-flash",
+          "name": "DeepSeek 4 Flash · AINative",
+          "contextWindow": 200000,
+          "maxTokens": 32000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "deepseek-v3",
+          "name": "DeepSeek V3 · AINative",
+          "contextWindow": 200000,
+          "maxTokens": 32000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "deepseek-v3-2",
+          "name": "DeepSeek V3.2 · AINative",
+          "contextWindow": 200000,
+          "maxTokens": 32000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "deepseek-3-2",
+          "name": "DeepSeek 3.2 · AINative",
+          "contextWindow": 200000,
+          "maxTokens": 32000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "deepseek-r1",
+          "name": "DeepSeek R1 · AINative",
+          "contextWindow": 200000,
+          "maxTokens": 32000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "deepseek-r1-distill-llama-70b",
+          "name": "DeepSeek R1 Distill Llama 70B · AINative",
+          "contextWindow": 200000,
+          "maxTokens": 32000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "deepseek-r1-distill-llama-8b",
+          "name": "DeepSeek R1 Distill Llama 8B · AINative",
+          "contextWindow": 200000,
+          "maxTokens": 32000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "deepseek-r1-distill-qwen-7b",
+          "name": "DeepSeek R1 Distill Qwen 7B · AINative",
+          "contextWindow": 200000,
+          "maxTokens": 32000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "llama-4-maverick",
+          "name": "Llama 4 Maverick · AINative",
+          "contextWindow": 1000000,
+          "maxTokens": 32768,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "llama-4-maverick-17b",
+          "name": "Llama 4 Maverick 17B · AINative",
+          "contextWindow": 1000000,
+          "maxTokens": 32768,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "llama-4-maverick-17b-128e",
+          "name": "Llama 4 Maverick 17B 128e · AINative",
+          "contextWindow": 1000000,
+          "maxTokens": 32768,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "llama-4-scout",
+          "name": "Llama 4 Scout · AINative",
+          "contextWindow": 1000000,
+          "maxTokens": 32768,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "llama-3-3-70b",
+          "name": "Llama 3.3 70B · AINative",
+          "contextWindow": 200000,
+          "maxTokens": 32000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "llama-3-3-70b-instruct",
+          "name": "Llama 3.3 70B Instruct · AINative",
+          "contextWindow": 200000,
+          "maxTokens": 32000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "llama-3-1-8b",
+          "name": "Llama 3.1 8B · AINative",
+          "contextWindow": 200000,
+          "maxTokens": 32000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "llama-3-2-11b-vision",
+          "name": "Llama 3.2 11B Vision · AINative",
+          "contextWindow": 200000,
+          "maxTokens": 32000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "llama-3-2-90b-vision",
+          "name": "Llama 3.2 90B Vision · AINative",
+          "contextWindow": 200000,
+          "maxTokens": 32000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "qwen3-coder-next",
+          "name": "Qwen3 Coder Next · AINative",
+          "contextWindow": 200000,
+          "maxTokens": 32000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "qwen3-coder-30b-a3b",
+          "name": "Qwen3 Coder 30B A3b · AINative",
+          "contextWindow": 200000,
+          "maxTokens": 32000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "qwen3-5-397b",
+          "name": "Qwen3.5 397B · AINative",
+          "contextWindow": 262144,
+          "maxTokens": 32768,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "qwen3-5-397b-a22b-instruct",
+          "name": "Qwen3.5 397B A22B Instruct · AINative",
+          "contextWindow": 262144,
+          "maxTokens": 32768,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "qwen3-5-72b-instruct",
+          "name": "Qwen3.5 72B Instruct · AINative",
+          "contextWindow": 200000,
+          "maxTokens": 32000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "qwen3-32b",
+          "name": "Qwen3 32B · AINative",
+          "contextWindow": 200000,
+          "maxTokens": 32000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "qwen3-14b",
+          "name": "Qwen3 14B · AINative",
+          "contextWindow": 200000,
+          "maxTokens": 32000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "qwen3-8b",
+          "name": "Qwen3 8B · AINative",
+          "contextWindow": 200000,
+          "maxTokens": 32000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "qwen-coder-32b",
+          "name": "Qwen Coder 32B · AINative",
+          "contextWindow": 200000,
+          "maxTokens": 32000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "qwen-coder-7b",
+          "name": "Qwen Coder 7B · AINative",
+          "contextWindow": 200000,
+          "maxTokens": 32000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "kimi-k2",
+          "name": "Kimi K2 · AINative",
+          "contextWindow": 256000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "kimi-k2-5",
+          "name": "Kimi K2.5 · AINative",
+          "contextWindow": 256000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "kimi-k2-6",
+          "name": "Kimi K2.6 · AINative",
+          "contextWindow": 256000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "kimi-k2-thinking",
+          "name": "Kimi K2 Thinking · AINative",
+          "contextWindow": 256000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "kimi-k3",
+          "name": "Kimi K3 · AINative",
+          "contextWindow": 1000000,
+          "maxTokens": 64000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "gemini-flash",
+          "name": "Gemini Flash · AINative",
+          "contextWindow": 1000000,
+          "maxTokens": 65536,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "glm-4-7",
+          "name": "GLM-4.7 · AINative",
+          "contextWindow": 262144,
+          "maxTokens": 32768,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "glm-5-1",
+          "name": "GLM-5.1 · AINative",
+          "contextWindow": 262144,
+          "maxTokens": 32768,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "glm-5-2",
+          "name": "GLM-5.2 · AINative",
+          "contextWindow": 262144,
+          "maxTokens": 32768,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "glm-5-3",
+          "name": "GLM-5.3 · AINative",
+          "contextWindow": 262144,
+          "maxTokens": 32768,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "zai-glm-4-7",
+          "name": "Zai GLM-4.7 · AINative",
+          "contextWindow": 262144,
+          "maxTokens": 32768,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "minimax-m2-5",
+          "name": "MiniMax M2.5 · AINative",
+          "contextWindow": 200000,
+          "maxTokens": 32000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "minimax-m2-7",
+          "name": "MiniMax M2.7 · AINative",
+          "contextWindow": 200000,
+          "maxTokens": 32000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "nemotron-3-ultra-550b",
+          "name": "Nemotron 3 Ultra 550B · AINative",
+          "contextWindow": 1000000,
+          "maxTokens": 32768,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "nemotron-3-super-120b",
+          "name": "Nemotron 3 Super 120B · AINative",
+          "contextWindow": 200000,
+          "maxTokens": 32000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "nemotron-nano-12b-v2-vl",
+          "name": "Nemotron Nano 12B V2 VL · AINative",
+          "contextWindow": 200000,
+          "maxTokens": 32000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "arcee-trinity-large-thinking",
+          "name": "Arcee Trinity Large Thinking · AINative",
+          "contextWindow": 200000,
+          "maxTokens": 32000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "mistral-large",
+          "name": "Mistral Large · AINative",
+          "contextWindow": 262144,
+          "maxTokens": 32768,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "mistral-medium",
+          "name": "Mistral Medium · AINative",
+          "contextWindow": 262144,
+          "maxTokens": 32768,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "mistral-3-14b",
+          "name": "Mistral 3 14B · AINative",
+          "contextWindow": 262144,
+          "maxTokens": 32768,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "gemma-4-31b",
+          "name": "Gemma 4 31B · AINative",
+          "contextWindow": 200000,
+          "maxTokens": 32000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "gemma-3-27b",
+          "name": "Gemma 3 27B · AINative",
+          "contextWindow": 200000,
+          "maxTokens": 32000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "gemma-3-12b",
+          "name": "Gemma 3 12B · AINative",
+          "contextWindow": 200000,
+          "maxTokens": 32000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "gpt-oss-120b",
+          "name": "GPT Oss 120B · AINative",
+          "contextWindow": 200000,
+          "maxTokens": 32000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "gpt-oss-20b",
+          "name": "GPT Oss 20B · AINative",
+          "contextWindow": 200000,
+          "maxTokens": 32000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "phi-4",
+          "name": "Phi-4 · AINative",
+          "contextWindow": 200000,
+          "maxTokens": 32000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "cohere-command",
+          "name": "Cohere Command · AINative",
+          "contextWindow": 200000,
+          "maxTokens": 32000,
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "model-without-preview",
+          "name": "Model Without Preview · AINative",
+          "contextWindow": 200000,
+          "maxTokens": 32000,
+          "input": [
+            "text"
+          ]
+        }
+      ]
+    }
+  }
+}

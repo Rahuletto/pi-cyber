@@ -1,0 +1,2535 @@
+[
+  {
+    "id": "recon-web-1",
+    "category": "recon-web",
+    "candidate": "[Subfinder](https://github.com/projectdiscovery/subfinder)",
+    "name": "Subfinder",
+    "upstream": "https://github.com/projectdiscovery/subfinder",
+    "section": "ProjectDiscovery and adjacent pipeline tools",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 53,
+    "columns": [
+      "[Subfinder](https://github.com/projectdiscovery/subfinder)",
+      "Passive subdomain discovery. **Docs reviewed.**",
+      "Go CLI; documented stdin/stdout and JSON/file output. Online passive providers; some providers need credentials. Darwin arm64 unverified.",
+      "**Core** \u2014 narrow input/output boundary and a useful passive first step."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-2",
+    "category": "recon-web",
+    "candidate": "[httpx](https://github.com/projectdiscovery/httpx)",
+    "name": "httpx",
+    "upstream": "https://github.com/projectdiscovery/httpx",
+    "section": "ProjectDiscovery and adjacent pipeline tools",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 54,
+    "columns": [
+      "[httpx](https://github.com/projectdiscovery/httpx)",
+      "HTTP service probing and metadata enrichment. **Docs reviewed.**",
+      "Go CLI; accepts hosts/URLs/CIDR and composes well in pipelines. Network access; some enrichments or sources can require keys. Darwin arm64 unverified.",
+      "**Core** \u2014 high value normalized HTTP inventory."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-3",
+    "category": "recon-web",
+    "candidate": "[Nuclei](https://github.com/projectdiscovery/nuclei)",
+    "name": "Nuclei",
+    "upstream": "https://github.com/projectdiscovery/nuclei",
+    "section": "ProjectDiscovery and adjacent pipeline tools",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 55,
+    "columns": [
+      "[Nuclei](https://github.com/projectdiscovery/nuclei)",
+      "Template-driven vulnerability and misconfiguration checks. **Docs reviewed.**",
+      "Go CLI, structured outputs documented; templates are a separate, frequently updated input set. No credential inherently, though target auth may be configured. Darwin arm64 unverified.",
+      "**On-demand** \u2014 powerful and broad; template selection and target scope need operator control."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-4",
+    "category": "recon-web",
+    "candidate": "[Katana](https://github.com/projectdiscovery/katana)",
+    "name": "Katana",
+    "upstream": "https://github.com/projectdiscovery/katana",
+    "section": "ProjectDiscovery and adjacent pipeline tools",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 56,
+    "columns": [
+      "[Katana](https://github.com/projectdiscovery/katana)",
+      "Web crawler with standard/headless modes and field extraction. **Docs reviewed.**",
+      "Go CLI; stdin/URL/list input and stdout/file/JSON output documented. Headless mode adds browser/runtime weight. Darwin arm64 unverified.",
+      "**On-demand** \u2014 useful for endpoint discovery; headless dependency makes it a second-stage adapter."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-5",
+    "category": "recon-web",
+    "candidate": "[dnsx](https://github.com/projectdiscovery/dnsx)",
+    "name": "dnsx",
+    "upstream": "https://github.com/projectdiscovery/dnsx",
+    "section": "ProjectDiscovery and adjacent pipeline tools",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 57,
+    "columns": [
+      "[dnsx](https://github.com/projectdiscovery/dnsx)",
+      "DNS record probing, resolution and wildcard handling. **Docs reviewed.**",
+      "Go CLI; stdin/stdout; DNS/resolvers required, supports TCP/UDP/DoH/DoT. Darwin arm64 unverified.",
+      "**Core** \u2014 a compact DNS normalization step where not duplicated by Subfinder."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-6",
+    "category": "recon-web",
+    "candidate": "[Naabu](https://github.com/projectdiscovery/naabu)",
+    "name": "Naabu",
+    "upstream": "https://github.com/projectdiscovery/naabu",
+    "section": "ProjectDiscovery and adjacent pipeline tools",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 58,
+    "columns": [
+      "[Naabu](https://github.com/projectdiscovery/naabu)",
+      "Port discovery. **Docs reviewed.**",
+      "Go CLI accepts host/list/stdin-style inputs and writes JSONL or text. README calls for libpcap (Homebrew on Mac); raw/SYN modes and rate/concurrency settings have privilege and network impact implications. Darwin arm64 asset not checked.",
+      "**On-demand** \u2014 useful network-scope adapter, but keep explicit target/port bounds and permission expectations."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-7",
+    "category": "recon-web",
+    "candidate": "[Tlsx](https://github.com/projectdiscovery/tlsx)",
+    "name": "Tlsx",
+    "upstream": "https://github.com/projectdiscovery/tlsx",
+    "section": "ProjectDiscovery and adjacent pipeline tools",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 59,
+    "columns": [
+      "[Tlsx](https://github.com/projectdiscovery/tlsx)",
+      "TLS certificate, protocol, and fingerprint metadata. **Docs reviewed.**",
+      "Go CLI; JSON output includes host, port, negotiated TLS, certificate dates/names and fingerprints. Network access required; no API key inherent. Darwin arm64 artifact not reviewed.",
+      "**On-demand** \u2014 focused enrichment after host inventory; avoid a duplicate TLS scanner if testssl covers the task."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-8",
+    "category": "recon-web",
+    "candidate": "[Uncover](https://github.com/projectdiscovery/uncover)",
+    "name": "Uncover",
+    "upstream": "https://github.com/projectdiscovery/uncover",
+    "section": "ProjectDiscovery and adjacent pipeline tools",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 60,
+    "columns": [
+      "[Uncover](https://github.com/projectdiscovery/uncover)",
+      "Searches third-party internet asset indexes for exposed hosts. **Docs reviewed.**",
+      "Go CLI; JSONL/raw output and stdin/stdout are documented. Most search providers require their own API keys and terms; Shodan InternetDB supports IP/CIDR without a key. No current macOS arm64 artifact was reviewed.",
+      "**On-demand** \u2014 passive/provider-backed discovery, with many credentials and query semantics to manage. It does not itself validate live services."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-9",
+    "category": "recon-web",
+    "candidate": "[ASNMap](https://github.com/projectdiscovery/asnmap)",
+    "name": "ASNMap",
+    "upstream": "https://github.com/projectdiscovery/asnmap",
+    "section": "ProjectDiscovery and adjacent pipeline tools",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 61,
+    "columns": [
+      "[ASNMap](https://github.com/projectdiscovery/asnmap)",
+      "ASN/IP range mapping. **Docs reviewed.**",
+      "Go CLI accepts organization/ASN inputs and emits CIDRs or JSON/CSV. Public mapping-service dependency; credentials/rate behavior not validated here. Apple Silicon untested.",
+      "**Reference** \u2014 add only if the harness explicitly models organization-owned network scope."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-10",
+    "category": "recon-web",
+    "candidate": "[Alterx](https://github.com/projectdiscovery/alterx)",
+    "name": "Alterx",
+    "upstream": "https://github.com/projectdiscovery/alterx",
+    "section": "ProjectDiscovery and adjacent pipeline tools",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 62,
+    "columns": [
+      "[Alterx](https://github.com/projectdiscovery/alterx)",
+      "Generates subdomain permutations using a configurable pattern DSL. **Docs reviewed.**",
+      "Go CLI accepts stdin/list/file inputs, optional pattern and word payload files, and writes output to file/stdout. Generation can expand input significantly; M-series not tested.",
+      "**On-demand** \u2014 useful for an explicit permutation stage; cap generated results and follow with resolution."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-11",
+    "category": "recon-web",
+    "candidate": "[Interactsh](https://github.com/projectdiscovery/interactsh)",
+    "name": "Interactsh",
+    "upstream": "https://github.com/projectdiscovery/interactsh",
+    "section": "ProjectDiscovery and adjacent pipeline tools",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 63,
+    "columns": [
+      "[Interactsh](https://github.com/projectdiscovery/interactsh)",
+      "OAST callback service and client library for observing external DNS/HTTP(S)/SMTP(S)/LDAP interactions. **Docs and release assets reviewed.**",
+      "Client emits JSONL and can save payload/session data; release page includes macOS arm64 client. The public service supports client use; self-hosting is a different server deployment requiring domain/nameserver control, an always-on public host, ports/services, and optional auth token. Server interaction storage is in memory by default with an eviction window (default 30 days); disk/Redis options exist with caveats.",
+      "**On-demand** \u2014 enable only for a task that needs callback evidence. Correlate each payload/session with the originating test and wait policy; treat interaction logs as sensitive. No callback before timeout is inconclusive, not proof that a vulnerability is absent."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-12",
+    "category": "recon-web",
+    "candidate": "[ProjectDiscovery vulnx](https://github.com/projectdiscovery/vulnx)",
+    "name": "ProjectDiscovery vulnx",
+    "upstream": "https://github.com/projectdiscovery/vulnx",
+    "section": "ProjectDiscovery and adjacent pipeline tools",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 64,
+    "columns": [
+      "[ProjectDiscovery vulnx](https://github.com/projectdiscovery/vulnx)",
+      "Searches, filters, retrieves and aggregates vulnerability intelligence/CVE records; it is not a target scanner. **Docs reviewed.**",
+      "Go CLI with JSON/CSV, batch IDs, pipes and pagination; no key required but upstream documents tight unauthenticated rate limits (10 requests/minute), optional PD API key raises limits. Darwin arm64 release not checked.",
+      "**Core** for defensive advisory/CVE triage; **on-demand** for offense planning. Keep database findings separate from evidence that an asset is actually affected."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-13",
+    "category": "recon-web",
+    "candidate": "[OWASP Amass](https://github.com/owasp-amass/amass)",
+    "name": "OWASP Amass",
+    "upstream": "https://github.com/owasp-amass/amass",
+    "section": "Discovery, crawling, and content enumeration",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 70,
+    "columns": [
+      "[OWASP Amass](https://github.com/owasp-amass/amass)",
+      "Attack-surface mapping and asset discovery. **Docs reviewed.**",
+      "Go project/CLI plus framework, database, and Docker components; source documentation describes multiple project components. Provider sources may require credentials. M-series behavior unverified.",
+      "**On-demand** \u2014 broad overlap with Subfinder and heavier state/config surface. Choose it instead of stacking multiple passive enumerators when deeper mapping is needed."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-14",
+    "category": "recon-web",
+    "candidate": "[SpiderFoot](https://github.com/smicallef/spiderfoot)",
+    "name": "SpiderFoot",
+    "upstream": "https://github.com/smicallef/spiderfoot",
+    "section": "Discovery, crawling, and content enumeration",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 71,
+    "columns": [
+      "[SpiderFoot](https://github.com/smicallef/spiderfoot)",
+      "OSINT automation and attack-surface mapping; listed by A-poc. **Docs reviewed.**",
+      "Python 3.7+, web UI or CLI, 200+ modules, CSV/JSON/GEXF exports and SQLite backend. Modules can need provider API keys and invoke other tools. Mac arm64 packaging was not checked; hosted HX REST API is a separate product.",
+      "**On-demand** \u2014 broad OSINT workbench with a larger module/credential surface, not a narrow first-stage CLI adapter."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-15",
+    "category": "recon-web",
+    "candidate": "[reconFTW](https://github.com/six2dez/reconftw)",
+    "name": "reconFTW",
+    "upstream": "https://github.com/six2dez/reconftw",
+    "section": "Discovery, crawling, and content enumeration",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 72,
+    "columns": [
+      "[reconFTW](https://github.com/six2dez/reconftw)",
+      "Automated recon orchestration; listed by A-poc. **Docs reviewed.**",
+      "Shell workflow installs/configures many dependencies and tools; upstream local setup references Go, sudo policy and `install.sh`; Docker path also documented. Output is a result directory. Native Mac closure not validated.",
+      "**Reject** \u2014 bundles the orchestrator and a broad dependency footprint, duplicating the harness\u2019s orchestration role."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-16",
+    "category": "recon-web",
+    "candidate": "[ffuf](https://github.com/ffuf/ffuf)",
+    "name": "ffuf",
+    "upstream": "https://github.com/ffuf/ffuf",
+    "section": "Discovery, crawling, and content enumeration",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 73,
+    "columns": [
+      "[ffuf](https://github.com/ffuf/ffuf)",
+      "HTTP fuzzing and content discovery. **Docs reviewed.**",
+      "Go CLI; JSON/NDJSON output, file/command inputs; wordlists required. Upstream README explicitly documents Homebrew on macOS; arm64 binary not tested.",
+      "**Core** \u2014 strong structured result interface; expose bounded, task-specific operations rather than arbitrary flag passthrough."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-17",
+    "category": "recon-web",
+    "candidate": "[feroxbuster](https://github.com/epi052/feroxbuster)",
+    "name": "feroxbuster",
+    "upstream": "https://github.com/epi052/feroxbuster",
+    "section": "Discovery, crawling, and content enumeration",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 74,
+    "columns": [
+      "[feroxbuster](https://github.com/epi052/feroxbuster)",
+      "Recursive content discovery in Rust; listed by A-poc. **Docs reviewed.**",
+      "Rust CLI with stdin and JSON log/output support; upstream documents macOS Homebrew and nix install paths. Wordlists required; arm64 artifact not independently checked.",
+      "**On-demand** \u2014 overlaps ffuf/gobuster; select only if recursive discovery is a clear requirement."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-18",
+    "category": "recon-web",
+    "candidate": "[Gobuster](https://github.com/OJ/gobuster)",
+    "name": "Gobuster",
+    "upstream": "https://github.com/OJ/gobuster",
+    "section": "Discovery, crawling, and content enumeration",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 75,
+    "columns": [
+      "[Gobuster](https://github.com/OJ/gobuster)",
+      "Directory/file, DNS, vhost and storage discovery. **Docs reviewed.**",
+      "Go CLI, multiple modes; current stable machine-output shape and Mac artifact not reviewed. Wordlists/network required.",
+      "**Reference** \u2014 overlaps ffuf + Subfinder/dnsx; retain for mode-specific gaps, not as another core wrapper."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-19",
+    "category": "recon-web",
+    "candidate": "[Dirsearch](https://github.com/maurosoria/dirsearch)",
+    "name": "Dirsearch",
+    "upstream": "https://github.com/maurosoria/dirsearch",
+    "section": "Discovery, crawling, and content enumeration",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 76,
+    "columns": [
+      "[Dirsearch](https://github.com/maurosoria/dirsearch)",
+      "Web path discovery; listed by A-poc. **Docs reviewed.**",
+      "Python CLI with wordlist/path inputs and request/auth options; README output contract reviewed but no JSON option was found in the checked page. Python environment required; Mac/arm64 support not stated.",
+      "**Reference** \u2014 overlaps the more integration-friendly ffuf/feroxbuster candidates."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-20",
+    "category": "recon-web",
+    "candidate": "[Arjun](https://github.com/s0md3v/Arjun)",
+    "name": "Arjun",
+    "upstream": "https://github.com/s0md3v/Arjun",
+    "section": "Discovery, crawling, and content enumeration",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 77,
+    "columns": [
+      "[Arjun](https://github.com/s0md3v/Arjun)",
+      "HTTP parameter-name discovery. **Docs reviewed.**",
+      "Python CLI supports GET/POST/JSON/XML request forms; imports URL lists or raw requests; exports JSON/text/Burp. Custom headers/auth may be needed; upstream claims handling timeouts/rate limits. Apple Silicon support not stated in reviewed docs.",
+      "**On-demand** \u2014 useful after endpoints are found; active request behavior and rate controls should be surfaced."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-21",
+    "category": "recon-web",
+    "candidate": "[gau](https://github.com/lc/gau)",
+    "name": "gau",
+    "upstream": "https://github.com/lc/gau",
+    "section": "Discovery, crawling, and content enumeration",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 78,
+    "columns": [
+      "[gau](https://github.com/lc/gau)",
+      "Retrieves known URLs from OTX, Wayback Machine and Common Crawl. **Docs reviewed.**",
+      "Go CLI; JSON output and file output documented; providers can be selected among Wayback, Common Crawl, OTX and urlscan. Provider credentials/quotas depend on source; no Darwin artifact review.",
+      "**On-demand** \u2014 useful historical endpoint source; select one archive adapter because it overlaps waybackurls."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-22",
+    "category": "recon-web",
+    "candidate": "[waybackurls](https://github.com/tomnomnom/waybackurls)",
+    "name": "waybackurls",
+    "upstream": "https://github.com/tomnomnom/waybackurls",
+    "section": "Discovery, crawling, and content enumeration",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 79,
+    "columns": [
+      "[waybackurls](https://github.com/tomnomnom/waybackurls)",
+      "Retrieves URLs known to the Wayback Machine. **Docs reviewed.**",
+      "Go CLI accepts line-delimited domains on stdin and returns URL lines on stdout. No key requirement is stated in README; archive service quotas and Mac artifact not assessed.",
+      "**Reference** \u2014 overlaps gau; select one archive-source adapter."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-23",
+    "category": "recon-web",
+    "candidate": "[Gospider](https://github.com/jaeles-project/gospider)",
+    "name": "Gospider",
+    "upstream": "https://github.com/jaeles-project/gospider",
+    "section": "Discovery, crawling, and content enumeration",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 80,
+    "columns": [
+      "[Gospider](https://github.com/jaeles-project/gospider)",
+      "Web spider/crawler. **Docs reviewed.**",
+      "Go CLI supports one site or site-list input, JSON output and concurrency/delay controls. Live network required; no Mac-specific support statement reviewed.",
+      "**Reference** \u2014 overlaps Katana; prefer Katana as the documented structured crawler candidate."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-24",
+    "category": "recon-web",
+    "candidate": "[Hakrawler](https://github.com/hakluke/hakrawler)",
+    "name": "Hakrawler",
+    "upstream": "https://github.com/hakluke/hakrawler",
+    "section": "Discovery, crawling, and content enumeration",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 81,
+    "columns": [
+      "[Hakrawler](https://github.com/hakluke/hakrawler)",
+      "Lightweight endpoint crawler. **Docs reviewed.**",
+      "Go CLI for extracting links/endpoints from a supplied URL; README exposes a compact text-oriented pipeline interface. Current machine-readable schema and Mac artifact not established.",
+      "**Reference** \u2014 simpler alternative if Katana proves too heavy, not an additional core tool."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-25",
+    "category": "recon-web",
+    "candidate": "[gowitness](https://github.com/sensepost/gowitness)",
+    "name": "gowitness",
+    "upstream": "https://github.com/sensepost/gowitness",
+    "section": "Discovery, crawling, and content enumeration",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 82,
+    "columns": [
+      "[gowitness](https://github.com/sensepost/gowitness)",
+      "Web screenshot utility; listed by A-poc. **Docs reviewed.**",
+      "Go CLI with upstream macOS support statement; Chrome headless needed. Can read URL/CIDR and Nmap/Nessus result inputs; writes SQLite, JSONL and CSV and has an API-backed viewer. M-series not tested.",
+      "**On-demand** \u2014 visual evidence task, not needed for endpoint inventory."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-26",
+    "category": "recon-web",
+    "candidate": "[EyeWitness](https://github.com/RedSiege/EyeWitness)",
+    "name": "EyeWitness",
+    "upstream": "https://github.com/RedSiege/EyeWitness",
+    "section": "Discovery, crawling, and content enumeration",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 83,
+    "columns": [
+      "[EyeWitness](https://github.com/RedSiege/EyeWitness)",
+      "Web screenshots, server-header collection and default-credential identification; listed by A-poc. **Docs reviewed.**",
+      "Python 3.7+ with virtualenv, Chrome/ChromeDriver, and setup privileges; upstream documents a macOS Homebrew setup. Takes URL files and Nmap XML; M-series was not tested.",
+      "**Reference** \u2014 overlap with gowitness and requires a richer browser runtime."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-27",
+    "category": "recon-web",
+    "candidate": "[Subzy](https://github.com/PentestPad/subzy)",
+    "name": "Subzy",
+    "upstream": "https://github.com/PentestPad/subzy",
+    "section": "Discovery, crawling, and content enumeration",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 84,
+    "columns": [
+      "[Subzy](https://github.com/PentestPad/subzy)",
+      "Subdomain takeover signal checker; listed by A-poc. **Docs reviewed.**",
+      "Go CLI accepts one or multiple subdomains or an input file; exposes concurrency, timeout and TLS behavior controls. Structured result output and Mac artifact were not established.",
+      "**On-demand** \u2014 narrow, potentially consequential findings require human validation."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-28",
+    "category": "recon-web",
+    "candidate": "[dnsrecon](https://github.com/darkoperator/dnsrecon)",
+    "name": "dnsrecon",
+    "upstream": "https://github.com/darkoperator/dnsrecon",
+    "section": "Discovery, crawling, and content enumeration",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 85,
+    "columns": [
+      "[dnsrecon](https://github.com/darkoperator/dnsrecon)",
+      "DNS record enumeration, zone-transfer checks, wildcard detection, subdomain brute force, PTR and cache queries; listed by A-poc. **Docs reviewed.**",
+      "Python 3.12+, managed `uv` setup; README documents CLI and optional REST API. Optional Shodan netblock expansion requires an API key. Output schema and Apple Silicon support not confirmed.",
+      "**Reference** \u2014 overlaps dnsx/Amass unless a specific DNS workflow requires it."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-29",
+    "category": "recon-web",
+    "candidate": "[shuffledns](https://github.com/projectdiscovery/shuffledns)",
+    "name": "shuffledns",
+    "upstream": "https://github.com/projectdiscovery/shuffledns",
+    "section": "Discovery, crawling, and content enumeration",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 86,
+    "columns": [
+      "[shuffledns](https://github.com/projectdiscovery/shuffledns)",
+      "DNS resolution and active subdomain brute force with wildcard filtering. **Docs reviewed.**",
+      "Go CLI wraps MassDNS, supports stdin/stdout and takes resolver and optional wordlist files. Active query volume depends on input/wordlist; M-series compatibility not tested.",
+      "**On-demand** \u2014 useful at a deliberate active DNS stage, overlapping dnsx for resolution."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-30",
+    "category": "recon-web",
+    "candidate": "[MassDNS](https://github.com/blechschmidt/massdns)",
+    "name": "MassDNS",
+    "upstream": "https://github.com/blechschmidt/massdns",
+    "section": "Discovery, crawling, and content enumeration",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 87,
+    "columns": [
+      "[MassDNS](https://github.com/blechschmidt/massdns)",
+      "High-performance DNS stub resolver. **Docs reviewed.**",
+      "C source built via Makefile, with non-Linux `nolinux` build option, resolver-list input, stdout/file output and line/domain/NDJSON formats. High-volume resolver; Apple Silicon not tested.",
+      "**Platform-limited** \u2014 low-level specialized dependency; avoid duplicating DNS resolution adapters."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-31",
+    "category": "recon-web",
+    "candidate": "[PureDNS](https://github.com/d3mondev/puredns)",
+    "name": "PureDNS",
+    "upstream": "https://github.com/d3mondev/puredns",
+    "section": "Discovery, crawling, and content enumeration",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 88,
+    "columns": [
+      "[PureDNS](https://github.com/d3mondev/puredns)",
+      "DNS resolution and active subdomain brute force with wildcard and poisoning checks. **Docs reviewed.**",
+      "Go CLI requires MassDNS, public resolver lists and optionally trusted resolvers; supports stdin and saved domain/MassDNS outputs. Public resolver correctness affects results; Mac arm64 not stated.",
+      "**On-demand** \u2014 substantial, high-volume DNS work with overlap."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-32",
+    "category": "recon-web",
+    "candidate": "[Nmap](https://github.com/nmap/nmap)",
+    "name": "Nmap",
+    "upstream": "https://github.com/nmap/nmap",
+    "section": "Network, TLS, and server checks",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 94,
+    "columns": [
+      "[Nmap](https://github.com/nmap/nmap)",
+      "Network discovery and service/version identification. **Docs reviewed.**",
+      "CLI\u2019s upstream guide calls XML the preferred programmatic format and documents a stable, extensible schema. Privileges and packet behavior vary by scan mode. The current official macOS installer is x86-64; Apple Silicon support was not established.",
+      "**On-demand** \u2014 broad network scanner; require explicit scope and dedicated adapter controls."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-33",
+    "category": "recon-web",
+    "candidate": "[RustScan](https://github.com/RustScan/RustScan)",
+    "name": "RustScan",
+    "upstream": "https://github.com/RustScan/RustScan",
+    "section": "Network, TLS, and server checks",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 95,
+    "columns": [
+      "[RustScan](https://github.com/RustScan/RustScan)",
+      "Fast port-discovery frontend; listed in adjacent ecosystem, not A-poc recon inventory. **Docs reviewed.**",
+      "Rust CLI; upstream recommends Cargo and lists Homebrew for macOS. Can feed discovered ports to Nmap; current structured-output contract and arm64 behavior not reviewed.",
+      "**Reference** \u2014 overlaps Naabu/Nmap and adds little to minimal harness."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-34",
+    "category": "recon-web",
+    "candidate": "[testssl.sh](https://github.com/testssl/testssl.sh)",
+    "name": "testssl.sh",
+    "upstream": "https://github.com/testssl/testssl.sh",
+    "section": "Network, TLS, and server checks",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 96,
+    "columns": [
+      "[testssl.sh](https://github.com/testssl/testssl.sh)",
+      "TLS/SSL protocol, cipher and cryptographic configuration checks. **Docs reviewed.**",
+      "Bash CLI; upstream documents CSV, two JSON forms and HTML output, and macOS operation with Bash >=3.2 plus standard utilities; bundled or system LibreSSL/OpenSSL options are described. Actual M-series runtime not tested.",
+      "**On-demand** \u2014 useful targeted TLS audit; broader than tlsx and therefore choose per task instead of running both by default."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-35",
+    "category": "recon-web",
+    "candidate": "[Nikto](https://github.com/sullo/nikto)",
+    "name": "Nikto",
+    "upstream": "https://github.com/sullo/nikto",
+    "section": "Network, TLS, and server checks",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 97,
+    "columns": [
+      "[Nikto](https://github.com/sullo/nikto)",
+      "Web server configuration, known-file and outdated-component checks. **Docs reviewed.**",
+      "Perl CLI and report output; Perl runtime. Docs explicitly describe conspicuous requests.",
+      "**On-demand** \u2014 legacy but focused scanner; avoid default or broad unbounded use."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-36",
+    "category": "recon-web",
+    "candidate": "[WhatWeb](https://github.com/urbanadventurer/WhatWeb)",
+    "name": "WhatWeb",
+    "upstream": "https://github.com/urbanadventurer/WhatWeb",
+    "section": "Network, TLS, and server checks",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 98,
+    "columns": [
+      "[WhatWeb](https://github.com/urbanadventurer/WhatWeb)",
+      "Web technology fingerprinting. **Docs reviewed.**",
+      "Ruby CLI with brief/verbose, XML and JSON/JSON-verbose file logs; plugin system and thread/wait controls. Ruby/gems required; M-series support not established.",
+      "**Reference** \u2014 overlaps httpx technology probes; only add for specific fingerprint coverage."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-37",
+    "category": "recon-web",
+    "candidate": "[Wappalyzer CLI](https://github.com/wappalyzer/wappalyzer)",
+    "name": "Wappalyzer CLI",
+    "upstream": "https://github.com/wappalyzer/wappalyzer",
+    "section": "Network, TLS, and server checks",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 99,
+    "columns": [
+      "[Wappalyzer CLI](https://github.com/wappalyzer/wappalyzer)",
+      "Technology fingerprinting from web responses; A-poc references the Wappalyzer project. **Catalog only; linked upstream returned 404 on 21 Oct 2026.**",
+      "The linked repository could not establish the current CLI identity, Node/runtime requirements, output format, account/API dependency, or macOS support.",
+      "**Reject pending identity** \u2014 same enrichment category as httpx, and the listed upstream did not provide a verifiable adapter contract."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-38",
+    "category": "recon-web",
+    "candidate": "[OWASP ZAP](https://github.com/zaproxy/zap)",
+    "name": "OWASP ZAP",
+    "upstream": "https://github.com/zaproxy/zap",
+    "section": "Web proxy and API testing",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 105,
+    "columns": [
+      "[OWASP ZAP](https://github.com/zaproxy/zap)",
+      "Intercepting proxy and web app scanner with automation. **Docs reviewed.**",
+      "Java desktop/daemon; YAML Automation Framework, REST API, JSON/XML/HTML/HAR. API key; add-ons provide features; MCP Integration add-on exists. Native Mac installer/runtime specifics not checked.",
+      "**On-demand** \u2014 strong broad web/API workbench; CLI/REST adapter is viable, MCP integration is an optional bridge rather than a prerequisite."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-39",
+    "category": "recon-web",
+    "candidate": "[Burp Suite](https://portswigger.net/burp)",
+    "name": "Burp Suite",
+    "upstream": "https://portswigger.net/burp",
+    "section": "Web proxy and API testing",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 106,
+    "columns": [
+      "[Burp Suite](https://portswigger.net/burp)",
+      "Intercepting proxy and commercial web/API scanner. **Docs reviewed.**",
+      "Desktop product; REST API can bind loopback and uses an API key. Pro required for active Scanner functionality. macOS availability not revalidated in this pass.",
+      "**Platform-limited** \u2014 human-led desktop workflow and licensing are a poor default harness dependency; useful if user already has Pro."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-40",
+    "category": "recon-web",
+    "candidate": "[Schemathesis](https://github.com/schemathesis/schemathesis)",
+    "name": "Schemathesis",
+    "upstream": "https://github.com/schemathesis/schemathesis",
+    "section": "Web proxy and API testing",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 107,
+    "columns": [
+      "[Schemathesis](https://github.com/schemathesis/schemathesis)",
+      "Schema-based API behavior testing for OpenAPI/GraphQL. **Docs reviewed.**",
+      "Python CLI and pytest integration; reports include JSON/JUnit/HTML family (details vary by version). API credentials may be required; Python env setup.",
+      "**Core** \u2014 best fit for explicit API specs and test environments; keep generated mutations scoped and reproducible."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-41",
+    "category": "recon-web",
+    "candidate": "[RESTler](https://github.com/microsoft/restler-fuzzer)",
+    "name": "RESTler",
+    "upstream": "https://github.com/microsoft/restler-fuzzer",
+    "section": "Web proxy and API testing",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 108,
+    "columns": [
+      "[RESTler](https://github.com/microsoft/restler-fuzzer)",
+      "Stateful REST API fuzz testing from OpenAPI. **Docs reviewed.**",
+      "Upstream documents a sequence including compiler, test generation and runtime; Python toolchain plus .NET/runtime setup and generated artifacts are involved. Apple Silicon and result normalization not established.",
+      "**On-demand** \u2014 deeper stateful API testing with significant setup, suited to an explicit lab/CI job."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-42",
+    "category": "recon-web",
+    "candidate": "[Kiterunner](https://github.com/assetnote/kiterunner)",
+    "name": "Kiterunner",
+    "upstream": "https://github.com/assetnote/kiterunner",
+    "section": "Web proxy and API testing",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 109,
+    "columns": [
+      "[Kiterunner](https://github.com/assetnote/kiterunner)",
+      "Contextual API endpoint/content discovery. **Docs reviewed.**",
+      "Go CLI takes target or target-file inputs and large route wordlists; scan output can be JSON, text or pretty. Concurrency controls are explicit; upstream warns against excessive per-host connections. Apple Silicon build/release not validated.",
+      "**On-demand** \u2014 specialized route discovery; overlaps Katana/ffuf."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-43",
+    "category": "recon-web",
+    "candidate": "[Postman CLI](https://github.com/postmanlabs/postman-cli)",
+    "name": "Postman CLI",
+    "upstream": "https://github.com/postmanlabs/postman-cli",
+    "section": "Web proxy and API testing",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 110,
+    "columns": [
+      "[Postman CLI](https://github.com/postmanlabs/postman-cli)",
+      "Runs Postman collections and API tests. **Docs reviewed.**",
+      "Official docs describe collection execution and CI reporting; Postman account/API-key/workspace features may apply depending on run path. Node/package and macOS architecture details not validated here.",
+      "**On-demand** \u2014 use when existing collections are the source of truth."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-44",
+    "category": "recon-web",
+    "candidate": "[GraphQL Cop](https://github.com/dolevf/GraphQL-Cop)",
+    "name": "GraphQL Cop",
+    "upstream": "https://github.com/dolevf/GraphQL-Cop",
+    "section": "Web proxy and API testing",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 111,
+    "columns": [
+      "[GraphQL Cop](https://github.com/dolevf/GraphQL-Cop)",
+      "GraphQL security audit checks. **Docs reviewed.**",
+      "Python CLI evaluates a supplied GraphQL endpoint; schema/query access and Python dependency setup required. Current output schema and Apple Silicon evidence not established.",
+      "**On-demand** \u2014 narrow checks, if GraphQL is in scope and other API tools do not cover it."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-45",
+    "category": "recon-web",
+    "candidate": "[mitmproxy](https://github.com/mitmproxy/mitmproxy)",
+    "name": "mitmproxy",
+    "upstream": "https://github.com/mitmproxy/mitmproxy",
+    "section": "Web proxy and API testing",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 112,
+    "columns": [
+      "[mitmproxy](https://github.com/mitmproxy/mitmproxy)",
+      "Programmable HTTP(S), HTTP/2 and WebSocket interception, replay and flow inspection. **Docs reviewed.**",
+      "Three frontends: interactive console `mitmproxy`, web UI `mitmweb`, and CLI `mitmdump`; Python scripting supported. TLS interception creates a local CA that clients must trust; Mac/Linux transparent proxy mode is documented. Package/release arm64 details not checked.",
+      "**On-demand** \u2014 useful interactive traffic workbench and extension surface, not a general scanner or default Pi tool call."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-46",
+    "category": "recon-web",
+    "candidate": "[crt.sh](https://crt.sh/)",
+    "name": "crt.sh",
+    "upstream": "https://crt.sh/",
+    "section": "Additional A-poc web/recon entries and supporting utilities",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 118,
+    "columns": [
+      "[crt.sh](https://crt.sh/)",
+      "Certificate Transparency search service referenced by A-poc. **Catalog only.**",
+      "Web service; no local install; availability/rate limits and response contract not assessed.",
+      "**Reference** \u2014 use as a passive source behind a provider interface, not a standalone executable adapter."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-47",
+    "category": "recon-web",
+    "candidate": "[Shodan](https://github.com/achillean/shodan-python)",
+    "name": "Shodan",
+    "upstream": "https://github.com/achillean/shodan-python",
+    "section": "Additional A-poc web/recon entries and supporting utilities",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 119,
+    "columns": [
+      "[Shodan](https://github.com/achillean/shodan-python)",
+      "Public internet asset search/API and host metadata; listed by A-poc. **Docs reviewed.**",
+      "Official Python library and CLI; supports search, IP lookups, streaming and DNS data. Shodan account/API key required; service quotas depend on account. Mac arm64 untested.",
+      "**On-demand** \u2014 external credentialed intelligence source, overlapping Uncover provider options."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-48",
+    "category": "recon-web",
+    "candidate": "[TruffleHog](https://github.com/trufflesecurity/trufflehog)",
+    "name": "TruffleHog",
+    "upstream": "https://github.com/trufflesecurity/trufflehog",
+    "section": "Additional A-poc web/recon entries and supporting utilities",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 120,
+    "columns": [
+      "[TruffleHog](https://github.com/trufflesecurity/trufflehog)",
+      "Secret scanning across repositories and sources; A-poc lists it in Reconnaissance. **Docs reviewed.**",
+      "Go CLI scans local git and configured source providers; JSON output and detector verification are documented. Remote sources can need provider credentials; local history scans do not. Mac arm64 release/runtime not checked.",
+      "**On-demand** \u2014 useful for owned repositories and authorized secret audits; isolate credentials and handle verified secrets carefully."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-49",
+    "category": "recon-web",
+    "candidate": "[GitHub secret scanning alternatives: Gitleaks](https://github.com/gitleaks/gitleaks)",
+    "name": "GitHub secret scanning alternatives: Gitleaks",
+    "upstream": "https://github.com/gitleaks/gitleaks",
+    "section": "Additional A-poc web/recon entries and supporting utilities",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 121,
+    "columns": [
+      "[GitHub secret scanning alternatives: Gitleaks](https://github.com/gitleaks/gitleaks)",
+      "Local/git history secret detection. **Docs reviewed.**",
+      "Go CLI scans paths, git history or stdin; JSON/SARIF output documented. Local scans need no service key; hosted modes can need credentials. Apple Silicon release not checked.",
+      "**On-demand** \u2014 useful defensive code/repository audit adjacent to web recon."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-50",
+    "category": "recon-web",
+    "candidate": "[Subdomain takeover verification: tko-subs](https://github.com/anshumanbh/tko-subs)",
+    "name": "Subdomain takeover verification: tko-subs",
+    "upstream": "https://github.com/anshumanbh/tko-subs",
+    "section": "Additional A-poc web/recon entries and supporting utilities",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 122,
+    "columns": [
+      "[Subdomain takeover verification: tko-subs](https://github.com/anshumanbh/tko-subs)",
+      "Detects possible dangling DNS/subdomain takeover conditions. **Docs reviewed.**",
+      "Upstream README confirms the project purpose and repository entry point; provider signatures, API assumptions, result schema, platform and maintenance were not validated.",
+      "**Reject** \u2014 duplicates Subzy; no differentiating integration advantage was established in this review."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-51",
+    "category": "recon-web",
+    "candidate": "[Caido](https://github.com/caido/caido)",
+    "name": "Caido",
+    "upstream": "https://github.com/caido/caido",
+    "section": "Community-discovered candidates (11 additions)",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 130,
+    "columns": [
+      "[Caido](https://github.com/caido/caido)",
+      "Intercepting HTTP proxy and manual web/API testing workbench; surfaced in r/bugbounty tool discussions. **Release page reviewed.**",
+      "Current release notes list macOS AArch64 desktop and CLI builds. Project README points to releases/wiki; CLI/API integration contract was not reviewed. GUI plus optional extensions; account/license details not evaluated.",
+      "**On-demand** \u2014 strong operator-facing alternative alongside Burp/ZAP; treat it as a GUI service unless a documented API adapter is selected."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-52",
+    "category": "recon-web",
+    "candidate": "[sqlmap](https://github.com/sqlmapproject/sqlmap)",
+    "name": "sqlmap",
+    "upstream": "https://github.com/sqlmapproject/sqlmap",
+    "section": "Community-discovered candidates (11 additions)",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 131,
+    "columns": [
+      "[sqlmap](https://github.com/sqlmapproject/sqlmap)",
+      "Automated SQL injection testing and database fingerprinting; surfaced in r/bugbounty tool-stack discussions. **Docs reviewed.**",
+      "Python CLI; upstream says Python 2.7/3.x on any platform; Apple Silicon was not tested here. Request/report interfaces are documented, but a stable machine-output schema was not checked.",
+      "**On-demand** \u2014 active, potentially intrusive verification, useful in both defensive validation and authorized offensive assessment when explicitly selected."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-53",
+    "category": "recon-web",
+    "candidate": "[jwt_tool](https://github.com/ticarpi/jwt_tool)",
+    "name": "jwt_tool",
+    "upstream": "https://github.com/ticarpi/jwt_tool",
+    "section": "Community-discovered candidates (11 additions)",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 132,
+    "columns": [
+      "[jwt_tool](https://github.com/ticarpi/jwt_tool)",
+      "JWT inspection and security test toolkit; surfaced in r/netsec practitioner/tool threads. **Docs reviewed.**",
+      "Python 3 CLI; request files/headers and response metadata; dependencies include crypto libraries. macOS compatibility not directly documented in reviewed README; use version-pinned isolated Python env.",
+      "**On-demand** \u2014 domain-specific checks for systems using JWT; requests can be active and credentials/tokens are sensitive inputs."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-54",
+    "category": "recon-web",
+    "candidate": "[XSStrike](https://github.com/s0md3v/XSStrike)",
+    "name": "XSStrike",
+    "upstream": "https://github.com/s0md3v/XSStrike",
+    "section": "Community-discovered candidates (11 additions)",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 133,
+    "columns": [
+      "[XSStrike](https://github.com/s0md3v/XSStrike)",
+      "Specialized XSS detection/fuzzing candidate mentioned in r/bugbounty tool stack. **Docs reviewed.**",
+      "Python CLI with URL/crawl inputs and request/header options; output is primarily human-readable terminal findings. Python dependencies and active test behavior; no Apple Silicon statement reviewed.",
+      "**Reference** \u2014 useful specialized comparison with Nuclei/ZAP, but no adapter need established yet."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-55",
+    "category": "recon-web",
+    "candidate": "[gf](https://github.com/tomnomnom/gf)",
+    "name": "gf",
+    "upstream": "https://github.com/tomnomnom/gf",
+    "section": "Community-discovered candidates (11 additions)",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 134,
+    "columns": [
+      "[gf](https://github.com/tomnomnom/gf)",
+      "Named regex/pattern wrapper around grep, mentioned with URL collection in r/bugbounty discussion. **Docs reviewed.**",
+      "Go CLI reads stdin and local pattern JSON files; outputs matched lines. macOS arm64 not explicitly verified in README. Rule packs are separately maintained.",
+      "**Reference** \u2014 tiny local post-processor, not a scanner; useful only if the harness needs reproducible pattern profiles."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-56",
+    "category": "recon-web",
+    "candidate": "[LinkFinder](https://github.com/GerbenJavado/LinkFinder)",
+    "name": "LinkFinder",
+    "upstream": "https://github.com/GerbenJavado/LinkFinder",
+    "section": "Community-discovered candidates (11 additions)",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 135,
+    "columns": [
+      "[LinkFinder](https://github.com/GerbenJavado/LinkFinder)",
+      "Extracts endpoints from JavaScript, surfaced in a practitioner recon workflow. **Docs reviewed.**",
+      "Python 3 CLI; accepts URL/file/folder inputs and emits HTML or plaintext/stdout; optional cookies. Upstream Mac support is not stated.",
+      "**On-demand** \u2014 distinct JS artifact extraction stage; compare with Katana field extraction before adding both."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-57",
+    "category": "recon-web",
+    "candidate": "[GoTestWAF](https://github.com/wallarm/gotestwaf)",
+    "name": "GoTestWAF",
+    "upstream": "https://github.com/wallarm/gotestwaf",
+    "section": "Community-discovered candidates (11 additions)",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 136,
+    "columns": [
+      "[GoTestWAF](https://github.com/wallarm/gotestwaf)",
+      "Evaluates WAF/API-security controls using test cases; surfaced in a self-promotional r/netsec tool thread and corroborated by upstream docs. **Docs reviewed.**",
+      "Upstream lists native macOS support and Go build; Apple Silicon release evidence was not established. Chrome is needed for PDF, HTML works without it. JSON/HTML/PDF reports; accepts OpenAPI input and supports multiple API protocols.",
+      "**On-demand** \u2014 best for defensive control validation and authorized red-team validation in a controlled environment; not a general vulnerability scanner."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-58",
+    "category": "recon-web",
+    "candidate": "[Semgrep](https://github.com/semgrep/semgrep)",
+    "name": "Semgrep",
+    "upstream": "https://github.com/semgrep/semgrep",
+    "section": "Community-discovered candidates (11 additions)",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 137,
+    "columns": [
+      "[Semgrep](https://github.com/semgrep/semgrep)",
+      "Static source-code analysis surfaced as a source-available alternative in r/Pentesting discussion; upstream JSON output schema reviewed. **Docs reviewed.**",
+      "CLI and documented JSON output schema; source checkout/release runtime and Apple Silicon support not checked here. Rules/configs and optional hosted features may add setup.",
+      "**On-demand** \u2014 code-focused defensive mode; useful for source-assisted review, separate from runtime target scanning."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-59",
+    "category": "recon-web",
+    "candidate": "[Pinakastra (formerly SubHunterX)](https://github.com/who0xac/Pinakastra)",
+    "name": "Pinakastra (formerly SubHunterX)",
+    "upstream": "https://github.com/who0xac/Pinakastra",
+    "section": "Community-discovered candidates (11 additions)",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 138,
+    "columns": [
+      "[Pinakastra (formerly SubHunterX)](https://github.com/who0xac/Pinakastra)",
+      "The Reddit post promoted SubHunterX as an orchestrator for Subfinder, Amass, httpx, ffuf, Katana and GF. The linked repo now redirects to a renamed AI pentesting framework. **Catalog only; repository identity checked.**",
+      "Current README describes broader AI pentesting/exploitation; native Mac/output/dependency closure not validated.",
+      "**Reject** for the lean harness \u2014 it duplicates orchestration and its current identity/scope differs from the 2025 post. This is a scope decision, not a blanket exclusion of offensive tools."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-60",
+    "category": "recon-web",
+    "candidate": "[VulnX by pradip676](https://github.com/pradip676/vulnx)",
+    "name": "VulnX by pradip676",
+    "upstream": "https://github.com/pradip676/vulnx",
+    "section": "Community-discovered candidates (11 additions)",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 139,
+    "columns": [
+      "[VulnX by pradip676](https://github.com/pradip676/vulnx)",
+      "A distinct title-cased VulnX candidate: Python wrapper around Nmap service discovery and Vulners CVE lookup. **Docs reviewed.**",
+      "Interactive Python script; Nmap and Python packages; upstream asks for a Vulners API key and writes HTML/PDF-oriented reports. README setup is Linux-oriented; macOS not confirmed.",
+      "**Reference** \u2014 mostly combines capabilities already represented by Nmap plus vulnerability-intelligence enrichment; no structured adapter advantage established."
+    ],
+    "installed": false
+  },
+  {
+    "id": "recon-web-61",
+    "category": "recon-web",
+    "candidate": "[Vulnx by anouarbensaad](https://github.com/anouarbensaad/vulnx)",
+    "name": "Vulnx by anouarbensaad",
+    "upstream": "https://github.com/anouarbensaad/vulnx",
+    "section": "Community-discovered candidates (11 additions)",
+    "source": "research/RECON-WEB-TOOLS.md",
+    "line": 140,
+    "columns": [
+      "[Vulnx by anouarbensaad](https://github.com/anouarbensaad/vulnx)",
+      "Another distinct lowercase `vulnx` homonym, described upstream as CMS detection, information collection and vulnerability scanning. **Docs reviewed.**",
+      "Repository presents a shell/Python project; the exact current execution path, credentials, result format, dependency closure, maintenance and macOS behavior were not validated.",
+      "**Reject** \u2014 identity is ambiguous in casual requests and no reviewed integration contract justifies selecting it."
+    ],
+    "installed": false
+  },
+  {
+    "id": "defense-cloud-identity-62",
+    "category": "defense-cloud-identity",
+    "candidate": "[Semgrep](https://semgrep.dev/docs/cli-reference/) **(Source-reviewed)** \u2014 source patterns, SAST, and supported dependency/config checks.",
+    "name": "Semgrep",
+    "upstream": "https://semgrep.dev/docs/cli-reference/",
+    "section": "Source, dependency, and secret review",
+    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "line": 15,
+    "columns": [
+      "[Semgrep](https://semgrep.dev/docs/cli-reference/) **(Source-reviewed)** \u2014 source patterns, SAST, and supported dependency/config checks.",
+      "CLI scans a local checkout; text, JSON, SARIF; CI/pre-commit integration. Docs cover macOS installation but the cited CLI page does not certify arm64.",
+      "Rule packs/local config; some registry/platform features need account/token; network for rule updates.",
+      "**Core.** Rules and language coverage vary; scan results need code review."
+    ],
+    "installed": false
+  },
+  {
+    "id": "defense-cloud-identity-63",
+    "category": "defense-cloud-identity",
+    "candidate": "[CodeQL CLI](https://codeql.github.com/docs/codeql-overview/system-requirements/) **(Source-reviewed)** \u2014 semantic source analysis and query packs.",
+    "name": "CodeQL CLI",
+    "upstream": "https://codeql.github.com/docs/codeql-overview/system-requirements/",
+    "section": "Source, dependency, and secret review",
+    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "line": 16,
+    "columns": [
+      "[CodeQL CLI](https://codeql.github.com/docs/codeql-overview/system-requirements/) **(Source-reviewed)** \u2014 semantic source analysis and query packs.",
+      "Official requirements list macOS 14/15/26 and arm64 Apple Silicon as beta; SARIF database results integrate with GitHub and review tooling. Compiled-language build tracing requires a working compiler; native interpretation/build-mode-none supported.",
+      "Large CLI/query packs and language build chains; GitHub authentication only for upload/API workflows.",
+      "**On-demand.** Apple Silicon is explicitly beta; compile analysis additionally requires Rosetta 2 per current system requirements."
+    ],
+    "installed": false
+  },
+  {
+    "id": "defense-cloud-identity-64",
+    "category": "defense-cloud-identity",
+    "candidate": "[Trivy](https://github.com/aquasecurity/trivy) **(Source-reviewed)** \u2014 source, image, filesystem, SBOM, IaC, and vulnerability review.",
+    "name": "Trivy",
+    "upstream": "https://github.com/aquasecurity/trivy",
+    "section": "Source, dependency, and secret review",
+    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "line": 17,
+    "columns": [
+      "[Trivy](https://github.com/aquasecurity/trivy) **(Source-reviewed)** \u2014 source, image, filesystem, SBOM, IaC, and vulnerability review.",
+      "Go CLI release/project supports macOS; JSON/SARIF/table; CI, container registry, and SBOM handoff. Native Apple Silicon release availability should be checked when pinning a version.",
+      "Vulnerability DB downloads; private registry credentials for private images; cloud creds only for remote cloud targets.",
+      "**Core.** Scanner scope depends on target and DB; third-party SBOM metadata may be incomplete."
+    ],
+    "installed": false
+  },
+  {
+    "id": "defense-cloud-identity-65",
+    "category": "defense-cloud-identity",
+    "candidate": "[osv-scanner](https://github.com/google/osv-scanner) **(Source-reviewed)** \u2014 dependency lockfile and source vulnerability matching against OSV.",
+    "name": "osv-scanner",
+    "upstream": "https://github.com/google/osv-scanner",
+    "section": "Source, dependency, and secret review",
+    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "line": 18,
+    "columns": [
+      "[osv-scanner](https://github.com/google/osv-scanner) **(Source-reviewed)** \u2014 dependency lockfile and source vulnerability matching against OSV.",
+      "Go CLI; JSON, SARIF, HTML; CI and local repo integration. Verify the release asset for arm64 rather than assuming.",
+      "Network for advisory data; generally no credentials for local files.",
+      "**Core.** Coverage depends on recognized manifest/lockfile and ecosystem; custom manifests need an intermediate format."
+    ],
+    "installed": false
+  },
+  {
+    "id": "defense-cloud-identity-66",
+    "category": "defense-cloud-identity",
+    "candidate": "[Gitleaks](https://github.com/gitleaks/gitleaks) **(Source-reviewed)** \u2014 detect likely secrets in working trees and Git history.",
+    "name": "Gitleaks",
+    "upstream": "https://github.com/gitleaks/gitleaks",
+    "section": "Source, dependency, and secret review",
+    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "line": 19,
+    "columns": [
+      "[Gitleaks](https://github.com/gitleaks/gitleaks) **(Source-reviewed)** \u2014 detect likely secrets in working trees and Git history.",
+      "Go CLI; JSON, SARIF, JUnit and CI/pre-commit patterns. Verify native arm64 release asset when packaging.",
+      "Local repository; no credentials unless scanning authenticated remote source through an integration.",
+      "**On-demand.** Evaluate alongside Betterleaks; pin version/config and do not assume report-schema interchangeability. This review makes no separate claim about Gitleaks\u2019 maintenance status."
+    ],
+    "installed": false
+  },
+  {
+    "id": "defense-cloud-identity-67",
+    "category": "defense-cloud-identity",
+    "candidate": "[Betterleaks](https://github.com/betterleaks/betterleaks) **(Source-reviewed)** \u2014 secret-scanning project from the Gitleaks author.",
+    "name": "Betterleaks",
+    "upstream": "https://github.com/betterleaks/betterleaks",
+    "section": "Source, dependency, and secret review",
+    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "line": 20,
+    "columns": [
+      "[Betterleaks](https://github.com/betterleaks/betterleaks) **(Source-reviewed)** \u2014 secret-scanning project from the Gitleaks author.",
+      "Go CLI; JSON output and Git scanning; upstream v2 prerelease notes change output schema and remove SARIF/CSV/JUnit/template and baseline behavior.",
+      "Local repo; remote source credentials only when connector requires them; Go toolchain if building from source.",
+      "**On-demand / watch.** Inspected release notes say v2 is prerelease and v1 maintenance continues; evaluate its report and rule differences before adoption."
+    ],
+    "installed": false
+  },
+  {
+    "id": "defense-cloud-identity-68",
+    "category": "defense-cloud-identity",
+    "candidate": "[TruffleHog](https://github.com/trufflesecurity/trufflehog) **(Source-reviewed)** \u2014 local/remote-source and cloud secret detection with verification.",
+    "name": "TruffleHog",
+    "upstream": "https://github.com/trufflesecurity/trufflehog",
+    "section": "Source, dependency, and secret review",
+    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "line": 21,
+    "columns": [
+      "[TruffleHog](https://github.com/trufflesecurity/trufflehog) **(Source-reviewed)** \u2014 local/remote-source and cloud secret detection with verification.",
+      "CLI supports JSON, SARIF, GitHub Actions and text outputs; local Git/filesystem and authenticated provider scans. The inspected upstream source did not certify Apple Silicon support.",
+      "Provider tokens for authenticated remote scans; network for source access/verification; local repository scan can avoid provider credentials.",
+      "**On-demand.** Verification can contact services; configure result/verification behavior and treat secret findings as highly sensitive."
+    ],
+    "installed": false
+  },
+  {
+    "id": "defense-cloud-identity-69",
+    "category": "defense-cloud-identity",
+    "candidate": "[Syft](https://github.com/anchore/syft) **(Source-reviewed)** \u2014 generate software bills of materials from directories, images, and archives.",
+    "name": "Syft",
+    "upstream": "https://github.com/anchore/syft",
+    "section": "Source, dependency, and secret review",
+    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "line": 22,
+    "columns": [
+      "[Syft](https://github.com/anchore/syft) **(Source-reviewed)** \u2014 generate software bills of materials from directories, images, and archives.",
+      "Go CLI; SPDX, CycloneDX, Syft JSON/text; feeds Grype and supply-chain review. Check release asset for arm64.",
+      "Container runtime/registry auth for images; local source scanning needs no credentials.",
+      "**Core.** SBOM is an inventory, not a vulnerability conclusion; image/layer coverage differs from source manifests."
+    ],
+    "installed": false
+  },
+  {
+    "id": "defense-cloud-identity-70",
+    "category": "defense-cloud-identity",
+    "candidate": "[Grype](https://github.com/anchore/grype) **(Source-reviewed)** \u2014 find known vulnerabilities in SBOMs and filesystems.",
+    "name": "Grype",
+    "upstream": "https://github.com/anchore/grype",
+    "section": "Source, dependency, and secret review",
+    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "line": 23,
+    "columns": [
+      "[Grype](https://github.com/anchore/grype) **(Source-reviewed)** \u2014 find known vulnerabilities in SBOMs and filesystems.",
+      "Go CLI; table, JSON, SARIF; natural Syft-to-Grype pipeline. Confirm arm64 artifact at version pin.",
+      "Advisory DB update/network; private registry access only if scanning private images through source path.",
+      "**On-demand.** Results inherit SBOM omissions, package matching uncertainty, and advisory freshness."
+    ],
+    "installed": false
+  },
+  {
+    "id": "defense-cloud-identity-71",
+    "category": "defense-cloud-identity",
+    "candidate": "[Prowler](https://docs.prowler.com/) **(Source-reviewed)** \u2014 cloud and SaaS posture checks, compliance mappings, account findings.",
+    "name": "Prowler",
+    "upstream": "https://docs.prowler.com/",
+    "section": "Cloud, IAM, infrastructure, and Kubernetes",
+    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "line": 29,
+    "columns": [
+      "[Prowler](https://docs.prowler.com/) **(Source-reviewed)** \u2014 cloud and SaaS posture checks, compliance mappings, account findings.",
+      "Python CLI and hosted/report integrations; HTML/CSV/JSON/JSON-ASFF and provider APIs. Docs describe CLI/providers, but inspected evidence did not certify Apple Silicon.",
+      "Provider SDKs; scoped AWS/Azure/GCP/Kubernetes/GitHub/etc credentials; read permissions.",
+      "**Core for cloud owners.** Make provider/region/scope explicit; API calls can be broad and incur rate limits."
+    ],
+    "installed": false
+  },
+  {
+    "id": "defense-cloud-identity-72",
+    "category": "defense-cloud-identity",
+    "candidate": "[ScoutSuite](https://github.com/nccgroup/ScoutSuite) **(Source-reviewed)** \u2014 point-in-time multi-cloud configuration audit.",
+    "name": "ScoutSuite",
+    "upstream": "https://github.com/nccgroup/ScoutSuite",
+    "section": "Cloud, IAM, infrastructure, and Kubernetes",
+    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "line": 30,
+    "columns": [
+      "[ScoutSuite](https://github.com/nccgroup/ScoutSuite) **(Source-reviewed)** \u2014 point-in-time multi-cloud configuration audit.",
+      "Python CLI gathers API configuration, writes HTML report and supports JSON/SQLite modes; source supports AWS/Azure/GCP and alpha providers. Mac/arm64 not explicitly certified.",
+      "Cloud SDKs and provider authentication; read access to enumerated APIs.",
+      "**On-demand.** Good offline review after collection; older Python project and alpha providers deserve version/scope review."
+    ],
+    "installed": false
+  },
+  {
+    "id": "defense-cloud-identity-73",
+    "category": "defense-cloud-identity",
+    "candidate": "[Steampipe](https://steampipe.io/docs) **(Source-reviewed)** \u2014 query cloud APIs as SQL tables; useful for reusable audit packs and evidence joins.",
+    "name": "Steampipe",
+    "upstream": "https://steampipe.io/docs",
+    "section": "Cloud, IAM, infrastructure, and Kubernetes",
+    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "line": 31,
+    "columns": [
+      "[Steampipe](https://steampipe.io/docs) **(Source-reviewed)** \u2014 query cloud APIs as SQL tables; useful for reusable audit packs and evidence joins.",
+      "CLI/Postgres-compatible query engine with plugins; table/CSV/JSON and dashboards via companion tooling. Official docs show plugin and credential-file/environment resolution; inspect native download for arm64.",
+      "Per-provider plugin and read-only API credentials; MFA/role refresh may require external login.",
+      "**Core for query-oriented teams.** SQL queries still generate live API calls; credentials are not automatically least privilege."
+    ],
+    "installed": false
+  },
+  {
+    "id": "defense-cloud-identity-74",
+    "category": "defense-cloud-identity",
+    "candidate": "[Checkov](https://www.checkov.io/1.Welcome/Quick%20Start.html) **(Source-reviewed)** \u2014 IaC policy scanning for Terraform and other deployment formats.",
+    "name": "Checkov",
+    "upstream": "https://www.checkov.io/1.Welcome/Quick%20Start.html",
+    "section": "Cloud, IAM, infrastructure, and Kubernetes",
+    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "line": 32,
+    "columns": [
+      "[Checkov](https://www.checkov.io/1.Welcome/Quick%20Start.html) **(Source-reviewed)** \u2014 IaC policy scanning for Terraform and other deployment formats.",
+      "Python CLI on local files/plans; CLI, JSON, SARIF, JUnit; CI/pre-commit. Python package is documented, but this does not establish native arm64 end-to-end.",
+      "Python environment; Prisma Cloud credentials optional for hosted features.",
+      "**Core.** Rule results depend on plan/context; send proprietary IaC to hosted integrations only when the engagement permits it."
+    ],
+    "installed": false
+  },
+  {
+    "id": "defense-cloud-identity-75",
+    "category": "defense-cloud-identity",
+    "candidate": "[KICS](https://docs.kics.io/latest/results/) **(Source-reviewed)** \u2014 query-based misconfiguration scanning for IaC and deployment files.",
+    "name": "KICS",
+    "upstream": "https://docs.kics.io/latest/results/",
+    "section": "Cloud, IAM, infrastructure, and Kubernetes",
+    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "line": 33,
+    "columns": [
+      "[KICS](https://docs.kics.io/latest/results/) **(Source-reviewed)** \u2014 query-based misconfiguration scanning for IaC and deployment files.",
+      "Official CLI reports JSON, SARIF, HTML and other formats; source/container scanning. Mac/arm64 support not established in inspected docs.",
+      "Downloaded query pack or bundled rules; no cloud credentials for static files.",
+      "**On-demand.** Complements Checkov with a different rule set; duplicate findings and query quality need triage."
+    ],
+    "installed": false
+  },
+  {
+    "id": "defense-cloud-identity-76",
+    "category": "defense-cloud-identity",
+    "candidate": "[kube-bench](https://github.com/aquasecurity/kube-bench) **(Source-reviewed)** \u2014 check Kubernetes node/control-plane configuration against CIS benchmarks.",
+    "name": "kube-bench",
+    "upstream": "https://github.com/aquasecurity/kube-bench",
+    "section": "Cloud, IAM, infrastructure, and Kubernetes",
+    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "line": 34,
+    "columns": [
+      "[kube-bench](https://github.com/aquasecurity/kube-bench) **(Source-reviewed)** \u2014 check Kubernetes node/control-plane configuration against CIS benchmarks.",
+      "Runs as a node-local/containerized audit; JSON/JUnit/text. Mac host is not a representative Kubernetes node; use on the actual supported cluster node or suitable node image.",
+      "Kubernetes/node access and benchmark config; privileged/container host access for node checks.",
+      "**Platform-limited.** Docker Desktop\u2019s Linux VM is not proof of production node posture."
+    ],
+    "installed": false
+  },
+  {
+    "id": "defense-cloud-identity-77",
+    "category": "defense-cloud-identity",
+    "candidate": "[kubeaudit](https://github.com/Shopify/kubeaudit) **(Source-reviewed)** \u2014 review Kubernetes resources for common security controls.",
+    "name": "kubeaudit",
+    "upstream": "https://github.com/Shopify/kubeaudit",
+    "section": "Cloud, IAM, infrastructure, and Kubernetes",
+    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "line": 35,
+    "columns": [
+      "[kubeaudit](https://github.com/Shopify/kubeaudit) **(Source-reviewed)** \u2014 review Kubernetes resources for common security controls.",
+      "CLI supports local manifest mode and cluster mode via kubeconfig; JSON output; Mac operator path is plausible through published binaries, but the inspected repo did not promise arm64.",
+      "Kubeconfig and read-only RBAC for live cluster; static YAML needs no credentials.",
+      "**On-demand.** Static and live modes answer different questions; pin cluster context and avoid accidental mutation."
+    ],
+    "installed": false
+  },
+  {
+    "id": "defense-cloud-identity-78",
+    "category": "defense-cloud-identity",
+    "candidate": "[KubeLinter](https://docs.kubelinter.io/) **(Source-reviewed)** \u2014 lint Kubernetes YAML and Helm charts for security/readiness checks.",
+    "name": "KubeLinter",
+    "upstream": "https://docs.kubelinter.io/",
+    "section": "Cloud, IAM, infrastructure, and Kubernetes",
+    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "line": 36,
+    "columns": [
+      "[KubeLinter](https://docs.kubelinter.io/) **(Source-reviewed)** \u2014 lint Kubernetes YAML and Helm charts for security/readiness checks.",
+      "CLI scans local files/charts and emits findings/exit status; no cluster contact required. Mac/arm64 not explicitly established by cited docs.",
+      "Helm/chart rendering dependencies as applicable; no credentials for local manifests.",
+      "**On-demand.** Upstream docs describe it as early-stage; policy findings require context."
+    ],
+    "installed": false
+  },
+  {
+    "id": "defense-cloud-identity-79",
+    "category": "defense-cloud-identity",
+    "candidate": "[Sigma rules](https://github.com/SigmaHQ/sigma) **(Source-reviewed)** \u2014 portable log-detection rule content.",
+    "name": "Sigma rules",
+    "upstream": "https://github.com/SigmaHQ/sigma",
+    "section": "Detection content, endpoint inventory, and host triage",
+    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "line": 42,
+    "columns": [
+      "[Sigma rules](https://github.com/SigmaHQ/sigma) **(Source-reviewed)** \u2014 portable log-detection rule content.",
+      "YAML rule corpus consumed by pySigma/SIEMs or compatible hunters; the rule corpus itself is platform-independent.",
+      "A target log source/schema and SIEM or local converter; no credentials to read rule files.",
+      "**Reference.** A rule does not execute by itself; source OS, event IDs, and field mappings affect fidelity."
+    ],
+    "installed": false
+  },
+  {
+    "id": "defense-cloud-identity-80",
+    "category": "defense-cloud-identity",
+    "candidate": "[pySigma / Sigma CLI](https://github.com/SigmaHQ/pySigma) **(Source-reviewed)** \u2014 parse/process Sigma and translate to supported query languages.",
+    "name": "pySigma / Sigma CLI",
+    "upstream": "https://github.com/SigmaHQ/pySigma",
+    "section": "Detection content, endpoint inventory, and host triage",
+    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "line": 43,
+    "columns": [
+      "[pySigma / Sigma CLI](https://github.com/SigmaHQ/pySigma) **(Source-reviewed)** \u2014 parse/process Sigma and translate to supported query languages.",
+      "Python library and CLI; backend-generated queries and pipeline integration. The legacy `sigmac` is superseded; pySigma is current conversion architecture.",
+      "Python and backend plug-ins; credentials only to run queries in remote SIEM.",
+      "**Core for detection engineering.** Backend capability and pipeline mapping constrain rule translation; inspect unsupported modifiers."
+    ],
+    "installed": false
+  },
+  {
+    "id": "defense-cloud-identity-81",
+    "category": "defense-cloud-identity",
+    "candidate": "[YARA](https://yara.readthedocs.io/en/stable/gettingstarted.html) **(Source-reviewed)** \u2014 scan files/directories/processes using rule sets.",
+    "name": "YARA",
+    "upstream": "https://yara.readthedocs.io/en/stable/gettingstarted.html",
+    "section": "Detection content, endpoint inventory, and host triage",
+    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "line": 44,
+    "columns": [
+      "[YARA](https://yara.readthedocs.io/en/stable/gettingstarted.html) **(Source-reviewed)** \u2014 scan files/directories/processes using rule sets.",
+      "Official docs say macOS and Homebrew supported; CLI, compiled rule files, libyara/Python API. Apple Silicon-specific build not directly called out.",
+      "Rule corpus; optional OpenSSL/libyara build dependencies; no credentials.",
+      "**Core.** Rule quality and false positives vary; treat third-party compiled rule files as untrusted inputs."
+    ],
+    "installed": false
+  },
+  {
+    "id": "defense-cloud-identity-82",
+    "category": "defense-cloud-identity",
+    "candidate": "[YARA-X](https://virustotal.github.io/yara-x/docs/intro/installation/) **(Source-reviewed)** \u2014 newer YARA-compatible engine and rule scanning.",
+    "name": "YARA-X",
+    "upstream": "https://virustotal.github.io/yara-x/docs/intro/installation/",
+    "section": "Detection content, endpoint inventory, and host triage",
+    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "line": 45,
+    "columns": [
+      "[YARA-X](https://virustotal.github.io/yara-x/docs/intro/installation/) **(Source-reviewed)** \u2014 newer YARA-compatible engine and rule scanning.",
+      "Official docs provide macOS binaries and Homebrew; CLI and Python package. Release architecture must be checked for arm64.",
+      "Rust if building; rule corpus; no credentials.",
+      "**On-demand.** Different engine implementation can have compatibility differences from legacy YARA; validate rule behavior before substituting."
+    ],
+    "installed": false
+  },
+  {
+    "id": "defense-cloud-identity-83",
+    "category": "defense-cloud-identity",
+    "candidate": "[osquery](https://github.com/osquery/osquery) **(Source-reviewed)** \u2014 local SQL inventory and event-backed system queries, including macOS tables.",
+    "name": "osquery",
+    "upstream": "https://github.com/osquery/osquery",
+    "section": "Detection content, endpoint inventory, and host triage",
+    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "line": 46,
+    "columns": [
+      "[osquery](https://github.com/osquery/osquery) **(Source-reviewed)** \u2014 local SQL inventory and event-backed system queries, including macOS tables.",
+      "Upstream lists macOS; standalone `osqueryi` emits JSON/CSV; daemon schedules queries/logging. Official docs note macOS 10.15+ core behavior and OS-version table differences.",
+      "Package installer; root/full-disk access for certain tables; optional TLS enrollment secret and cert for remote fleet.",
+      "**Core.** Excellent local evidence/query substrate; event publishers and high-privilege visibility need deliberate configuration."
+    ],
+    "installed": false
+  },
+  {
+    "id": "defense-cloud-identity-84",
+    "category": "defense-cloud-identity",
+    "candidate": "[Fleet](https://fleetdm.com/guides/enroll-hosts) **(Source-reviewed)** \u2014 manage osquery hosts, query packs, inventory, and results.",
+    "name": "Fleet",
+    "upstream": "https://fleetdm.com/guides/enroll-hosts",
+    "section": "Detection content, endpoint inventory, and host triage",
+    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "line": 47,
+    "columns": [
+      "[Fleet](https://fleetdm.com/guides/enroll-hosts) **(Source-reviewed)** \u2014 manage osquery hosts, query packs, inventory, and results.",
+      "Web service plus macOS `fleetd`/osquery agents; queries/results via Fleet API/UI, with platform-aware packs.",
+      "Server/database, TLS, enroll secret or PKI; managed host deployment and macOS Full Disk Access for full visibility.",
+      "**On-demand / platform-limited.** Valuable if a managed fleet exists; disproportionate for a one-Mac harness and introduces sensitive central telemetry."
+    ],
+    "installed": false
+  },
+  {
+    "id": "defense-cloud-identity-85",
+    "category": "defense-cloud-identity",
+    "candidate": "[Velociraptor](https://docs.velociraptor.app/docs/deployment/offline_collections/) **(Source-reviewed)** \u2014 DFIR collection, endpoint hunts, VQL, artifact packaging.",
+    "name": "Velociraptor",
+    "upstream": "https://docs.velociraptor.app/docs/deployment/offline_collections/",
+    "section": "Detection content, endpoint inventory, and host triage",
+    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "line": 48,
+    "columns": [
+      "[Velociraptor](https://docs.velociraptor.app/docs/deployment/offline_collections/) **(Source-reviewed)** \u2014 DFIR collection, endpoint hunts, VQL, artifact packaging.",
+      "Upstream documents macOS binaries and offline generic collector; server/client and portable collection container; output can be imported to server.",
+      "Server config or preconfigured collector; optional cloud destination credentials; endpoint privacy permissions.",
+      "**Core for DFIR, on-demand otherwise.** macOS repackaging invalidates signatures; offline mode is predefined and lacks interactive progress."
+    ],
+    "installed": false
+  },
+  {
+    "id": "defense-cloud-identity-86",
+    "category": "defense-cloud-identity",
+    "candidate": "[Volatility 3](https://volatility3.readthedocs.io/en/stable/getting-started-mac-tutorial.html) **(Source-reviewed)** \u2014 memory-image analysis.",
+    "name": "Volatility 3",
+    "upstream": "https://volatility3.readthedocs.io/en/stable/getting-started-mac-tutorial.html",
+    "section": "Detection content, endpoint inventory, and host triage",
+    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "line": 49,
+    "columns": [
+      "[Volatility 3](https://volatility3.readthedocs.io/en/stable/getting-started-mac-tutorial.html) **(Source-reviewed)** \u2014 memory-image analysis.",
+      "Python CLI works as an analyst-side parser; macOS image plugins exist, but upstream says macOS analysis support is no longer actively maintained.",
+      "Python package; matching symbol tables; separate authorized acquisition tooling/image.",
+      "**On-demand / platform-limited.** It does not acquire memory; Mac analysis is explicitly maintenance-limited and symbols/build matching matter."
+    ],
+    "installed": false
+  },
+  {
+    "id": "defense-cloud-identity-87",
+    "category": "defense-cloud-identity",
+    "candidate": "[Chainsaw](https://github.com/WithSecureOpenSource/chainsaw/wiki/Usage) **(Source-reviewed)** \u2014 hunt Windows EVTX files with Sigma and native rules.",
+    "name": "Chainsaw",
+    "upstream": "https://github.com/WithSecureOpenSource/chainsaw/wiki/Usage",
+    "section": "Detection content, endpoint inventory, and host triage",
+    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "line": 50,
+    "columns": [
+      "[Chainsaw](https://github.com/WithSecureOpenSource/chainsaw/wiki/Usage) **(Source-reviewed)** \u2014 hunt Windows EVTX files with Sigma and native rules.",
+      "Rust CLI; reads offline EVTX; JSON/CSV and terminal output. No Mac/arm64 support guarantee in inspected usage docs.",
+      "Event logs, Sigma rules, field mappings; no credentials for offline files.",
+      "**Core for Windows log cases.** Foreign evidence parser; rule support depends on event mapping and source data."
+    ],
+    "installed": false
+  },
+  {
+    "id": "defense-cloud-identity-88",
+    "category": "defense-cloud-identity",
+    "candidate": "[Hayabusa](https://github.com/Yamato-Security/hayabusa) **(Source-reviewed)** \u2014 Windows event-log timeline, threat hunting, and detection.",
+    "name": "Hayabusa",
+    "upstream": "https://github.com/Yamato-Security/hayabusa",
+    "section": "Detection content, endpoint inventory, and host triage",
+    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "line": 51,
+    "columns": [
+      "[Hayabusa](https://github.com/Yamato-Security/hayabusa) **(Source-reviewed)** \u2014 Windows event-log timeline, threat hunting, and detection.",
+      "Rust release project processes EVTX and produces CSV/JSON timeline; verify release assets for Darwin arm64.",
+      "EVTX and rule/config packs; offline files need no credentials.",
+      "**On-demand.** Windows-specific evidence; timeline quality depends on logs, timezone, and rule version."
+    ],
+    "installed": false
+  },
+  {
+    "id": "defense-cloud-identity-89",
+    "category": "defense-cloud-identity",
+    "candidate": "[Plaso / log2timeline](https://github.com/log2timeline/plaso) **(Source-reviewed)** \u2014 normalize filesystem/log artifacts into a forensic timeline.",
+    "name": "Plaso / log2timeline",
+    "upstream": "https://github.com/log2timeline/plaso",
+    "section": "Detection content, endpoint inventory, and host triage",
+    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "line": 52,
+    "columns": [
+      "[Plaso / log2timeline](https://github.com/log2timeline/plaso) **(Source-reviewed)** \u2014 normalize filesystem/log artifacts into a forensic timeline.",
+      "Python tooling, primarily documented/package-supported on Linux and Windows; macOS analyst compatibility not established here. Output storage feeds Timesketch and other review tools.",
+      "Python and parsers; disk image/files; may need elevated access for collection, not analysis.",
+      "**On-demand / platform-limited.** Parser and image coverage vary; for reproducible forensic acquisition, preserve originals and hashes."
+    ],
+    "installed": false
+  },
+  {
+    "id": "defense-cloud-identity-90",
+    "category": "defense-cloud-identity",
+    "candidate": "[TShark](https://www.wireshark.org/docs/man-pages/tshark.html) **(Source-reviewed)** \u2014 decode, filter, capture, and export packet data.",
+    "name": "TShark",
+    "upstream": "https://www.wireshark.org/docs/man-pages/tshark.html",
+    "section": "Packet, network, and log analysis",
+    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "line": 58,
+    "columns": [
+      "[TShark](https://www.wireshark.org/docs/man-pages/tshark.html) **(Source-reviewed)** \u2014 decode, filter, capture, and export packet data.",
+      "Wireshark ships macOS app/CLI; reads/writes pcap/pcapng, fields/JSON/text; pcap capture permissions on live interfaces.",
+      "Wireshark/dumpcap, capture interface permissions; no network credentials for offline PCAP.",
+      "**Core.** Mac capture sees only traffic available to its interfaces; use packet files for broader visibility."
+    ],
+    "installed": false
+  },
+  {
+    "id": "defense-cloud-identity-91",
+    "category": "defense-cloud-identity",
+    "candidate": "[Zeek](https://docs.zeek.org/en/current/install.html) **(Source-reviewed)** \u2014 network security monitoring and protocol metadata from PCAP/live traffic.",
+    "name": "Zeek",
+    "upstream": "https://docs.zeek.org/en/current/install.html",
+    "section": "Packet, network, and log analysis",
+    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "line": 59,
+    "columns": [
+      "[Zeek](https://docs.zeek.org/en/current/install.html) **(Source-reviewed)** \u2014 network security monitoring and protocol metadata from PCAP/live traffic.",
+      "Official docs include macOS build/install; structured per-protocol logs (JSON configurable) and scripts. Confirm arm64 package/build path at pinned release.",
+      "Build toolchain or package; offline PCAP needs no credentials; live capture needs packet privileges.",
+      "**Core for PCAP workflows.** Protocol logs are metadata, not complete payload evidence; macOS live capture is not a network tap."
+    ],
+    "installed": false
+  },
+  {
+    "id": "defense-cloud-identity-92",
+    "category": "defense-cloud-identity",
+    "candidate": "[Suricata](https://docs.suricata.io/en/latest/) **(Source-reviewed)** \u2014 signature/behavior network IDS and offline PCAP analysis.",
+    "name": "Suricata",
+    "upstream": "https://docs.suricata.io/en/latest/",
+    "section": "Packet, network, and log analysis",
+    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "line": 60,
+    "columns": [
+      "[Suricata](https://docs.suricata.io/en/latest/) **(Source-reviewed)** \u2014 signature/behavior network IDS and offline PCAP analysis.",
+      "EVE JSON outputs and alert/flow/event records; docs emphasize Linux interfaces/AF_PACKET and Windows/macOS support is not a standard capture path. Mac PCAP analysis may be build-dependent.",
+      "Rule sets; libpcap and platform-specific capture features; no credentials for offline files.",
+      "**Platform-limited / on-demand.** Prefer a supported Linux sensor/container/VM for live capture; do not infer Mac-native parity from source availability."
+    ],
+    "installed": false
+  },
+  {
+    "id": "defense-cloud-identity-93",
+    "category": "defense-cloud-identity",
+    "candidate": "[Arkime](https://arkime.com/) **(Source-reviewed)** \u2014 searchable packet capture and session metadata at scale.",
+    "name": "Arkime",
+    "upstream": "https://arkime.com/",
+    "section": "Packet, network, and log analysis",
+    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "line": 61,
+    "columns": [
+      "[Arkime](https://arkime.com/) **(Source-reviewed)** \u2014 searchable packet capture and session metadata at scale.",
+      "Multi-service capture/viewer stack, PCAP plus Elasticsearch/OpenSearch-style storage; inspected install path is server/Linux-centric, no Apple Silicon native promise.",
+      "Capture node, search datastore, storage, interfaces and privileges; credentials for datastore.",
+      "**Platform-limited.** Better as a dedicated sensor/service than a laptop package; storage and packet visibility dominate."
+    ],
+    "installed": false
+  },
+  {
+    "id": "defense-cloud-identity-94",
+    "category": "defense-cloud-identity",
+    "candidate": "[Nmap](https://nmap.org/book/inst-macosx.html) **(Source-reviewed)** \u2014 authorized service discovery and network assessment.",
+    "name": "Nmap",
+    "upstream": "https://nmap.org/book/inst-macosx.html",
+    "section": "Authorized offense and application assessment candidates",
+    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "line": 67,
+    "columns": [
+      "[Nmap](https://nmap.org/book/inst-macosx.html) **(Source-reviewed)** \u2014 authorized service discovery and network assessment.",
+      "Mac installer/source build documented; current download page lists x86-64 Mac binary, so Apple Silicon native support is unconfirmed. XML, grepable, and normal output support downstream parsing.",
+      "Elevated privileges for some scan modes; named target ranges and network reachability.",
+      "**Authorized Offense: On-demand.** Use only inside engagement scope; discovery is active traffic and results are point-in-time."
+    ],
+    "installed": false
+  },
+  {
+    "id": "defense-cloud-identity-95",
+    "category": "defense-cloud-identity",
+    "candidate": "[OWASP ZAP](https://www.zaproxy.org/docs/desktop/cmdline/) **(Source-reviewed)** \u2014 web application proxy, passive analysis, and scoped active testing.",
+    "name": "OWASP ZAP",
+    "upstream": "https://www.zaproxy.org/docs/desktop/cmdline/",
+    "section": "Authorized offense and application assessment candidates",
+    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "line": 68,
+    "columns": [
+      "[OWASP ZAP](https://www.zaproxy.org/docs/desktop/cmdline/) **(Source-reviewed)** \u2014 web application proxy, passive analysis, and scoped active testing.",
+      "macOS app and CLI documented; API/automation framework and HTML/JSON/XML reports.",
+      "Bundled Java in macOS installer; test account/session for authenticated app testing; app endpoints and scope.",
+      "**Authorized Offense: On-demand.** Active scan can alter application state; start from an agreed target list and test window."
+    ],
+    "installed": false
+  },
+  {
+    "id": "defense-cloud-identity-96",
+    "category": "defense-cloud-identity",
+    "candidate": "[Nuclei](https://docs.projectdiscovery.io/tools/nuclei/overview) **(Source-reviewed)** \u2014 template-driven verification of known web/service issues.",
+    "name": "Nuclei",
+    "upstream": "https://docs.projectdiscovery.io/tools/nuclei/overview",
+    "section": "Authorized offense and application assessment candidates",
+    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "line": 69,
+    "columns": [
+      "[Nuclei](https://docs.projectdiscovery.io/tools/nuclei/overview) **(Source-reviewed)** \u2014 template-driven verification of known web/service issues.",
+      "CLI supports JSONL output and input from URLs, OpenAPI, Burp exports, and logs; Mac/arm64 should be confirmed from release assets.",
+      "Template packs and network access; authenticated targets may require scoped request configuration.",
+      "**Authorized Offense: On-demand.** Templates issue requests and may be intrusive; curate templates and targets by engagement."
+    ],
+    "installed": false
+  },
+  {
+    "id": "defense-cloud-identity-97",
+    "category": "defense-cloud-identity",
+    "candidate": "[Metasploit Framework](https://docs.metasploit.com/docs/using-metasploit/getting-started/nightly-installers.html) **(Source-reviewed)** \u2014 broad vulnerability validation and lab exercise framework.",
+    "name": "Metasploit Framework",
+    "upstream": "https://docs.metasploit.com/docs/using-metasploit/getting-started/nightly-installers.html",
+    "section": "Authorized offense and application assessment candidates",
+    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "line": 70,
+    "columns": [
+      "[Metasploit Framework](https://docs.metasploit.com/docs/using-metasploit/getting-started/nightly-installers.html) **(Source-reviewed)** \u2014 broad vulnerability validation and lab exercise framework.",
+      "Official nightly installer for macOS; Ruby/PostgreSQL dependencies included; console plus authenticated JSON-RPC API. Docs do not establish Apple Silicon support for the installer.",
+      "Local database optional for some workflows; API bearer token when RPC is enabled; target-specific credentials only when authorized.",
+      "**Authorized Offense: Platform-limited / on-demand.** Broad module surface; expose only reviewed checks and lab workflows to Pi."
+    ],
+    "installed": false
+  },
+  {
+    "id": "defense-cloud-identity-98",
+    "category": "defense-cloud-identity",
+    "candidate": "[Sliver](https://github.com/BishopFox/sliver) **(Source-reviewed)** \u2014 specialist adversary-emulation server/client and endpoint agent framework.",
+    "name": "Sliver",
+    "upstream": "https://github.com/BishopFox/sliver",
+    "section": "Authorized offense and application assessment candidates",
+    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "line": 71,
+    "columns": [
+      "[Sliver](https://github.com/BishopFox/sliver) **(Source-reviewed)** \u2014 specialist adversary-emulation server/client and endpoint agent framework.",
+      "Upstream says server/client support macOS, Windows, and Linux; current Apple Silicon asset needs release verification. Operator results flow through client/API; implants run on authorized lab hosts.",
+      "Server and operator configuration; MinGW/Metasploit optional for some features; lab network and endpoint access.",
+      "**Authorized Offense: Lab-only specialist.** C2 and implant capabilities are intentionally isolated from Defense mode and are not required for routine assessment."
+    ],
+    "installed": false
+  },
+  {
+    "id": "defense-cloud-identity-99",
+    "category": "defense-cloud-identity",
+    "candidate": "[BloodHound CE](https://github.com/SpecterOps/BloodHound/tree/main/examples/docker-compose) **(Source-reviewed)** \u2014 graph and analyze directory identity relationships.",
+    "name": "BloodHound CE",
+    "upstream": "https://github.com/SpecterOps/BloodHound/tree/main/examples/docker-compose",
+    "section": "Network, directory, and identity review",
+    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "line": 77,
+    "columns": [
+      "[BloodHound CE](https://github.com/SpecterOps/BloodHound/tree/main/examples/docker-compose) **(Source-reviewed)** \u2014 graph and analyze directory identity relationships.",
+      "Official Compose example runs the server stack in containers and exposes UI/API; import collector ZIP/JSON data. Docker Desktop is a Mac path, but no explicit Apple Silicon certification in inspected docs.",
+      "Docker-compatible runtime, compose, substantial RAM/storage; server admin password; directory data is sensitive.",
+      "**On-demand.** A local graph server is separate from data collection; restrict imported data and bind/network exposure."
+    ],
+    "installed": false
+  },
+  {
+    "id": "defense-cloud-identity-100",
+    "category": "defense-cloud-identity",
+    "candidate": "[SharpHound](https://github.com/SpecterOps/SharpHound) **(Source-reviewed)** \u2014 collect Active Directory relationship data for BloodHound.",
+    "name": "SharpHound",
+    "upstream": "https://github.com/SpecterOps/SharpHound",
+    "section": "Network, directory, and identity review",
+    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "line": 78,
+    "columns": [
+      "[SharpHound](https://github.com/SpecterOps/SharpHound) **(Source-reviewed)** \u2014 collect Active Directory relationship data for BloodHound.",
+      "Windows collector produces compressed JSON data for import; Mac is not the collector host.",
+      "Windows host/domain reachability; authorized domain account; collector-compatible BloodHound version.",
+      "**Platform-limited.** Requires a Windows collection context; collection is observable and can be broad."
+    ],
+    "installed": false
+  },
+  {
+    "id": "defense-cloud-identity-101",
+    "category": "defense-cloud-identity",
+    "candidate": "[Impacket](https://github.com/fortra/impacket) **(Source-reviewed)** \u2014 protocol library and utility suite for SMB, MSRPC, Kerberos, LDAP, and packet formats.",
+    "name": "Impacket",
+    "upstream": "https://github.com/fortra/impacket",
+    "section": "Network, directory, and identity review",
+    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "line": 79,
+    "columns": [
+      "[Impacket](https://github.com/fortra/impacket) **(Source-reviewed)** \u2014 protocol library and utility suite for SMB, MSRPC, Kerberos, LDAP, and packet formats.",
+      "Python package with CLI examples and parsed protocol outputs; primary docs prescribe pipx but do not certify macOS/arm64.",
+      "Python, network access to a remote service; credentials/tickets only for authorized authenticated protocols.",
+      "**On-demand / platform-limited.** Powerful dual-use toolkit; keep role allowlist tightly scoped and omit credential access/relay workflows from default pack."
+    ],
+    "installed": false
+  },
+  {
+    "id": "defense-cloud-identity-102",
+    "category": "defense-cloud-identity",
+    "candidate": "[NetExec](https://github.com/Pennyw0rth/NetExec) **(Source-reviewed)** \u2014 inventory and assessment of authorized SMB/LDAP/WinRM/SSH service estates.",
+    "name": "NetExec",
+    "upstream": "https://github.com/Pennyw0rth/NetExec",
+    "section": "Network, directory, and identity review",
+    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "line": 80,
+    "columns": [
+      "[NetExec](https://github.com/Pennyw0rth/NetExec) **(Source-reviewed)** \u2014 inventory and assessment of authorized SMB/LDAP/WinRM/SSH service estates.",
+      "CLI and local database/report outputs; docs center Kali/Linux package workflows, so Mac/arm64 is not assumed.",
+      "Python/native dependencies, target network; often supplied account creds for authenticated checks.",
+      "**Platform-limited.** Active network checks can be intrusive; retain only approved inventory modules, not generalized execution features."
+    ],
+    "installed": false
+  },
+  {
+    "id": "defense-cloud-identity-103",
+    "category": "defense-cloud-identity",
+    "candidate": "[Certipy](https://github.com/ly4k/Certipy) **(Source-reviewed)** \u2014 assess Active Directory Certificate Services configuration and evidence.",
+    "name": "Certipy",
+    "upstream": "https://github.com/ly4k/Certipy",
+    "section": "Network, directory, and identity review",
+    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "line": 81,
+    "columns": [
+      "[Certipy](https://github.com/ly4k/Certipy) **(Source-reviewed)** \u2014 assess Active Directory Certificate Services configuration and evidence.",
+      "Python CLI/reports; cross-platform client support not explicitly certified in inspected docs; talks to remote AD CS.",
+      "Python/Impacket; domain DNS/network; typically authorized domain credentials for complete reads.",
+      "**On-demand / platform-limited.** Scope to read-only assessment/reporting; environment-specific AD CS support and permission coverage matter."
+    ],
+    "installed": false
+  },
+  {
+    "id": "defense-cloud-identity-104",
+    "category": "defense-cloud-identity",
+    "candidate": "[OpenLDAP ldapsearch](https://www.openldap.org/doc/admin/) **(Source-reviewed)** \u2014 query LDAP directory attributes with explicit filters/base/scope.",
+    "name": "OpenLDAP ldapsearch",
+    "upstream": "https://www.openldap.org/doc/admin/",
+    "section": "Network, directory, and identity review",
+    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "line": 82,
+    "columns": [
+      "[OpenLDAP ldapsearch](https://www.openldap.org/doc/admin/) **(Source-reviewed)** \u2014 query LDAP directory attributes with explicit filters/base/scope.",
+      "Native command-line client available from OpenLDAP distributions; LDIF/text output. Mac package availability depends on selected package manager; Apple system tooling may differ.",
+      "LDAP/LDAPS endpoint and CA trust; anonymous, SASL, or authorized bind credentials as configured.",
+      "**Core for identity diagnostics.** Minimal general-purpose query client; use narrow filters and protect returned directory data."
+    ],
+    "installed": false
+  },
+  {
+    "id": "defense-cloud-identity-105",
+    "category": "defense-cloud-identity",
+    "candidate": "[ldapdomaindump](https://github.com/dirkjanm/ldapdomaindump) **(Source-reviewed)** \u2014 turn authorized AD LDAP reads into domain/user/group/computer reports.",
+    "name": "ldapdomaindump",
+    "upstream": "https://github.com/dirkjanm/ldapdomaindump",
+    "section": "Network, directory, and identity review",
+    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "line": 83,
+    "columns": [
+      "[ldapdomaindump](https://github.com/dirkjanm/ldapdomaindump) **(Source-reviewed)** \u2014 turn authorized AD LDAP reads into domain/user/group/computer reports.",
+      "Python client produces JSON, HTML, and grep-friendly outputs; Mac/arm64 not expressly guaranteed.",
+      "Python/ldap3/Impacket; domain controller connectivity and credential for non-anonymous data.",
+      "**On-demand.** Output can expose broad identity inventory; historical project and AD schema/permissions affect completeness."
+    ],
+    "installed": false
+  },
+  {
+    "id": "defense-cloud-identity-106",
+    "category": "defense-cloud-identity",
+    "candidate": "[enum4linux-ng](https://github.com/cddmp/enum4linux-ng) **(Source-reviewed)** \u2014 SMB/NetBIOS/RPC/LDAP inventory of Windows/Samba hosts.",
+    "name": "enum4linux-ng",
+    "upstream": "https://github.com/cddmp/enum4linux-ng",
+    "section": "Network, directory, and identity review",
+    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "line": 84,
+    "columns": [
+      "[enum4linux-ng](https://github.com/cddmp/enum4linux-ng) **(Source-reviewed)** \u2014 SMB/NetBIOS/RPC/LDAP inventory of Windows/Samba hosts.",
+      "Python wrapper emits YAML/JSON; depends on Samba client utilities (`smbclient`, `rpcclient`, etc.); docs show Linux packages and generic Python but no native Mac certification.",
+      "Samba tools plus Python packages; remote host reachable; optional authorized credentials.",
+      "**Platform-limited.** Network enumeration is active; use only for named authorized inventory targets and avoid its guessing/brute-force options."
+    ],
+    "installed": false
+  },
+  {
+    "id": "defense-cloud-identity-107",
+    "category": "defense-cloud-identity",
+    "candidate": "[MITRE CALDERA](https://caldera.readthedocs.io/en/latest/) **(Source-reviewed)** \u2014 orchestrate ATT&CK emulation and test detection coverage.",
+    "name": "MITRE CALDERA",
+    "upstream": "https://caldera.readthedocs.io/en/latest/",
+    "section": "Controlled exercise and validation frameworks",
+    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "line": 90,
+    "columns": [
+      "[MITRE CALDERA](https://caldera.readthedocs.io/en/latest/) **(Source-reviewed)** \u2014 orchestrate ATT&CK emulation and test detection coverage.",
+      "CALDERA server plus Sandcat agent; upstream docs explicitly say Sandcat can target Windows, Linux, and macOS. Operations/results use server API/UI and plugins.",
+      "Python/server dependencies, lab network, agent deployment; usually server credentials and target access.",
+      "**On-demand / platform-limited.** Use an isolated lab and a preapproved ability set; agent builds and plugin behaviors vary."
+    ],
+    "installed": false
+  },
+  {
+    "id": "defense-cloud-identity-108",
+    "category": "defense-cloud-identity",
+    "candidate": "[Atomic Red Team / Invoke-AtomicRedTeam](https://www.atomicredteam.io/docs/invoke-atomicredteam/getting-started) **(Source-reviewed)** \u2014 small, ATT&CK-mapped tests to validate telemetry and controls.",
+    "name": "Atomic Red Team / Invoke-AtomicRedTeam",
+    "upstream": "https://www.atomicredteam.io/docs/invoke-atomicredteam/getting-started",
+    "section": "Controlled exercise and validation frameworks",
+    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "line": 91,
+    "columns": [
+      "[Atomic Red Team / Invoke-AtomicRedTeam](https://www.atomicredteam.io/docs/invoke-atomicredteam/getting-started) **(Source-reviewed)** \u2014 small, ATT&CK-mapped tests to validate telemetry and controls.",
+      "Official docs explicitly state cross-platform Windows/Linux/macOS execution; PowerShell Core on Mac/Linux; test definitions/results integrate with CI and cleanup metadata.",
+      "PowerShell Core and module/test dependencies; some tests require admin/root or external services.",
+      "**Core for a lab validation pack.** Each atomic test is an action; select only harmless approved tests in a disposable or designated lab."
+    ],
+    "installed": false
+  },
+  {
+    "id": "defense-cloud-identity-109",
+    "category": "defense-cloud-identity",
+    "candidate": "[Stratus Red Team](https://stratus-red-team.cloud/) **(Source-reviewed)** \u2014 cloud control-plane behavior emulation for detection validation.",
+    "name": "Stratus Red Team",
+    "upstream": "https://stratus-red-team.cloud/",
+    "section": "Controlled exercise and validation frameworks",
+    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "line": 92,
+    "columns": [
+      "[Stratus Red Team](https://stratus-red-team.cloud/) **(Source-reviewed)** \u2014 cloud control-plane behavior emulation for detection validation.",
+      "CLI-driven cloud technique simulations; documented support centers AWS/Azure/GCP environments; Apple Silicon operator path not established in inspected docs. Outputs are CLI/cloud telemetry.",
+      "Cloud CLI/SDK, explicitly scoped test account, credentials with test-specific permissions; cleanup is essential.",
+      "**Authorized Offense: On-demand / platform-limited.** Exercises modify cloud state and may create costs; use a test account or a production account only when the engagement explicitly covers it."
+    ],
+    "installed": false
+  },
+  {
+    "id": "defense-cloud-identity-110",
+    "category": "defense-cloud-identity",
+    "candidate": "[Prelude Operator](https://github.com/preludeorg) **(Catalog-only)** \u2014 possible assessment-plan and telemetry platform candidate.",
+    "name": "Prelude Operator",
+    "upstream": "https://github.com/preludeorg",
+    "section": "Controlled exercise and validation frameworks",
+    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "line": 93,
+    "columns": [
+      "[Prelude Operator](https://github.com/preludeorg) **(Catalog-only)** \u2014 possible assessment-plan and telemetry platform candidate.",
+      "The A-poc entry points at the product; this review did not validate a current public Operator repository or Mac/arm64 support.",
+      "Product account/service and endpoint agents would need separate evaluation.",
+      "**Reference only.** No implementation or compatibility claim is made from the catalog entry."
+    ],
+    "installed": false
+  },
+  {
+    "id": "defense-cloud-identity-111",
+    "category": "defense-cloud-identity",
+    "candidate": "[PurpleSharp](https://www.purplesharp.com/en/latest/) **(Source-reviewed)** \u2014 Windows AD adversary simulation that produces telemetry for blue-team testing.",
+    "name": "PurpleSharp",
+    "upstream": "https://www.purplesharp.com/en/latest/",
+    "section": "Controlled exercise and validation frameworks",
+    "source": "research/DEFENSE-CLOUD-IDENTITY-TOOLS.md",
+    "line": 94,
+    "columns": [
+      "[PurpleSharp](https://www.purplesharp.com/en/latest/) **(Source-reviewed)** \u2014 Windows AD adversary simulation that produces telemetry for blue-team testing.",
+      "C# utility targets Windows Active Directory and emits local/Windows event telemetry; not a Mac-native exercise agent.",
+      "Windows/.NET execution context, lab AD domain; authorized domain rights vary by scenario.",
+      "**Platform-limited.** Windows-only use; an alternative to emulate detections in a contained Windows lab, not a Mac workstation pack."
+    ],
+    "installed": false
+  },
+  {
+    "id": "browser-reverse-112",
+    "category": "browser-reverse",
+    "candidate": "[REA CLI + MCP](https://github.com/morluto/rea)",
+    "name": "REA CLI + MCP",
+    "upstream": "https://github.com/morluto/rea",
+    "section": "Tool and capability inventory",
+    "source": "research/BROWSER-REA-TOOLS.md",
+    "line": 61,
+    "columns": [
+      "1",
+      "[REA CLI + MCP](https://github.com/morluto/rea)",
+      "Core",
+      "Node.js 22.19+/24.11+/26+ and npm per upstream docs. Pi stdio server plus bundled, matching skill. Capability and provider catalogs are runtime/package-specific."
+    ],
+    "installed": false
+  },
+  {
+    "id": "browser-reverse-113",
+    "category": "browser-reverse",
+    "candidate": "[Obscura](https://github.com/h4ckf0r0day/obscura) browser",
+    "name": "Obscura",
+    "upstream": "https://github.com/h4ckf0r0day/obscura",
+    "section": "Tool and capability inventory",
+    "source": "research/BROWSER-REA-TOOLS.md",
+    "line": 62,
+    "columns": [
+      "2",
+      "[Obscura](https://github.com/h4ckf0r0day/obscura) browser",
+      "On-demand",
+      "Upstream provides an Apple Silicon aarch64 macOS release archive with renderer; says no Chrome or Node dependency. MCP for direct simple actions; CDP for contexts/targets/interception. Independent engine, not REA\u2019s documented Chrome-family scenario provider."
+    ],
+    "installed": false
+  },
+  {
+    "id": "browser-reverse-114",
+    "category": "browser-reverse",
+    "candidate": "[Apple command-line developer tools](https://developer.apple.com/documentation/xcode) (`file`, `otool`, `nm`, `strings`, `lipo`, `dwarfdump`, `dyld_info`, `swift-demangle`, `plutil`, `codesign`, `spctl`)",
+    "name": "Apple command-line developer tools",
+    "upstream": "https://developer.apple.com/documentation/xcode",
+    "section": "Tool and capability inventory",
+    "source": "research/BROWSER-REA-TOOLS.md",
+    "line": 63,
+    "columns": [
+      "3",
+      "[Apple command-line developer tools](https://developer.apple.com/documentation/xcode) (`file`, `otool`, `nm`, `strings`, `lipo`, `dwarfdump`, `dyld_info`, `swift-demangle`, `plutil`, `codesign`, `spctl`)",
+      "Core",
+      "macOS/Xcode or Command Line Tools, availability varies by tool and OS release. REA has macOS inspection capabilities that wrap selected platform utilities; use typed REA operations when available, direct tool only for scoped corroboration."
+    ],
+    "installed": false
+  },
+  {
+    "id": "browser-reverse-115",
+    "category": "browser-reverse",
+    "candidate": "[LLDB](https://lldb.llvm.org/)",
+    "name": "LLDB",
+    "upstream": "https://lldb.llvm.org/",
+    "section": "Tool and capability inventory",
+    "source": "research/BROWSER-REA-TOOLS.md",
+    "line": 64,
+    "columns": [
+      "4",
+      "[LLDB](https://lldb.llvm.org/)",
+      "Core",
+      "Ships with Apple developer tools; native macOS/arm64 debugger. REA documents a bounded owned-process `observe_native_calls` workflow under LLDB, not general interactive debugger control."
+    ],
+    "installed": false
+  },
+  {
+    "id": "browser-reverse-116",
+    "category": "browser-reverse",
+    "candidate": "[Ghidra](https://github.com/NationalSecurityAgency/ghidra)",
+    "name": "Ghidra",
+    "upstream": "https://github.com/NationalSecurityAgency/ghidra",
+    "section": "Tool and capability inventory",
+    "source": "research/BROWSER-REA-TOOLS.md",
+    "line": 65,
+    "columns": [
+      "5",
+      "[Ghidra](https://github.com/NationalSecurityAgency/ghidra)",
+      "Recommended default / on-demand",
+      "On Apple Silicon, use the documented REA path of Ghidra 12.1.4, full arm64 JDK 21, and a matching native arm64 decompiler. Current-main REA docs contain one stale provider-evaluation statement denying Mac support; detailed install and test docs plus macOS verification say supported. Confirm the pinned published REA release includes that path."
+    ],
+    "installed": false
+  },
+  {
+    "id": "browser-reverse-117",
+    "category": "browser-reverse",
+    "candidate": "[Hopper](https://www.hopperapp.com/)",
+    "name": "Hopper",
+    "upstream": "https://www.hopperapp.com/",
+    "section": "Tool and capability inventory",
+    "source": "research/BROWSER-REA-TOOLS.md",
+    "line": 66,
+    "columns": [
+      "6",
+      "[Hopper](https://www.hopperapp.com/)",
+      "On-demand / platform-limited",
+      "Commercial macOS native disassembler/decompiler, with vendor demo limits. REA supports it on macOS 12+; user handles license/demo first-run and any install approval."
+    ],
+    "installed": false
+  },
+  {
+    "id": "browser-reverse-118",
+    "category": "browser-reverse",
+    "candidate": "[IDA](https://hex-rays.com/ida-pro/)",
+    "name": "IDA",
+    "upstream": "https://hex-rays.com/ida-pro/",
+    "section": "Tool and capability inventory",
+    "source": "research/BROWSER-REA-TOOLS.md",
+    "line": 67,
+    "columns": [
+      "7",
+      "[IDA](https://hex-rays.com/ida-pro/)",
+      "On-demand / platform-limited",
+      "Commercial licensing and separate upstream IDA MCP configuration. REA adapts configured upstream server and binds target identity; macOS arm64 headless verification is documented for a specific IDA Pro 9.1 setup, not universal compatibility."
+    ],
+    "installed": false
+  },
+  {
+    "id": "browser-reverse-119",
+    "category": "browser-reverse",
+    "candidate": "[Frida](https://frida.re/docs/home/)",
+    "name": "Frida",
+    "upstream": "https://frida.re/docs/home/",
+    "section": "Tool and capability inventory",
+    "source": "research/BROWSER-REA-TOOLS.md",
+    "line": 68,
+    "columns": [
+      "8",
+      "[Frida](https://frida.re/docs/home/)",
+      "On-demand",
+      "Runtime instrumentation for native/user-owned targets, separate from static analysis. REA main documents Frida command families, but the exact host/server/device prerequisites are guide- and version-specific. Use only on authorized, controlled targets."
+    ],
+    "installed": false
+  },
+  {
+    "id": "browser-reverse-120",
+    "category": "browser-reverse",
+    "candidate": "[Rizin](https://rizin.re/)",
+    "name": "Rizin",
+    "upstream": "https://rizin.re/",
+    "section": "Tool and capability inventory",
+    "source": "research/BROWSER-REA-TOOLS.md",
+    "line": 69,
+    "columns": [
+      "9",
+      "[Rizin](https://rizin.re/)",
+      "On-demand",
+      "Portable reverse-engineering framework; macOS may require a supplied build/package. REA has a Rizin command/provider family in current main; check active MCP catalog and matching guide before relying on it."
+    ],
+    "installed": false
+  },
+  {
+    "id": "browser-reverse-121",
+    "category": "browser-reverse",
+    "candidate": "[radare2](https://rada.re/n/)",
+    "name": "radare2",
+    "upstream": "https://rada.re/n/",
+    "section": "Tool and capability inventory",
+    "source": "research/BROWSER-REA-TOOLS.md",
+    "line": 70,
+    "columns": [
+      "10",
+      "[radare2](https://rada.re/n/)",
+      "On-demand",
+      "Portable disassembler/analysis toolkit with its own command model. Useful standalone fallback; do not assume REA Rizin integration also means radare2 integration."
+    ],
+    "installed": false
+  },
+  {
+    "id": "browser-reverse-122",
+    "category": "browser-reverse",
+    "candidate": "[LLVM](https://llvm.org/docs/CommandGuide/llvm-objdump.html) (`llvm-objdump`, `llvm-nm`, `llvm-readobj`)",
+    "name": "LLVM",
+    "upstream": "https://llvm.org/docs/CommandGuide/llvm-objdump.html",
+    "section": "Tool and capability inventory",
+    "source": "research/BROWSER-REA-TOOLS.md",
+    "line": 71,
+    "columns": [
+      "11",
+      "[LLVM](https://llvm.org/docs/CommandGuide/llvm-objdump.html) (`llvm-objdump`, `llvm-nm`, `llvm-readobj`)",
+      "On-demand",
+      "Apple clang tools or separately supplied LLVM build. Useful independent format/symbol corroboration; REA docs list objdump family, but per-host availability must be checked."
+    ],
+    "installed": false
+  },
+  {
+    "id": "browser-reverse-123",
+    "category": "browser-reverse",
+    "candidate": "[Swift compiler and symbol tools](https://www.swift.org/documentation/)",
+    "name": "Swift compiler and symbol tools",
+    "upstream": "https://www.swift.org/documentation/",
+    "section": "Tool and capability inventory",
+    "source": "research/BROWSER-REA-TOOLS.md",
+    "line": 72,
+    "columns": [
+      "12",
+      "[Swift compiler and symbol tools](https://www.swift.org/documentation/)",
+      "Core on Swift targets",
+      "Apple developer toolchain on macOS; `swift-demangle` is also in Apple\u2019s tool suite. REA uses platform-specific analysis and documents Swift/Objective-C fixture coverage; pseudocode remains provider-dependent."
+    ],
+    "installed": false
+  },
+  {
+    "id": "browser-reverse-124",
+    "category": "browser-reverse",
+    "candidate": "[Managed PE/CLI inspection](https://github.com/morluto/rea)",
+    "name": "Managed PE/CLI inspection",
+    "upstream": "https://github.com/morluto/rea",
+    "section": "Tool and capability inventory",
+    "source": "research/BROWSER-REA-TOOLS.md",
+    "line": 73,
+    "columns": [
+      "13",
+      "[Managed PE/CLI inspection](https://github.com/morluto/rea)",
+      "On-demand",
+      "REA provides a static inspector for metadata, CIL, member comparisons, and native boundaries without executing the assembly. A separate .NET SDK or disassembler is an optional tool with its own host requirements; do not assume Windows ildasm is a native Mac utility."
+    ],
+    "installed": false
+  },
+  {
+    "id": "browser-reverse-125",
+    "category": "browser-reverse",
+    "candidate": "[JADX](https://github.com/skylot/jadx) headless integration",
+    "name": "JADX",
+    "upstream": "https://github.com/skylot/jadx",
+    "section": "Tool and capability inventory",
+    "source": "research/BROWSER-REA-TOOLS.md",
+    "line": 74,
+    "columns": [
+      "14",
+      "[JADX](https://github.com/skylot/jadx) headless integration",
+      "On-demand / platform-limited",
+      "Android APK static Java/Kotlin decompilation, full JDK and separately supplied pinned `jadx-headless-mcp` JAR. REA guide reports macOS arm64 verification with JDK 21; no APK execution or emulator needed for the static path."
+    ],
+    "installed": false
+  },
+  {
+    "id": "browser-reverse-126",
+    "category": "browser-reverse",
+    "candidate": "[Apktool](https://apktool.org/)",
+    "name": "Apktool",
+    "upstream": "https://apktool.org/",
+    "section": "Tool and capability inventory",
+    "source": "research/BROWSER-REA-TOOLS.md",
+    "line": 75,
+    "columns": [
+      "15",
+      "[Apktool](https://apktool.org/)",
+      "On-demand",
+      "Java launcher for Android manifest/resources. REA accepts supplied Apktool 2.7.0+ in the resource workflow; it does not install Apktool or Java."
+    ],
+    "installed": false
+  },
+  {
+    "id": "browser-reverse-127",
+    "category": "browser-reverse",
+    "candidate": "[Android Platform Tools / adb](https://developer.android.com/tools)",
+    "name": "Android Platform Tools / adb",
+    "upstream": "https://developer.android.com/tools",
+    "section": "Tool and capability inventory",
+    "source": "research/BROWSER-REA-TOOLS.md",
+    "line": 76,
+    "columns": [
+      "16",
+      "[Android Platform Tools / adb](https://developer.android.com/tools)",
+      "On-demand / device-limited",
+      "Requires caller-supplied `adb` and a selected authorized device/emulator. REA has separate device/package/process/log/acquisition tools; those operations may mutate device state and are not part of APK static analysis."
+    ],
+    "installed": false
+  },
+  {
+    "id": "browser-reverse-128",
+    "category": "browser-reverse",
+    "candidate": "[Binwalk](https://github.com/ReFirmLabs/binwalk)",
+    "name": "Binwalk",
+    "upstream": "https://github.com/ReFirmLabs/binwalk",
+    "section": "Tool and capability inventory",
+    "source": "research/BROWSER-REA-TOOLS.md",
+    "line": 77,
+    "columns": [
+      "17",
+      "[Binwalk](https://github.com/ReFirmLabs/binwalk)",
+      "Platform-limited",
+      "Firmware signature/region inventory; REA requires caller-supplied Binwalk 3.1.x and has Linux x64 verified lane. REA does not install it."
+    ],
+    "installed": false
+  },
+  {
+    "id": "browser-reverse-129",
+    "category": "browser-reverse",
+    "candidate": "[Unblob](https://github.com/onekey-sec/unblob)",
+    "name": "Unblob",
+    "upstream": "https://github.com/onekey-sec/unblob",
+    "section": "Tool and capability inventory",
+    "source": "research/BROWSER-REA-TOOLS.md",
+    "line": 78,
+    "columns": [
+      "18",
+      "[Unblob](https://github.com/onekey-sec/unblob)",
+      "Platform-limited / on-demand",
+      "Explicit firmware extraction with caller-selected new output directory; REA accepts caller-supplied Unblob 26.6.x; current REA verification is Linux x64. Extraction is distinct from passive inventory."
+    ],
+    "installed": false
+  },
+  {
+    "id": "browser-reverse-130",
+    "category": "browser-reverse",
+    "candidate": "[7-Zip](https://www.7-zip.org/) / macOS `ditto`",
+    "name": "7-Zip",
+    "upstream": "https://www.7-zip.org/",
+    "section": "Tool and capability inventory",
+    "source": "research/BROWSER-REA-TOOLS.md",
+    "line": 79,
+    "columns": [
+      "19",
+      "[7-Zip](https://www.7-zip.org/) / macOS `ditto`",
+      "Core for archives",
+      "Use archive-aware inventory/extraction for ZIP/APK/IPA/DMG/ASAR. REA\u2019s artifact graph and archive parsers preserve source paths/digests; tools vary by format and host. Never execute extracted content as an inspection shortcut."
+    ],
+    "installed": false
+  },
+  {
+    "id": "browser-reverse-131",
+    "category": "browser-reverse",
+    "candidate": "[mitmproxy](https://docs.mitmproxy.org/)",
+    "name": "mitmproxy",
+    "upstream": "https://docs.mitmproxy.org/",
+    "section": "Tool and capability inventory",
+    "source": "research/BROWSER-REA-TOOLS.md",
+    "line": 80,
+    "columns": [
+      "20",
+      "[mitmproxy](https://docs.mitmproxy.org/)",
+      "On-demand capture producer",
+      "Produces traffic captures for controlled testing. Current REA supports HAR and a version-specific native mitmproxy decoder on Linux, not Mac. For native Mac analysis, retain the original capture and consider HAR export, explicitly recording any conversion loss and which derived views accept it."
+    ],
+    "installed": false
+  },
+  {
+    "id": "browser-reverse-132",
+    "category": "browser-reverse",
+    "candidate": "[Wireshark / tshark](https://www.wireshark.org/docs/man-pages/tshark.html)",
+    "name": "Wireshark / tshark",
+    "upstream": "https://www.wireshark.org/docs/man-pages/tshark.html",
+    "section": "Tool and capability inventory",
+    "source": "research/BROWSER-REA-TOOLS.md",
+    "line": 81,
+    "columns": [
+      "21",
+      "[Wireshark / tshark](https://www.wireshark.org/docs/man-pages/tshark.html)",
+      "On-demand / platform-limited",
+      "PCAP analysis with caller-supplied `tshark`/`capinfos`; REA current docs describe a Linux-verified packet-capture lane, native macOS behavior not verified in that lane."
+    ],
+    "installed": false
+  },
+  {
+    "id": "browser-reverse-133",
+    "category": "browser-reverse",
+    "candidate": "[Charles Proxy](https://www.charlesproxy.com/)",
+    "name": "Charles Proxy",
+    "upstream": "https://www.charlesproxy.com/",
+    "section": "Tool and capability inventory",
+    "source": "research/BROWSER-REA-TOOLS.md",
+    "line": 82,
+    "columns": [
+      "22",
+      "[Charles Proxy](https://www.charlesproxy.com/)",
+      "On-demand / commercial",
+      "Optional GUI capture/replay producer for controlled environments; not an REA engine. Export a supported HAR for offline REA inspection and retain the original capture separately."
+    ],
+    "installed": false
+  },
+  {
+    "id": "browser-reverse-134",
+    "category": "browser-reverse",
+    "candidate": "[Proxyman](https://proxyman.com/)",
+    "name": "Proxyman",
+    "upstream": "https://proxyman.com/",
+    "section": "Tool and capability inventory",
+    "source": "research/BROWSER-REA-TOOLS.md",
+    "line": 83,
+    "columns": [
+      "23",
+      "[Proxyman](https://proxyman.com/)",
+      "On-demand / commercial",
+      "macOS/iOS-focused GUI capture producer; not an REA engine. Use only a controlled test device/account and retain original capture; imported evidence formats are not all supported."
+    ],
+    "installed": false
+  },
+  {
+    "id": "browser-reverse-135",
+    "category": "browser-reverse",
+    "candidate": "[Apple Console / unified logging](https://developer.apple.com/documentation/os/logging)",
+    "name": "Apple Console / unified logging",
+    "upstream": "https://developer.apple.com/documentation/os/logging",
+    "section": "Tool and capability inventory",
+    "source": "research/BROWSER-REA-TOOLS.md",
+    "line": 84,
+    "columns": [
+      "24",
+      "[Apple Console / unified logging](https://developer.apple.com/documentation/os/logging)",
+      "On-demand",
+      "Native macOS app/system logs for runtime corroboration. REA process/runtime tools do not automatically include all OS logs; record collection window and process identity separately."
+    ],
+    "installed": false
+  },
+  {
+    "id": "browser-reverse-136",
+    "category": "browser-reverse",
+    "candidate": "[Web Platform Tests](https://github.com/web-platform-tests/wpt)",
+    "name": "Web Platform Tests",
+    "upstream": "https://github.com/web-platform-tests/wpt",
+    "section": "Tool and capability inventory",
+    "source": "research/BROWSER-REA-TOOLS.md",
+    "line": 85,
+    "columns": [
+      "25",
+      "[Web Platform Tests](https://github.com/web-platform-tests/wpt)",
+      "On-demand validation suite",
+      "Browser conformance fixtures, not a product dependency. Select and pin relevant tests against the exact Obscura/Chrome/Safari builds; a passing fixture set supports only the tested features and cases."
+    ],
+    "installed": false
+  },
+  {
+    "id": "ecosystem-reference-137",
+    "category": "ecosystem-reference",
+    "candidate": "[CAI](https://github.com/aliasrobotics/cai)",
+    "name": "CAI",
+    "upstream": "https://github.com/aliasrobotics/cai",
+    "section": "Source-reviewed candidates",
+    "source": "research/ECOSYSTEM-PATTERNS.md",
+    "line": 17,
+    "columns": [
+      "[CAI](https://github.com/aliasrobotics/cai)",
+      "Agents, handoffs, tool patterns, tracing, and human-in-the-loop concepts are useful architecture references.",
+      "Python 3.12 and macOS are documented, but the repository is archived and the public release is frozen.",
+      "**Borrow concepts only.** Do not add its runtime or dependencies; archived security tooling is a poor maintained base."
+    ],
+    "installed": false
+  },
+  {
+    "id": "ecosystem-reference-138",
+    "category": "ecosystem-reference",
+    "candidate": "[PentestGPT](https://github.com/GreyDGL/PentestGPT)",
+    "name": "PentestGPT",
+    "upstream": "https://github.com/GreyDGL/PentestGPT",
+    "section": "Source-reviewed candidates",
+    "source": "research/ECOSYSTEM-PATTERNS.md",
+    "line": 18,
+    "columns": [
+      "[PentestGPT](https://github.com/GreyDGL/PentestGPT)",
+      "The legacy workflow decomposes a test into smaller tasks; the current agentic CLI adds staged work and resumable sessions. This is a useful reference for specialist-worker outputs.",
+      "Python 3.12+, `uv`, and Claude Code/Codex CLIs for the newer backend; Docker flow is also documented. Native Apple Silicon was not tested. Its current pipeline can run autonomously.",
+      "**Borrow task decomposition and resume semantics only.** Avoid a parallel agent runtime; require Pi policy, evidence, and scope contracts around any worker."
+    ],
+    "installed": false
+  },
+  {
+    "id": "ecosystem-reference-139",
+    "category": "ecosystem-reference",
+    "candidate": "[Strix](https://github.com/usestrix/strix)",
+    "name": "Strix",
+    "upstream": "https://github.com/usestrix/strix",
+    "section": "Source-reviewed candidates",
+    "source": "research/ECOSYSTEM-PATTERNS.md",
+    "line": 19,
+    "columns": [
+      "[Strix](https://github.com/usestrix/strix)",
+      "Current upstream describes an app-security harness that runs code dynamically, validates findings with proof-of-concept evidence, and offers fix/report/CI workflows.",
+      "Local quick start requires Docker plus an LLM provider; first run pulls a sandbox image. Not a lightweight native-only worker.",
+      "**Borrow the find \u2192 validate \u2192 fix \u2192 retest workflow.** Treat product capability claims as upstream claims; avoid adding its full harness if Pi already owns orchestration."
+    ],
+    "installed": false
+  },
+  {
+    "id": "ecosystem-reference-140",
+    "category": "ecosystem-reference",
+    "candidate": "[Shannon](https://github.com/KeygraphHQ/shannon)",
+    "name": "Shannon",
+    "upstream": "https://github.com/KeygraphHQ/shannon",
+    "section": "Source-reviewed candidates",
+    "source": "research/ECOSYSTEM-PATTERNS.md",
+    "line": 20,
+    "columns": [
+      "[Shannon](https://github.com/KeygraphHQ/shannon)",
+      "Strong scan \u2192 code/context analysis \u2192 live test \u2192 report shape; authenticated flow configuration; resumable workspaces; \u201cno exploit, no report\u201d makes validation concrete.",
+      "Its worker runs in Docker, and docs explicitly warn against production testing. MacOS host feasibility is plausible through Docker Desktop, but this is not a lightweight native worker.",
+      "**Borrow task/evidence contracts and retest semantics.** Do not duplicate its end-to-end orchestrator."
+    ],
+    "installed": false
+  },
+  {
+    "id": "ecosystem-reference-141",
+    "category": "ecosystem-reference",
+    "candidate": "[PentAGI](https://github.com/vxcontrol/pentagi)",
+    "name": "PentAGI",
+    "upstream": "https://github.com/vxcontrol/pentagi",
+    "section": "Source-reviewed candidates",
+    "source": "research/ECOSYSTEM-PATTERNS.md",
+    "line": 21,
+    "columns": [
+      "[PentAGI](https://github.com/vxcontrol/pentagi)",
+      "Specialist agent roles, explicit flows, and evidence/history ideas.",
+      "A multi-service Docker stack and large Kali worker images make this a poor native Mac extension. Its docs require Docker infrastructure, so this is not a small native worker.",
+      "**Architecture reference only.** Keep infrastructure choices separate from Pi\u2019s orchestration, and adopt only a specific capability if it fits a scoped workflow."
+    ],
+    "installed": false
+  },
+  {
+    "id": "ecosystem-reference-142",
+    "category": "ecosystem-reference",
+    "candidate": "[HexStrike AI](https://github.com/0x4m4/hexstrike-ai)",
+    "name": "HexStrike AI",
+    "upstream": "https://github.com/0x4m4/hexstrike-ai",
+    "section": "Source-reviewed candidates",
+    "source": "research/ECOSYSTEM-PATTERNS.md",
+    "line": 22,
+    "columns": [
+      "[HexStrike AI](https://github.com/0x4m4/hexstrike-ai)",
+      "An MCP fa\u00e7ade over many specialist security tools illustrates discoverability and structured tool APIs.",
+      "Requirements are largely Linux security binaries; native Apple Silicon compatibility is not established by the readme. A large tool catalog expands permissions and maintenance burden.",
+      "**Do not import its catalog.** If one tool is needed, expose just that tool behind the extension\u2019s own scope and approval checks. Canonical repository identity is 0x4m4; similarly named mirrors/forks were found."
+    ],
+    "installed": false
+  },
+  {
+    "id": "ecosystem-reference-143",
+    "category": "ecosystem-reference",
+    "candidate": "[Interactsh](https://github.com/projectdiscovery/interactsh)",
+    "name": "Interactsh",
+    "upstream": "https://github.com/projectdiscovery/interactsh",
+    "section": "Source-reviewed candidates",
+    "source": "research/ECOSYSTEM-PATTERNS.md",
+    "line": 23,
+    "columns": [
+      "[Interactsh](https://github.com/projectdiscovery/interactsh)",
+      "Out-of-band application security testing (OAST): correlate an authorized test\u2019s unique callback with an observed server-side interaction.",
+      "Go project with published releases; source reviewed, but local build/run on macOS ARM was not checked. Public service use introduces external data handling.",
+      "**Optional, tightly scoped integration.** Per-engagement tokens, explicit authorization, and a clear callback evidence record."
+    ],
+    "installed": false
+  },
+  {
+    "id": "ecosystem-reference-144",
+    "category": "ecosystem-reference",
+    "candidate": "[Obscura](https://github.com/h4ckf0r0day/obscura)",
+    "name": "Obscura",
+    "upstream": "https://github.com/h4ckf0r0day/obscura",
+    "section": "Source-reviewed candidates",
+    "source": "research/ECOSYSTEM-PATTERNS.md",
+    "line": 24,
+    "columns": [
+      "[Obscura](https://github.com/h4ckf0r0day/obscura)",
+      "Existing headless browser/MCP can inspect pages, traffic, screenshots, and persistent storage; `--storage-dir` shows a route to explicit identity separation.",
+      "Upstream documents an Apple Silicon macOS binary. It is an evolving custom browser engine, so Chromium compatibility and site behavior can differ. Its \u201cstealth\u201d mode is not a security boundary.",
+      "**Keep as a browser specialist.** Require separate storage dirs and allowlists for offense vs defense, label the active identity, and retain navigation/traffic evidence. Use ordinary browser-compatible paths when fidelity matters."
+    ],
+    "installed": false
+  },
+  {
+    "id": "ecosystem-reference-145",
+    "category": "ecosystem-reference",
+    "candidate": "[REA](https://github.com/morluto/rea) \u00b7 [rea.tools](https://rea.tools/)",
+    "name": "REA",
+    "upstream": "https://github.com/morluto/rea",
+    "section": "Source-reviewed candidates",
+    "source": "research/ECOSYSTEM-PATTERNS.md",
+    "line": 25,
+    "columns": [
+      "[REA](https://github.com/morluto/rea) \u00b7 [rea.tools](https://rea.tools/)",
+      "Official upstream provides an MCP and evidence-backed workflows for binaries, JavaScript/Electron, .NET, and web analysis. It returns findings with evidence and limitations.",
+      "Node/npm setup; analysis engines and target-specific tools are separate dependencies. The sibling [browser/REA research](BROWSER-REA-TOOLS.md) documents the Apple Silicon Ghidra route and browser limits from upstream docs.",
+      "**Keep the requested REA integration as a specialist.** Its evidence and limitations model fits the worker contract; pin matching package/skill versions as the sibling research recommends."
+    ],
+    "installed": false
+  },
+  {
+    "id": "ecosystem-reference-146",
+    "category": "ecosystem-reference",
+    "candidate": "[Wazuh](https://github.com/wazuh/wazuh)",
+    "name": "Wazuh",
+    "upstream": "https://github.com/wazuh/wazuh",
+    "section": "Source-reviewed candidates",
+    "source": "research/ECOSYSTEM-PATTERNS.md",
+    "line": 26,
+    "columns": [
+      "[Wazuh](https://github.com/wazuh/wazuh)",
+      "A mature defensive SIEM/XDR and dashboard reference for security events, integrity monitoring, vulnerabilities, compliance, and endpoint status.",
+      "A Mac can be an endpoint, but the manager/indexer/dashboard are a deployment stack, not a small native extension. Verify ARM package support for the exact agent release.",
+      "**Optional external integration only** if there is already a Wazuh installation; query alert/event records read-only and link to the canonical event."
+    ],
+    "installed": false
+  },
+  {
+    "id": "ecosystem-reference-147",
+    "category": "ecosystem-reference",
+    "candidate": "[MISP](https://github.com/MISP/MISP)",
+    "name": "MISP",
+    "upstream": "https://github.com/MISP/MISP",
+    "section": "Source-reviewed candidates",
+    "source": "research/ECOSYSTEM-PATTERNS.md",
+    "line": 27,
+    "columns": [
+      "[MISP](https://github.com/MISP/MISP)",
+      "Structured threat indicators, relationships/correlation, and analyst-owned intelligence; better source of typed context than free-text feeds.",
+      "Server platform/deployment concerns make it an external service; AGPL-3.0 is relevant if distributing modified components.",
+      "**Optional read-only connector** to an existing instance, with source, timestamp, confidence, and sharing markings retained. Avoid spinning up MISP solely for a local extension."
+    ],
+    "installed": false
+  },
+  {
+    "id": "ecosystem-reference-148",
+    "category": "ecosystem-reference",
+    "candidate": "[DFIR Companion](https://github.com/hasamba/DFIR-Companion)",
+    "name": "DFIR Companion",
+    "upstream": "https://github.com/hasamba/DFIR-Companion",
+    "section": "Source-reviewed candidates",
+    "source": "research/ECOSYSTEM-PATTERNS.md",
+    "line": 28,
+    "columns": [
+      "[DFIR Companion](https://github.com/hasamba/DFIR-Companion)",
+      "Useful defensive workflow: deterministic parsers, case timeline, provenance, analyst questions, and report generation over existing SIEM/DFIR evidence. Its docs stress it is a post-detection layer, not a detection engine.",
+      "Node 22.19+ from source; project offers Windows/Linux releases and Docker, but no native macOS release is documented.",
+      "**Borrow its case/evidence model.** Optional integration only where a user already has it; do not create a second local case database without a clear need."
+    ],
+    "installed": false
+  },
+  {
+    "id": "ecosystem-reference-149",
+    "category": "ecosystem-reference",
+    "candidate": "[CyberChef](https://github.com/gchq/CyberChef)",
+    "name": "CyberChef",
+    "upstream": "https://github.com/gchq/CyberChef",
+    "section": "Source-reviewed candidates",
+    "source": "research/ECOSYSTEM-PATTERNS.md",
+    "line": 29,
+    "columns": [
+      "[CyberChef](https://github.com/gchq/CyberChef)",
+      "Deterministic transformations for decoding, parsing, hashes, encodings, and analyst-visible recipes. Client-side operation supports local handling and repeatable transforms.",
+      "Browser app; the project supports Chrome/Firefox and downloadable local operation. No host-native executable is needed for basic use.",
+      "**Good optional utility.** Call selected deterministic transforms and preserve recipe/input/output; don\u2019t ask an LLM to recreate known transforms."
+    ],
+    "installed": false
+  }
+]

@@ -1,0 +1,31 @@
+{
+  "name": "pi-cyber-harness",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Lean offense and defense engagement context extension for Pi",
+  "scripts": {
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "doctor": "bun src/doctor.ts",
+    "pi": "bash ./scripts/pi.sh",
+    "pi:ast": "bash ./scripts/pi.sh --ast"
+  },
+  "pi": {
+    "extensions": [
+      "./src/index.ts"
+    ],
+    "themes": [
+      "./themes"
+    ]
+  },
+  "devDependencies": {
+    "@earendil-works/pi-coding-agent": "1.3.0",
+    "typebox": "1.3.27",
+    "@types/bun": "1.3.11",
+    "typescript": "5.9.3"
+  },
+  "optionalDependencies": {
+    "@ast-grep/napi": "0.51.0"
+  }
+}
