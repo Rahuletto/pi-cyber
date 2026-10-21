@@ -12,9 +12,9 @@ This status applies to the merged `feat/toolchain-buildout` tree. It distinguish
 
 ## Verification boundaries
 
-- On 2026-10-21, `bun install --frozen-lockfile`, `bun run typecheck`, and `bun test` passed: 228 passed, 0 failed, 4 skipped across 18 files.
-- `bun run doctor -- --json` reports 15/17 core scanner binaries as validated on this machine. Zap and Semgrep remain cataloged. Doctor reports PATH presence and recorded installer state; it does not execute a tool or prove target behavior.
-- The four package versions, local Pi profile paths, selected bigpowers skill copies, worker spawn caps and no-network package wiring checks passed. Pi's interactive package loading and a real worker call were not exercised.
+- On 2026-10-21, `bun install --frozen-lockfile`, `bun run install:packages`, `bun run typecheck`, and `bun test` passed: 250 passed, 0 failed, 4 skipped across 19 files.
+- `bun run doctor -- --json` reports 15/17 core scanner binaries as validated on this machine. A fresh installer retry skipped those 15 and could not match Darwin/arm64 assets for Zap or Semgrep; both remain cataloged. Doctor reports PATH presence and recorded installer state; it does not execute a tool or prove target behavior.
+- The four package versions, local Pi profile paths, selected bigpowers skill copies, worker spawn caps and no-network package wiring checks passed. `pi list` resolved all four local package paths. Pi's interactive extensions, provider calls and a real worker call were not exercised.
 - Knowledge search covers the local indexed skills/research/docs corpus after an explicit rebuild. It does not claim a complete or automatically refreshed OWASP, CWE, CVSS or ATT&CK mirror.
 - Browser lease behavior is a coordination contract. It does not provide process isolation, authenticated browser profiles, or proof that an external browser MCP is connected.
 - Specialist Markdown files and task/result validation do not establish that `pi-subagents` is installed, that workers inherit all intended context, or that concurrency/cancellation is enforced by the harness.
