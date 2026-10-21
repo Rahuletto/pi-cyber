@@ -61,7 +61,7 @@ test("actual SDK loader registers extension and state tool writes durable mode-s
   expect(state.scope).toEqual(["local fixture only"]);
   expect(state.modes.defense.nextSteps).toEqual(["prepare dossier"]);
   expect(state.modes.offense.nextSteps).toEqual(["validate fixture hypothesis"]);
-  expect(h.extension.tools.size).toBe(2);
+  expect(h.extension.tools.size).toBe(4);
 });
 
 test("refuses switching during agent or nested tool work and leaves prior mode", async () => {

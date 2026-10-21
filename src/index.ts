@@ -4,6 +4,9 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { STATE_ENTRY, brief, recoverState, switchMode, updateState, type CyberMode, type CyberState } from "./state.ts";
 import { registerGithubTool } from "./tools/github.ts";
+import { registerEvidenceTool } from "./tools/evidence.ts";
+import { registerCyberJobsTool } from "./tools/jobs.ts";
+import { contextLine } from "./evidence/db.ts";
 
 const resource = (path: string) => fileURLToPath(new URL(`../${path}`, import.meta.url));
 const instructions = Object.fromEntries(["base", "offense", "defense"].map((name) => [name, readFileSync(resource(`prompts/${name}.md`), "utf8")]));
@@ -15,6 +18,8 @@ const patchSchema = Type.Object({
 
 export default function cyber(pi: ExtensionAPI): void {
   registerGithubTool(pi);
+  registerEvidenceTool(pi);
+  registerCyberJobsTool(pi);
   const runningTools = new Set<string>();
   let agentRunning = false;
   let visualReady = false;
@@ -59,10 +64,16 @@ export default function cyber(pi: ExtensionAPI): void {
   });
   // Runs for every provider call, including a continuation after mid-turn compaction.
   // This message is ephemeral: it does not grow the session transcript.
-  pi.on("context", (event, ctx) => ({ messages: [
-    ...event.messages.filter((message) => !(message.role === "custom" && message.customType === "cyber.context")),
-    { role: "custom" as const, customType: "cyber.context", content: brief(current(ctx)), display: false, timestamp: Date.now() },
-  ] }));
+  // One guarded, lazily-computed evidence hint line is appended after the state brief;
+  // it never throws and never exposes stored contents.
+  pi.on("context", (event, ctx) => {
+    let evidenceSuffix = "";
+    try { const line = contextLine(); if (line) evidenceSuffix = `\n${line}`; } catch { evidenceSuffix = ""; }
+    return { messages: [
+      ...event.messages.filter((message) => !(message.role === "custom" && message.customType === "cyber.context")),
+      { role: "custom" as const, customType: "cyber.context", content: `${brief(current(ctx))}${evidenceSuffix}`, display: false, timestamp: Date.now() },
+    ] };
+  });
   pi.on("tool_call", (_event, ctx) => {
     try { current(ctx); } catch (error) { return { block: true, reason: String(error) }; }
     if (ctx.mode === "tui" && !visualReady) return { block: true, reason: "Cyber theme restoration failed. Resolve the visible error and retry /cyber mode before executing tools." };

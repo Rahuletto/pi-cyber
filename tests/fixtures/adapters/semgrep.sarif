@@ -1,0 +1,1 @@
+{"runs":[{"tool":{"driver":{"name":"semgrep","rules":[{"id":"typescript.security.example"}]}},"results":[{"ruleId":"typescript.security.example","level":"error","message":{"text":"Use crypto.randomBytes instead of Math.random"},"locations":[{"physicalLocation":{"artifactLocation":{"uri":"src/app.ts"},"region":{"startLine":42}}}]}]}]}

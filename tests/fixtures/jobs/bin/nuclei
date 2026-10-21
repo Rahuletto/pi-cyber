@@ -1,0 +1,50 @@
+#!/usr/bin/env bun
+// Fixture stub for Task-6 job-runner tests: prints the nuclei fixture (or a
+// large repeat of its first line) and exits 0. Argv-switch driven:
+//   --flood          emit ~600 KiB of valid nuclei lines (output-cap test)
+//   --linger         print, then hang 15 s (timeout kill -> interrupted path)
+//   --silent-linger  hang 15 s with no output (timeout kill -> outcome-unknown)
+//   --exit-fail      print, then write stderr and exit 1 (non-zero exit path)
+//   --taint          append a secret-tainted finding line (guarded persist)
+//   --signal-self    print, then SIGKILL itself (abrupt signal exit path;
+//                    Bun surfaces that as exit code 137 = 128 + 9)
+// Never touches the network. Shell-free executable (bun script marked +x),
+// placed onto PATH via the test's env.
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
+const argv = process.argv.slice(2);
+const fixturePath = readFileSync(join(import.meta.dir, "..", "..", "adapters", "nuclei.jsonl"), "utf8");
+
+if (argv.includes("--silent-linger")) {
+  await Bun.sleep(15_000);
+  process.exit(0);
+}
+
+if (argv.includes("--flood")) {
+  const line = `${fixturePath.trimEnd().split("\n")[0]}\n`;
+  let flood = "";
+  for (let i = 0; i < 4000; i++) flood += line;
+  await Bun.write(Bun.stdout, flood);
+} else {
+  let output = fixturePath.endsWith("\n") ? fixturePath : `${fixturePath}\n`;
+  if (argv.includes("--taint")) {
+    // A Normalized finding whose raw text and key look secret-like: the
+    // evidence store must refuse it and the runner must annotate the ledger.
+    output += `{"host":"api_key=leakysecretvalue","templateID":"FIXTURE-TAINT","info":{"severity":"info","name":"fixture taint"}}\n`;
+  }
+  await Bun.write(Bun.stdout, output);
+}
+
+if (argv.includes("--signal-self")) {
+  process.kill(process.pid, "SIGKILL");
+}
+
+if (argv.includes("--linger")) {
+  await Bun.sleep(15_000);
+  process.exit(0);
+}
+if (argv.includes("--exit-fail")) {
+  await Bun.write(Bun.stderr, "fixture failure: nuclei stub says boom\n");
+  process.exit(1);
+}
