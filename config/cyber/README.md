@@ -40,18 +40,43 @@ tools.
    that disagrees with `provider` is rejected as invalid configuration. Keep
    `workflow: "none"`: raw bounded results plus an explicit `fetch_content`
    call, no summary model and no curator window.
-4. **Research boundaries.** `fetchRouting.allowRemoteHostedProviders` is
+4. **The live agent copy is operator-owned.** The installer links this file
+   into the agent directory (`~/.pi/agent/web-search.json`) only when nothing
+   is there yet. Once the operator writes a real file there — a different
+   provider, a local key source — the installer leaves it untouched and the two
+   profiles may diverge. The agent copy wins for the `pi` command; this
+   repository copy wins for `bun run pi`.
+5. **You.com as the agent's provider.** The provider id is `you` and it is
+   explicit-only: it is never chosen by `auto` or `provider: "all"`, and each
+   request consumes You.com API credits. The credential is read at request
+   time, never from the repository:
+
+   ```json
+   {
+     "provider": "you",
+     "youApiKey": "!cat ~/.config/opencode/you.key",
+     "webSearch": { "enabled": true, "allowedProviders": ["you", "duckduckgo"] }
+   }
+   ```
+
+   `!cat` runs the command through a shell and reads the value from a local
+   file; `$VAR` and `${VAR}` read one environment variable; a literal value is
+   also accepted. `YDC_API_KEY` in the environment works only when the config
+   has no `youApiKey` entry — a configured value wins over the environment.
+   The installer prompts for the key and writes it with mode 600 when the
+   effective config selects `you`.
+6. **Research boundaries.** `fetchRouting.allowRemoteHostedProviders` is
    `false` and `allowBrowserCookies` is `false`: page fetches stay on the
    direct local HTTP path and never reach a hosted extractor or a Chromium
    cookie jar. Revisit these only with a written reason.
-5. **Worker caps.** `extensions/subagent/config.json` keeps the harness at 2
+7. **Worker caps.** `extensions/subagent/config.json` keeps the harness at 2
    concurrent children and 8 spawns per run (upstream default: 64). Raise them
    only after measuring memory, cost and result quality on this Mac.
-6. **bigpowers.** The extension (`omp-hooks.ts`) is deliberately **not**
+8. **bigpowers.** The extension (`omp-hooks.ts`) is deliberately **not**
    loaded; only six skills are exposed, and they expect `scripts/bp-*.sh` and
    `specs/` state that this harness does not provide — treat those steps as
    unavailable. See `SKILLS-NOTICE.md`.
-7. **pi-btw.** `/btw` and `/btw:ask` are available as an optional side
+9. **pi-btw.** `/btw` and `/btw:ask` are available as an optional side
    conversation. A `/btw` child shares this repository's working directory and
    has no isolation; prefer `/btw:ask` (read-only) for parallel reading.
 

@@ -137,7 +137,7 @@ The profile also loads:
 
 | Package | Configuration |
 | --- | --- |
-| `pi-web-access` | DuckDuckGo search with explicit fetches; hosted extraction and browser cookies are disabled. |
+| `pi-web-access` | Explicit search provider with explicit fetches; hosted extraction and browser cookies are disabled. The repository profile pins keyless DuckDuckGo; the installed pi agent may pin a keyed provider such as You.com through its own operator-owned `web-search.json`. |
 | `pi-btw` | Optional side conversations. It is not the specialist engine. |
 | `bigpowers` | Pinned as a package, but its extension is disabled. Six selected skills are copied into `config/cyber/skills`. |
 

@@ -194,6 +194,45 @@ else
   say "  $KEY_HINT"
 fi
 
+# ── search key ───────────────────────────────────────────────────────────────
+# Only when the effective web-search config selects the You.com provider: the
+# credential is resolved at request time from this file, never from the repo.
+step "search key"
+SEARCH_KEY_PATH="${CYBER_SEARCH_KEY_PATH:-$HOME/.config/opencode/you.key}"
+SEARCH_KEY_DIR="$(dirname "$SEARCH_KEY_PATH")"
+SEARCH_KEY_HINT="mkdir -p \"$SEARCH_KEY_DIR\" && printf '%s' '<key>' > \"$SEARCH_KEY_PATH\" && chmod 600 \"$SEARCH_KEY_PATH\""
+WEB_SEARCH_EFFECTIVE="$AGENT/web-search.json"
+[[ -f "$WEB_SEARCH_EFFECTIVE" ]] || WEB_SEARCH_EFFECTIVE="$ROOT/config/cyber/web-search.json"
+SEARCH_PROVIDER=""
+if [[ -f "$WEB_SEARCH_EFFECTIVE" ]]; then
+  SEARCH_PROVIDER="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("provider",""))' "$WEB_SEARCH_EFFECTIVE" 2>/dev/null || echo "")"
+fi
+if [[ "$SEARCH_PROVIDER" != "you" ]]; then
+  say "skipped — the search provider is '${SEARCH_PROVIDER:-unset}'"
+elif [[ -f "$SEARCH_KEY_PATH" ]]; then
+  say "present at $SEARCH_KEY_PATH"
+elif [[ -n "${CYBER_SEARCH_KEY:-}" ]]; then
+  mkdir -p "$SEARCH_KEY_DIR"
+  printf '%s' "$CYBER_SEARCH_KEY" > "$SEARCH_KEY_PATH"
+  chmod 600 "$SEARCH_KEY_PATH"
+  say "written to $SEARCH_KEY_PATH (mode 600)"
+elif [[ -t 0 ]]; then
+  read -r -s -p "  paste the You.com search key (blank to skip): " SEARCH_KEY
+  echo
+  if [[ -n "$SEARCH_KEY" ]]; then
+    mkdir -p "$SEARCH_KEY_DIR"
+    printf '%s' "$SEARCH_KEY" > "$SEARCH_KEY_PATH"
+    chmod 600 "$SEARCH_KEY_PATH"
+    say "written to $SEARCH_KEY_PATH (mode 600)"
+  else
+    say "skipped — write it yourself before the first search:"
+    say "  $SEARCH_KEY_HINT"
+  fi
+else
+  say "no key found at $SEARCH_KEY_PATH"
+  say "  $SEARCH_KEY_HINT"
+fi
+
 # ── agent-dir resources ──────────────────────────────────────────────────────
 # Two profile files are read from the agent directory by convention rather than
 # by path: the pi-subagents spawn caps and the web-search provider config.
@@ -203,8 +242,14 @@ for rel in "extensions/subagent/config.json:config/cyber/extensions/subagent/con
   dest="$AGENT/${rel%%:*}"
   src="$ROOT/${rel##*:}"
   if [[ -f "$src" ]]; then
-    ln -sfn "$src" "$dest"
-    say "linked $dest"
+    # A real file in the agent dir is operator-owned (a different provider, a
+    # local key source). Never replace it with a link to the repository copy.
+    if [[ -e "$dest" && ! -L "$dest" ]]; then
+      say "kept $dest (operator-owned file left untouched)"
+    else
+      ln -sfn "$src" "$dest"
+      say "linked $dest"
+    fi
   fi
 done
 

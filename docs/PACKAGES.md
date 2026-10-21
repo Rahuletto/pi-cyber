@@ -47,11 +47,13 @@ instead of downloading a second copy, and the version check in
 - **Capability lists are not sandboxes.** A role's `tools` allowlist narrows
   what a child may call inside Pi; it does not confine the operating system.
   Children share the operator's own privileges.
-- **Search providers see the query.** `web-search.json` pins keyless
-  DuckDuckGo, disables the curator, browser cookies and hosted extractors, and
-  keeps `workflow: "none"`, so the harness never opens a summary model or a
-  curator window on its own. Switching to a keyed provider changes who receives
-  the query and the fetched text.
+- **Search providers see the query.** `web-search.json` disables the curator,
+  browser cookies and hosted extractors, and keeps `workflow: "none"`, so the
+  harness never opens a summary model or a curator window on its own. The
+  repository profile pins keyless DuckDuckGo; the installed pi agent may pin a
+  keyed provider such as You.com in its own operator-owned `web-search.json`.
+  Switching to a keyed provider changes who receives the query and the fetched
+  text, and each You.com request consumes API credits.
 - **The bigpowers skills are not native to this repository.** They expect
   `scripts/bp-*.sh` and `specs/` state that the harness does not provide; those
   steps cannot run here.
