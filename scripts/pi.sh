@@ -5,6 +5,9 @@ ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
 PROFILE="$ROOT/config/cyber"
 mkdir -p "$PROFILE"
 export PI_CODING_AGENT_DIR="${PI_CODING_AGENT_DIR:-$PROFILE}"
+# The harness is repo scoped: run the session from the repository root so the
+# specialist roles, the evidence store and the job artifacts resolve there.
+cd "$ROOT"
 PI="$ROOT/node_modules/.bin/pi"
 [ -x "$PI" ] || { echo "run: bun install --frozen-lockfile" >&2; exit 1; }
 EXTRA_ARGS=()
