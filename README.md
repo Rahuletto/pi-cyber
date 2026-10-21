@@ -16,13 +16,13 @@ bun run doctor
 bun run pi
 ```
 
-Optional packages install only into the isolated profile when requested:
+Check pinned package wiring and refresh the selected profile skills after installation:
 
 ```sh
 bun run install:packages
 ```
 
-This installs the pinned worker, web access, side conversation and selected workflow packages into `config/cyber`; see [package setup and limits](docs/PACKAGES.md). It does not copy personal provider credentials.
+The exact package pins are installed by `bun install --frozen-lockfile` and loaded only through `config/cyber`; see [package setup and limits](docs/PACKAGES.md). The checker does not copy personal provider credentials.
 
 `bun run pi` uses the local pinned Pi CLI and defaults `PI_CODING_AGENT_DIR` to `config/cyber` in this directory. It explicitly loads this extension, preserving existing personal Pi configuration. Set `PI_CODING_AGENT_DIR` explicitly to choose another dedicated directory. Configure provider login there; this project does not copy personal credentials. Pi still uses its normal project trust and project instructions.
 

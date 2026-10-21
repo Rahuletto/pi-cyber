@@ -1,0 +1,27 @@
+{
+  "$schema": "https://pi.dev/schemas/settings.schema.json",
+  "packages": [
+    {
+      "source": "../../node_modules/pi-subagents",
+      "extensions": ["index.js"],
+      "skills": ["skills/**"],
+      "prompts": ["prompts/**"]
+    },
+    {
+      "source": "../../node_modules/pi-web-access",
+      "extensions": ["dist/index.js"]
+    },
+    {
+      "source": "../../node_modules/pi-btw",
+      "extensions": ["extensions/btw.ts"],
+      "skills": ["skills/**"]
+    },
+    {
+      "source": "../../node_modules/bigpowers",
+      "extensions": [],
+      "skills": [],
+      "prompts": []
+    }
+  ],
+  "skills": ["./skills"]
+}

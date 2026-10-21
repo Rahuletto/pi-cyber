@@ -1,91 +1,159 @@
-import { spawnSync } from "node:child_process";
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
+/**
+ * Package installer for the cyber profile (Tasks 10 + 11).
+ *
+ * The harness runs under bun, so the four reviewed Pi packages are installed
+ * into this repository with `bun add` and pinned in package.json. This script
+ * is the operator-facing half: it verifies the pins, reports the resolved
+ * on-disk paths Pi will load, and refreshes the selectively copied bigpowers
+ * skills in the profile.
+ *
+ * It never installs anything itself, never reaches the network, and is never
+ * invoked by the test suite. Run it explicitly:
+ *
+ *   bun scripts/install-packages.ts            # verify + refresh profile skills
+ *   bun scripts/install-packages.ts --check    # verify only, no writes
+ */
+import { existsSync, readFileSync, mkdirSync, copyFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const profile = resolve(process.env.PI_CODING_AGENT_DIR ?? `${root}/config/cyber`);
-const pi = resolve(root, "node_modules/.bin/pi");
-const packages = [
-  "npm:pi-subagents@0.79.2",
-  "npm:pi-web-access@0.43.0",
-  "npm:pi-btw@0.8.0",
-  "npm:bigpowers@2.88.9",
-];
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const PROFILE = join(ROOT, "config", "cyber");
 
-mkdirSync(profile, { recursive: true });
-const settingsPath = resolve(profile, "settings.json");
-let settings: { [key: string]: unknown; packages?: unknown[] } = {};
-try {
-  const parsed: unknown = JSON.parse(readFileSync(settingsPath, "utf8"));
-  if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
-    settings = parsed as { [key: string]: unknown; packages?: unknown[] };
-  }
-} catch (error) {
-  if (!(error instanceof Error) || !("code" in error && error.code === "ENOENT")) throw error;
+/** Package identity and pin come from research/PACKAGES-*.md; keep them exact. */
+export const EXPECTED_PACKAGES = [
+  { name: "pi-subagents", version: "0.79.2", role: "worker engine" },
+  { name: "pi-web-access", version: "0.43.0", role: "search and extraction" },
+  { name: "pi-btw", version: "0.8.0", role: "optional side conversation" },
+  { name: "bigpowers", version: "2.88.9", role: "selective remediation skills" },
+] as const;
+
+/** Plan Task 11: only these bigpowers skills enter the profile. */
+export const SELECTED_SKILLS = ["survey-context", "research-first", "plan-work", "develop-tdd", "verify-work", "audit-code"] as const;
+
+export interface PackageCheck {
+  name: string;
+  declared: string | null;
+  installed: string | null;
+  expected: string;
+  path: string | null;
+  ok: boolean;
+  problem: string | null;
 }
-const packageSource = (item: unknown): string | undefined => {
-  if (typeof item === "string") return item;
-  if (typeof item === "object" && item !== null && "source" in item && typeof item.source === "string") return item.source;
-  return undefined;
+
+const readJson = (path: string): Record<string, unknown> | null => {
+  try {
+    return JSON.parse(readFileSync(path, "utf8")) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
 };
-const installed = new Set((settings.packages ?? []).map(packageSource).filter((source): source is string => source !== undefined));
 
-for (const source of packages) {
-  if (installed.has(source)) {
-    console.log(`already recorded: ${source}`);
-    continue;
-  }
-  const result = spawnSync(pi, ["install", source, "--no-approve"], {
-    cwd: root,
-    env: { ...process.env, PI_CODING_AGENT_DIR: profile },
-    stdio: "inherit",
+const pinOf = (value: unknown): string | null => {
+  if (typeof value !== "string") return null;
+  return value.replace(/^[\^~>=<\s]+/, "");
+};
+
+/** Compare the declared pin and the installed copy against the reviewed version. */
+export function checkPackages(root = ROOT): PackageCheck[] {
+  const manifest = readJson(join(root, "package.json"));
+  const declared = { ...(manifest?.dependencies as Record<string, string> | undefined) };
+  return EXPECTED_PACKAGES.map((expected) => {
+    const declaredVersion = pinOf(declared[expected.name]) ?? null;
+    const packageRoot = join(root, "node_modules", expected.name);
+    const installed = readJson(join(packageRoot, "package.json"));
+    const installedVersion = typeof installed?.version === "string" ? installed.version : null;
+    const problems: string[] = [];
+    if (!declaredVersion) problems.push("not declared in package.json dependencies");
+    else if (declaredVersion !== expected.version) problems.push(`package.json pins ${declaredVersion}, expected ${expected.version}`);
+    if (!installedVersion) problems.push("not installed in node_modules");
+    else if (installedVersion !== expected.version) problems.push(`installed ${installedVersion}, expected ${expected.version}`);
+    return {
+      name: expected.name,
+      declared: declaredVersion,
+      installed: installedVersion,
+      expected: expected.version,
+      path: installedVersion ? packageRoot : null,
+      ok: problems.length === 0,
+      problem: problems.length ? problems.join("; ") : null,
+    };
   });
-  if (result.error) throw result.error;
-  if (result.status !== 0) process.exit(result.status ?? 1);
-  installed.add(source);
 }
 
-const installedSettings: unknown = JSON.parse(readFileSync(settingsPath, "utf8"));
-if (typeof installedSettings !== "object" || installedSettings === null || Array.isArray(installedSettings)) {
-  throw new Error(`Pi wrote invalid settings at ${settingsPath}`);
-}
-settings = installedSettings as { [key: string]: unknown; packages?: unknown[] };
-
-// Keep bigpowers limited to six selected skills; do not load its extension,
-// prompts, themes, or the remaining broad skill catalog.
-const bigpowers = "npm:bigpowers@2.88.9";
-settings.packages = (settings.packages ?? []).map((item) => packageSource(item) === bigpowers
-  ? {
-      source: bigpowers,
-      autoload: false,
-      extensions: [],
-      prompts: [],
-      themes: [],
-      skills: [
-        "+.pi/skills/survey-context/SKILL.md",
-        "+.pi/skills/research-first/SKILL.md",
-        "+.pi/skills/plan-work/SKILL.md",
-        "+.pi/skills/develop-tdd/SKILL.md",
-        "+.pi/skills/verify-work/SKILL.md",
-        "+.pi/skills/audit-code/SKILL.md",
-      ],
+/** Refresh the copied bigpowers skills; report every file that could not be copied. */
+export function syncSelectedSkills(root = ROOT): { copied: string[]; failed: string[] } {
+  const copied: string[] = [];
+  const failed: string[] = [];
+  const sourceRoot = join(root, "node_modules", "bigpowers", ".pi", "skills");
+  for (const skill of SELECTED_SKILLS) {
+    const source = join(sourceRoot, skill, "SKILL.md");
+    const target = join(root, "config", "cyber", "skills", skill, "SKILL.md");
+    if (!existsSync(source)) {
+      failed.push(`${skill}: missing source ${source}`);
+      continue;
     }
-  : item);
-writeFileSync(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, { mode: 0o600 });
-
-const webConfigPath = resolve(profile, "web-search.json");
-let webConfig: { [key: string]: unknown } = {};
-try {
-  const parsed: unknown = JSON.parse(readFileSync(webConfigPath, "utf8"));
-  if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
-    webConfig = parsed as { [key: string]: unknown };
+    try {
+      mkdirSync(dirname(target), { recursive: true });
+      copyFileSync(source, target);
+      copied.push(skill);
+    } catch (error) {
+      failed.push(`${skill}: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
-} catch (error) {
-  if (!(error instanceof Error) || !("code" in error && error.code === "ENOENT")) throw error;
+  return { copied, failed };
 }
-webConfig.searchProvider ??= "exa";
-webConfig.workflow ??= "none";
-writeFileSync(webConfigPath, `${JSON.stringify(webConfig, null, 2)}\n`, { mode: 0o600 });
-console.log(`profile: ${profile}`);
-console.log(`search provider: ${String(webConfig.searchProvider)}; workflow: ${String(webConfig.workflow)}`);
+
+/** Profile files Pi reads for this harness. */
+export function profilePaths(root = ROOT): { path: string; exists: boolean; kind: string }[] {
+  const candidates: [string, string][] = [
+    [join(root, "config", "cyber", "settings.json"), "profile settings (packages, skills)"],
+    [join(root, "config", "cyber", "web-search.json"), "pi-web-access configuration"],
+    [join(root, "config", "cyber", "extensions", "subagent", "config.json"), "pi-subagents spawn caps"],
+    [join(root, "config", "cyber", "agents"), "specialist role definitions"],
+    [join(root, "config", "cyber", "skills"), "selected bigpowers skills"],
+  ];
+  return candidates.map(([path, kind]) => ({ path, exists: existsSync(path), kind }));
+}
+
+function main(): number {
+  const checkOnly = process.argv.includes("--check");
+  const checks = checkPackages();
+  let failed = false;
+  console.log("pi-cyber package check (pins from research/PACKAGES-*.md)");
+  for (const check of checks) {
+    if (check.ok) {
+      console.log(`  ok       ${check.name}@${check.expected} -> ${check.path}`);
+      continue;
+    }
+    failed = true;
+    console.error(`  FAILED   ${check.name}@${check.expected}: ${check.problem}`);
+    console.error(`           fix: bun add ${check.name}@${check.expected}`);
+  }
+
+  let sync = { copied: [] as string[], failed: [] as string[] };
+  if (!checkOnly) {
+    sync = syncSelectedSkills();
+    for (const skill of sync.copied) console.log(`  skill    ${skill} (copied from bigpowers)`);
+    for (const problem of sync.failed) {
+      failed = true;
+      console.error(`  FAILED   skill ${problem}`);
+    }
+  }
+
+  console.log("profile paths Pi loads for this harness");
+  for (const entry of profilePaths()) {
+    console.log(`  ${entry.exists ? "ok      " : "MISSING "} ${entry.kind}: ${entry.path}`);
+    if (!entry.exists) failed = true;
+  }
+
+  if (failed) {
+    console.error("package wiring incomplete: resolve the failures above before running the harness.");
+    return 1;
+  }
+  console.log("package wiring complete. Start Pi with: bun run pi (from the repository root).");
+  return 0;
+}
+
+if (import.meta.main) {
+  process.exit(main());
+}

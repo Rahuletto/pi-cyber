@@ -1,0 +1,8 @@
+{
+  "maxSubagentSpawnsPerRun": 8,
+  "maxActiveAsyncRunsPerSession": 2,
+  "globalConcurrencyLimit": 2,
+  "maxSubagentSpawnsPerSession": 16,
+  "defaultSubagentContext": "fresh",
+  "scheduledRuns": { "enabled": false }
+}
