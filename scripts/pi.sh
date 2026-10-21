@@ -16,6 +16,9 @@ fi
 # The harness is repo scoped: run the session from the repository root so the
 # specialist roles, the evidence store and the job artifacts resolve there.
 cd "$ROOT"
+# Persistent V8 bytecode cache — eliminates repeated JIT compilation of the pi bundle
+export NODE_COMPILE_CACHE="${NODE_COMPILE_CACHE:-$HOME/.pi/agent/.v8cc}"
+mkdir -p "$NODE_COMPILE_CACHE"
 PI="$ROOT/node_modules/.bin/pi"
 [ -x "$PI" ] || { echo "run: bun install --frozen-lockfile" >&2; exit 1; }
 EXTRA_ARGS=()
