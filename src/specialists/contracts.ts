@@ -23,6 +23,12 @@ export const SPECIALIST_ROLES = [
   "validation",
   "offensive-operator",
   "source-remediation",
+  "auth",
+  "secrets",
+  "exfil",
+  "backdoor",
+  "reverse",
+  "reviewer",
 ] as const;
 export type SpecialistRole = (typeof SPECIALIST_ROLES)[number];
 

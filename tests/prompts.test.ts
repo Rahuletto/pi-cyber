@@ -17,17 +17,34 @@ const offense = read("offense");
 const defense = read("defense");
 const all = { base, offense, defense };
 
-/** Line caps from the buildout plan Task 13. */
+/**
+ * Line caps from the buildout plan Task 13. Lines enforce the dense-paragraph
+ * structure (bolded section headers, no walls of bullets).
+ */
 const LINE_CAPS: Record<string, number> = { base: 40, offense: 25, defense: 25 };
 
+/**
+ * Character caps. The overlays are injected into the system prompt on every
+ * provider call, so the size that actually costs tokens is characters, not
+ * lines — a 25-line file can hold 60k characters and blow the context window
+ * without tripping the line cap. This budget is the real size guard.
+ */
+const CHAR_CAPS: Record<string, number> = { base: 12_000, offense: 16_000, defense: 12_000 };
+
 /** Tools the overlays are allowed to name. Anything else is a phantom. */
-const REGISTERED_CYBER_TOOLS = ["cyber_state", "cyber_evidence", "cyber_jobs"];
+const REGISTERED_CYBER_TOOLS = ["cyber_state", "cyber_evidence", "cyber_jobs", "cyber_spec"];
 
 describe("prompt overlays", () => {
   test("each overlay stays inside its line cap", () => {
     for (const [name, cap] of Object.entries(LINE_CAPS)) {
       const lines = all[name as keyof typeof all].split("\n");
       expect(lines.length).toBeLessThanOrEqual(cap);
+    }
+  });
+
+  test("each overlay stays inside its character budget", () => {
+    for (const [name, cap] of Object.entries(CHAR_CAPS)) {
+      expect(all[name as keyof typeof all].length).toBeLessThanOrEqual(cap);
     }
   });
 

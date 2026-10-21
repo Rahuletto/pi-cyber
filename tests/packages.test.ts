@@ -96,8 +96,8 @@ describe("cyber profile wiring", () => {
     }
   });
 
-  test("the profile carries the six specialist roles and the six selected skills", () => {
-    const roles = ["recon", "web-api", "vulnerability-research", "validation", "offensive-operator", "source-remediation"];
+  test("the profile carries the twelve specialist roles and the six selected skills", () => {
+    const roles = ["recon", "web-api", "vulnerability-research", "validation", "offensive-operator", "source-remediation", "auth", "secrets", "exfil", "backdoor", "reverse", "reviewer"];
     for (const role of roles) {
       const path = join(PROFILE, "agents", `${role}.md`);
       expect(existsSync(path)).toBe(true);

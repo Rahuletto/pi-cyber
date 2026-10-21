@@ -66,11 +66,10 @@ test("actual SDK loader registers commands and state tool writes durable mode-sp
   expect(state.scope).toEqual(["local fixture only"]);
   expect(state.modes.offense.nextSteps).toEqual(["prepare dossier"]);
   expect(state.modes.defense.nextSteps).toEqual(["validate fixture hypothesis"]);
-  expect(h.extension.tools.size).toBe(17);
+  expect(h.extension.tools.size).toBe(18);
 });
 
-test("top-level /offense and /defense share the /cyber mode guard and switch path", async () => {
-  const h = await host();
+test("top-level /offense and /defense share the /cyber mode guard and switch path", async () => {  const h = await host();
   expect((await h.tool({ action: "get" })).details.mode).toBe("offense");
   h.setIdle(false); await h.command("defense"); h.setIdle(true);
   expect((await h.tool({ action: "get" })).details.mode).toBe("offense");
@@ -176,4 +175,19 @@ test("checkpoint reports durable revision and invalid model patch leaves state i
   const before = h.session.getBranch().length;
   await expect(h.tool({ action: "update", patch: { objective: "api_key=do-not-store-this-value" } })).rejects.toThrow(/secret/i);
   expect(h.session.getBranch()).toHaveLength(before);
+});
+
+test("cyber_spec serves the full specification and every package to the agent", async () => {
+  const h = await host();
+  const call = async (target: string) => {
+    const result = await h.extension.tools.get("cyber_spec")!.definition.execute("fixture", { target }, undefined, undefined, h.ctx as unknown as ExtensionToolContext);
+    const content = result.content as { type: "text"; text: string }[];
+    return String(content[0]?.text ?? "");
+  };
+  expect(await call("full")).toContain("# 30. ACTIVATION");
+  expect(await call("doors")).toContain("find the other 98");
+  expect(await call("status")).toContain("PHASE N COMPLETE");
+  await expect(call("nonexistent")).rejects.toThrow(/Unknown specification target/);
+  await h.command("cyber", "mode defense");
+  await expect(call("full")).rejects.toThrow(/offense mode/);
 });

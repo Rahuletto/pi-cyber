@@ -114,7 +114,7 @@ describe("specialist result critique", () => {
 
 describe("specialist role files", () => {
   test("one role file per planned role, each within the 60 line budget", () => {
-    expect(SPECIALIST_ROLES.length).toBe(6);
+    expect(SPECIALIST_ROLES.length).toBe(12);
     for (const role of SPECIALIST_ROLES) {
       const path = join(AGENTS_DIR, `${role}.md`);
       expect(existsSync(path)).toBe(true);

@@ -2,6 +2,7 @@ import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-a
 import { Type } from "typebox";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { join } from "node:path";
 import { STATE_ENTRY, brief, recoverState, switchMode, updateState, type CyberMode, type CyberState } from "./state.ts";
 import { registerGithubTool } from "./tools/github.ts";
 import { registerEvidenceTool } from "./tools/evidence.ts";
@@ -14,6 +15,51 @@ import { contextLine } from "./evidence/db.ts";
 const CYBER_THEME = "cyber-defense"; // Single blue accent in both modes; nothing rethemes on mode change.
 const resource = (path: string) => fileURLToPath(new URL(`../${path}`, import.meta.url));
 const instructions = Object.fromEntries(["base", "offense", "defense"].map((name) => [name, readFileSync(resource(`prompts/${name}.md`), "utf8")]));
+
+/** Absolute path to the prompt tree. Injected into the runtime prompt so the agent can reach the full spec and packages by absolute path. */
+const PROMPTS_DIR = resource("prompts");
+/** Package names the agent may pull on demand. Each maps to a file under prompts/packages/. */
+const PACKAGE_FILES: Record<string, string> = {
+  behavior: "behavior.md", contract: "contract.md", doctrine: "doctrine.md", doors: "doors.md",
+  exfil: "exfil.md", backdoor: "backdoor.md", secrets: "secrets.md", evidence: "evidence.md", status: "status.md",
+};
+/**
+ * Model-family overlay selection. The first matching rule wins; the more specific
+ * prefix is listed first. Unmatched models fall back to the general overlay.
+ */
+const OVERLAY_RULES: ReadonlyArray<readonly [RegExp, string]> = [
+  [/^grok|^cursor-grok|^cortex/i, "grok"], [/^claude/i, "claude"],
+  [/^gpt-5|^gpt-4o|^gpt-oss|^composer/i, "gpt"], [/^o1$|^o3$|^o4/i, "reasoning"],
+  [/^deepseek/i, "deepseek"], [/^llama/i, "llama"], [/^qwen/i, "qwen"], [/^gemma/i, "gemma"],
+  [/^mistral/i, "mistral"], [/^phi/i, "phi4"], [/^gemini/i, "gemini"], [/^glm|^zai-glm/i, "glm"],
+  [/^kimi/i, "kimi"], [/^nemotron|^arcee/i, "reasoning"],
+];
+const overlayCache = new Map<string, string>();
+/** Read a prompt resource, returning an empty string when it is absent so a missing overlay never breaks a run. */
+const readPrompt = (relative: string): string => {
+  try { return readFileSync(join(PROMPTS_DIR, relative), "utf8"); } catch { return ""; }
+};
+/** Resolve the behavioural overlay for a model id: family block plus the tool-calling block. */
+function overlayFor(modelId: string | undefined): string {
+  const key = modelId ?? "general";
+  const cached = overlayCache.get(key);
+  if (cached !== undefined) return cached;
+  const family = OVERLAY_RULES.find(([pattern]) => pattern.test(key))?.[1] ?? "general";
+  const body = [readPrompt(`overlays/${family}.md`), readPrompt("overlays/toolcall.md")].filter(Boolean).join("\n\n");
+  const rendered = body || readPrompt("overlays/general.md");
+  overlayCache.set(key, rendered);
+  return rendered;
+}
+/** Render the offense runtime prompt with the absolute prompt directory and the model overlay substituted in. */
+function renderOffense(modelId: string | undefined): string {
+  return instructions.offense.replaceAll("{{PROMPTS_DIR}}", PROMPTS_DIR).replace("{{MODEL_OVERLAY}}", overlayFor(modelId));
+}
+/** One-line pointer to the full spec and the package set, re-injected on every provider call so it survives compaction. */
+function specPointer(mode: CyberMode): string {
+  if (mode !== "offense") return "";
+  const packages = Object.keys(PACKAGE_FILES).map((name) => `${name}=${join(PROMPTS_DIR, "packages", PACKAGE_FILES[name])}`).join(" ");
+  return `OFFENSE SPEC: full=${join(PROMPTS_DIR, "offense-full.md")} | packages: ${packages} | read the file you need before acting on that area.`;
+}
 const strings = Type.Array(Type.String({ minLength: 1, maxLength: 2000 }), { maxItems: 24 });
 const patchSchema = Type.Object({
   scope: Type.Optional(strings), objective: Type.Optional(Type.String({ maxLength: 2000 })),
@@ -91,7 +137,8 @@ export default function cyber(pi: ExtensionAPI): void {
     const state = current(ctx);
     try { applyTheme(ctx); decorate(ctx, state.mode); }
     catch (error) { visualReady = false; notice(ctx, errorText(error), "error"); }
-    return { systemPrompt: `${event.systemPrompt}\n\n${instructions.base}\n\n${instructions[state.mode]}` };
+    const modePrompt = state.mode === "offense" ? renderOffense(ctx.model?.id) : instructions.defense;
+    return { systemPrompt: `${event.systemPrompt}\n\n${instructions.base}\n\n${modePrompt}` };
   });
   // Runs for every provider call, including a continuation after mid-turn compaction.
   // This message is ephemeral: it does not grow the session transcript.
@@ -100,9 +147,12 @@ export default function cyber(pi: ExtensionAPI): void {
   pi.on("context", (event, ctx) => {
     let evidenceSuffix = "";
     try { const line = contextLine(); if (line) evidenceSuffix = `\n${line}`; } catch { evidenceSuffix = ""; }
+    const state = current(ctx);
+    const spec = specPointer(state.mode);
+    const suffix = `${evidenceSuffix}${spec ? `\n${spec}` : ""}`;
     return { messages: [
       ...event.messages.filter((message) => !(message.role === "custom" && message.customType === "cyber.context")),
-      { role: "custom" as const, customType: "cyber.context", content: `${brief(current(ctx))}${evidenceSuffix}`, display: false, timestamp: Date.now() },
+      { role: "custom" as const, customType: "cyber.context", content: `${brief(state)}${suffix}`, display: false, timestamp: Date.now() },
     ] };
   });
   pi.on("tool_call", (_event, ctx) => {
@@ -130,6 +180,21 @@ export default function cyber(pi: ExtensionAPI): void {
   });
   registerModeCommand("offense");
   registerModeCommand("defense");
+  pi.registerCommand("offensespec", {
+    description: "Load the offense operator specification into the session: /offensespec [full|behavior|contract|doctrine|doors|exfil|backdoor|secrets|evidence|status]",
+    handler: async (args, ctx) => {
+      try {
+        if (current(ctx).mode !== "offense") { notice(ctx, "The offense specification needs offense mode. Switch with /offense first.", "warning"); return; }
+        const requested = (args.trim() || "full").toLowerCase();
+        const body = requested === "full"
+          ? readPrompt("offense-full.md")
+          : readPrompt(join("packages", PACKAGE_FILES[requested] ?? ""));
+        if (!body) { notice(ctx, `Unknown specification target "${requested}". Use full or one of: ${Object.keys(PACKAGE_FILES).join(", ")}.`, "error"); return; }
+        await pi.sendMessage({ customType: "cyber.spec", content: body, display: false }, { triggerTurn: true });
+        notice(ctx, `Loaded offense specification: ${requested} (${body.length} chars).`, "info");
+      } catch (error) { notice(ctx, errorText(error), "error"); }
+    },
+  });
   pi.registerTool({
     name: "cyber_state", label: "Cyber state",
     description: "Read or replace selected durable engagement fields. Scope/objective are shared; coverage, evidenceRefs and nextSteps belong to the active mode. Record established user scope only. No raw secrets. Lists replace their previous values; use get first. Mode changes require the user's /offense or /defense command (also /cyber mode offense|defense).",
@@ -144,6 +209,36 @@ export default function cyber(pi: ExtensionAPI): void {
       const next = params.action === "update" ? updateState(state, params.patch) : state;
       if (params.action === "update") save(next);
       return { content: [{ type: "text", text: brief(next) }], details: next, structuredContent: JSON.parse(JSON.stringify(next)) };
+    },
+  });
+  pi.registerTool({
+    name: "cyber_spec",
+    label: "Offense specification",
+    description:
+      "Load the offense operator specification on demand. target='full' returns the complete specification; " +
+      "target=<package> returns one focused package (behavior, contract, doctrine, doors, exfil, backdoor, secrets, evidence, status). " +
+      "Read 'full' before the first target interaction in an engagement, and the package matching the current task before acting on that area. " +
+      "Offense mode only.",
+    promptSnippet:
+      "Load the offense operator specification, or the focused package for the task at hand, before acting on that area.",
+    parameters: Type.Object({
+      target: Type.String({ minLength: 1, maxLength: 64, description: "'full', or a package name." }),
+    }, { additionalProperties: false }),
+    executionMode: "sequential",
+    annotations: { readOnlyHint: true, openWorldHint: false },
+    async execute(_id, params, _signal, _onUpdate, ctx) {
+      if (current(ctx).mode !== "offense") throw new Error("The offense specification is only available in offense mode. Switch with /offense.");
+      const requested = params.target.trim().toLowerCase();
+      if (requested === "full" || requested === "offense-full" || requested === "spec") {
+        const body = readPrompt("offense-full.md");
+        if (!body) throw new Error("The offense specification is not installed at prompts/offense-full.md.");
+        return { content: [{ type: "text", text: body }], details: { target: "full", chars: body.length } };
+      }
+      const file = PACKAGE_FILES[requested];
+      if (!file) throw new Error(`Unknown specification target "${params.target}". Use "full" or one of: ${Object.keys(PACKAGE_FILES).join(", ")}.`);
+      const body = readPrompt(join("packages", file));
+      if (!body) throw new Error(`Package "${requested}" is not installed at prompts/packages/${file}.`);
+      return { content: [{ type: "text", text: body }], details: { target: requested, chars: body.length } };
     },
   });
 }
