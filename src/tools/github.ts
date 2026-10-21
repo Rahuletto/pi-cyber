@@ -39,8 +39,24 @@ export function resolveGhPath(paths?: string[]): string | null {
 }
 
 function clip(text: string): string {
-  return text.length > MAX_OUTPUT_CHARS ? text.slice(0, MAX_OUTPUT_CHARS) + TRUNCATED : text;
+  if (text.length <= MAX_OUTPUT_CHARS) return text;
+  let cut = text.slice(0, MAX_OUTPUT_CHARS);
+  // Never emit a lone surrogate: drop a trailing half of a split pair.
+  const last = cut.charCodeAt(cut.length - 1);
+  if (last >= 0xd800 && last <= 0xdbff) cut = cut.slice(0, -1);
+  return cut + TRUNCATED;
 }
+
+/** owner/name with a conservative character set; guards the read endpoint against traversal. */
+const REPO_PATTERN = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
+
+/** Read targets interpolate into the authenticated GitHub API path: validate them before any call. */
+function validateReadTarget(repo: string, path: string): void {
+  if (!REPO_PATTERN.test(repo)) throw new Error(`Invalid repo for the read action: expected owner/name of [A-Za-z0-9_.-] only (rejected ${JSON.stringify(repo.slice(0, 64))}).`);
+  if (path.startsWith("/")) throw new Error(`Invalid path for the read action: path must be relative to the repo root (rejected ${JSON.stringify(path.slice(0, 64))}).`);
+  if (path.split("/").some((segment) => segment === "..")) throw new Error(`Invalid path for the read action: path must not contain '..' segments (rejected ${JSON.stringify(path.slice(0, 64))}).`);
+}
+
 
 async function runGh(ghPath: string, args: string[], signal: AbortSignal | undefined): Promise<string> {
   try {
@@ -124,12 +140,15 @@ const githubTool: ToolDefinition<typeof parameters> = {
     _ctx: ExtensionToolContext
   ): Promise<AgentToolResult> {
     requireFields(params);
+    if (params.action === "read") validateReadTarget(params.repo!, params.path!);
     const ghPath = resolveGhPath();
     if (!ghPath) throw new Error("gh CLI not available");
     const argv = buildArgs(params);
     const stdout = await runGh(ghPath, argv, signal);
+    let text = clip(stdout);
+    if (params.action === "cve" && text.trim().length === 0) text = "No advisories found";
     return {
-      content: [{ type: "text", text: clip(stdout) }],
+      content: [{ type: "text", text }],
       details: { action: params.action, argv: [ghPath, ...argv] },
     };
   },

@@ -9,4 +9,5 @@ PI="$ROOT/node_modules/.bin/pi"
 [ -x "$PI" ] || { echo "run: bun install --frozen-lockfile" >&2; exit 1; }
 EXTRA_ARGS=()
 [ "${AST:-0}" = "1" ] && EXTRA_ARGS+=(-e "$ROOT/src/ast-extension.ts")
-exec "$PI" -e "$ROOT/src/index.ts" --theme "$ROOT/config/cyber" "${EXTRA_ARGS[@]}"
+# No --theme argument: unverified flag on Pi 1.3.0; theme resources load via the package.json manifest.
+exec "$PI" -e "$ROOT/src/index.ts" ${EXTRA_ARGS[@]+"${EXTRA_ARGS[@]}"}

@@ -94,12 +94,12 @@ describe("resolveGhPath", () => {
 });
 
 describe("github tool", () => {
-  test("passes hostile repo/path as single argv elements, never shell-interpreted", async () => {
+  test("passes a hostile file path as a single argv element, never shell-interpreted", async () => {
     const dir = await tempDir();
     const dump = join(dir, "argv.dump");
     await writeFakeGh(dir);
     await rm(dump, { force: true });
-    const repo = "x\nrm -rf /";
+    const repo = "own.er/re-po";
     const path = "docs/a b\nc\nd.md";
     process.env.PATH = dir;
     process.env.GH_ARGV_DUMP = dump;
@@ -113,8 +113,25 @@ describe("github tool", () => {
       "Accept: application/vnd.github.raw",
     ]);
     // Every received piece stayed inside its own argv slot.
-    expect(argv.some((arg) => arg === "rm -rf /" || arg === "-rf")).toBe(false);
+    expect(argv.some((arg) => arg === "rm -rf /" || arg === "-rf" || arg === "..")).toBe(false);
     expect(result.isError ?? false).toBe(false);
+  });
+
+  test("rejects traversal/metacharacter read targets before any process starts", async () => {
+    const dir = await tempDir();
+    const dump = join(dir, "argv.dump");
+    await writeFakeGh(dir);
+    process.env.PATH = dir;
+    process.env.GH_ARGV_DUMP = dump;
+    process.env.GH_CANNED_OUTPUT = '{"pwned":true}';
+    for (const repo of ["owner/../evil", "own er/repo", "owner/re#po", "..", "owner/sub/repo"]) {
+      await expect(invoke({ action: "read", repo, path: "a.md" })).rejects.toThrow(/repo/);
+    }
+    for (const path of ["../secrets", "/etc/hosts", "a/../../b", ".."]) {
+      await expect(invoke({ action: "read", repo: "owner/re-po", path })).rejects.toThrow(/path/);
+    }
+    // The fake gh must never have been invoked for any rejection.
+    expect(existsSync(dump)).toBe(false);
   });
 
   test("runs gh from the injected PATH, prints canned stdout and traces correct argv", async () => {
@@ -151,6 +168,21 @@ describe("github tool", () => {
     process.env.GH_CANNED_OUTPUT = exact;
     const untouched = await invoke({ action: "cve", query: "CVE-2024-1234" });
     expect(untouched.content[0]).toEqual({ type: "text", text: exact });
+    // A truncated slice never ends in a lone high surrogate.
+    const split = `${"a".repeat(31_999)}\ud83d\ude00`;
+    process.env.GH_CANNED_OUTPUT = split;
+    const surrogateSafe = await invoke({ action: "cve", query: "CVE-2024-1234" });
+    expect(surrogateSafe.content[0]).toEqual({ type: "text", text: `${"a".repeat(31_999)}[truncated]` });
+  });
+
+  test("empty cve output falls back to an explicit no-advisories message", async () => {
+    const dir = await tempDir();
+    await writeFakeGh(dir);
+    process.env.PATH = dir;
+    process.env.GH_ARGV_DUMP = join(dir, "argv.dump");
+    process.env.GH_CANNED_OUTPUT = "";
+    const result = await invoke({ action: "cve", query: "CVE-2024-9999" });
+    expect(result.content[0]).toEqual({ type: "text", text: "No advisories found" });
   });
 
   test("resolves gh lazily per call, so PATH is honoured at execute time", async () => {
