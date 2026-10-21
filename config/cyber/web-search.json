@@ -1,0 +1,23 @@
+{
+  "provider": "duckduckgo",
+  "workflow": "none",
+  "webSearch": {
+    "enabled": true,
+    "allowedProviders": ["duckduckgo"]
+  },
+  "fetchRouting": {
+    "providers": ["http"],
+    "allowRemoteHostedProviders": false
+  },
+  "fetch": {
+    "timeout": 30,
+    "defaultMode": "readable",
+    "allowedModes": ["readable", "raw"]
+  },
+  "commands": {
+    "curator": { "enabled": false }
+  },
+  "allowBrowserCookies": false,
+  "maxInlineContentChars": 30000,
+  "toolActivation": "auto"
+}

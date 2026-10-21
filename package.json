@@ -27,5 +27,11 @@
   },
   "optionalDependencies": {
     "@ast-grep/napi": "0.51.0"
+  },
+  "dependencies": {
+    "bigpowers": "2.88.9",
+    "pi-btw": "0.8.0",
+    "pi-subagents": "0.79.2",
+    "pi-web-access": "0.43.0"
   }
 }
