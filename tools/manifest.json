@@ -21,7 +21,7 @@
     { "name": "rea", "category": "reverse", "repo": "morluto/rea", "version": "pin-at-install", "disposition": "on-demand" },
     { "name": "ghidra", "category": "reverse", "repo": "NationalSecurityAgency/ghidra", "version": "pin-at-install", "disposition": "deferred", "note": "deferred per operator decision 2026-10-21" },
     { "name": "jdk21", "category": "misc", "repo": "Adoptium/temurin21-binaries", "version": "pin-at-install", "disposition": "deferred", "note": "deferred per operator decision 2026-10-21" },
-    { "name": "understand-anything", "category": "misc", "version": "pin-at-install", "disposition": "on-demand", "note": "optional repository-comprehension lane; not part of core scanner execution" },
+    { "name": "understand-anything", "category": "misc", "version": "pin-at-install", "disposition": "on-demand", "note": "cataloged but never installed by the harness; optional repository-comprehension lane, not core scanner execution" },
     { "name": "piebald-claude-code-system-prompts", "category": "misc", "repo": "Piebald-AI/claude-code-system-prompts", "version": "pin-at-install", "disposition": "reference", "note": "catalog-only design source for the prompt corpus (security review methodology, coordinator/worker instructions, security monitor); never installed, no code imported" },
     { "name": "awesome-claude-code", "category": "misc", "version": "pin-at-install", "disposition": "reference", "note": "catalog-only design source index for prompt/agent patterns; never installed, no code imported" }
   ]
