@@ -1,26 +1,30 @@
-# Implementation boundaries and next integrations
+# Build status
 
-This workspace is `/Users/marban/.t3/scratch/2026-10-21-we-are-going-to-setup-f8d485bc`. There is no permanent checkout or Git repository yet. Global Mac settings and scanner installations are outside this local package.
+This status applies to the merged `feat/toolchain-buildout` tree. It distinguishes code present in the repository from capabilities exercised on this machine.
 
-The first package implements workflow state and Pi integration; see README for the tested behavior. A research decision or a Markdown specialist definition does not establish a running external integration.
+## Implemented in the extension
 
-## Selected architecture
+- `/offense`, `/defense`, and `/cyber status|checkpoint|mode …`; offense is the fresh-session default. The theme stays blue in both modes and the mode badge carries the distinction.
+- `cyber_state` for branch-aware engagement scope, objective, mode-specific coverage, evidence references and next steps.
+- Typed tools for the pinned scanner adapters, serialized job tracking, bounded evidence storage, Obscura browser leases and local-corpus FTS search.
+- A separate optional AST search/edit extension and a loopback-only Cyberbench fixture with intentionally seeded access-control and file-upload flaws.
+- Specialist contracts and role templates, plus pinned package/profile setup. Package installation and worker-runtime behavior are reported separately from the role definitions.
 
-- Pi owns normal coding tools, model calls, session branching and automatic compaction.
-- The cyber extension owns offense/defense overlays, mode display and durable engagement checkpoints. Scope and evidence pointers are restored into context rather than entrusted to lossy summaries alone.
-- Borrow oh-my-pi's AST search and staged-edit ideas through the separately enabled `ast_grep`/`ast_edit` module. Do not import its runtime, virtual filesystem, memory service or entire tool collection.
-- Keep Obscura direct MCP as the proposed free browser path; evaluate actual authenticated application compatibility before relying on it. A stock Chromium/WebKit lane is needed for engine-specific controls. CloakBrowser is an optional alternate, with current license/free-tier ambiguity documented in research.
-- Use one search/reader package with an explicit provider. A hosted keyless route is convenient but can throttle or disappear; self-hosted SearXNG avoids paid API credentials at the cost of operating a service. No search service is started by this foundation.
-- Use pi-subagents for bounded specialist execution after the pinned plugin is tested with host/mode context propagation. Templates are delivered before scheduler enforcement, cancellation and resource ownership are proven.
+## Verification boundaries
 
-## Next operational milestones
+- The extension, parsers, job and evidence paths, browser lease state transitions, knowledge indexing, prompts and Cyberbench loopback tests are exercised by the local test suite when it passes on the final tree.
+- `bun run doctor` reports PATH presence and recorded installer state. It does not execute a tool, verify its version, connect to a target or prove compatibility.
+- Knowledge search covers the local indexed skills/research/docs corpus after an explicit rebuild. It does not claim a complete or automatically refreshed OWASP, CWE, CVSS or ATT&CK mirror.
+- Browser lease behavior is a coordination contract. It does not provide process isolation, authenticated browser profiles, or proof that an external browser MCP is connected.
+- Specialist Markdown files and task/result validation do not establish that `pi-subagents` is installed, that workers inherit all intended context, or that concurrency/cancellation is enforced by the harness.
+- Network scanning, third-party package runtime compatibility, native Node execution, real provider calls and authenticated browser workflows require separate operator verification.
 
-1. Validate local Pi launch and model sign-in with the user's chosen provider. Keep an independent cyber profile so existing settings remain reviewable.
-2. Connect the selected browser MCP to a local fixture. Test real sign-in and isolated signed-out/member/admin contexts, request/response capture, page ownership and navigation limits.
-3. Build the native job adapter and evidence record contracts. Add parser fixtures, cancellation, timeouts, output bounds and scope checks before connecting the requested scanner family. Preserve raw artifacts plus normalized findings.
-4. Integrate specialist runtime with maximum concurrency, parent/worker instruction propagation, lease ownership, budgets and cancellation tests. No recursive fan-out by default.
-5. Connect the research provider and documentation registry. Verify source provenance, failed fetch handling and references after compaction. Start with official OWASP reference packs rather than claiming all cyber documentation is indexed.
-6. Install and verify the matching REA skill/server plus one local engine against a supplied benign fixture. Confirm architecture and SDK/tool versions, then enable binary specialists.
-7. Run one complete local application assessment: route-role matrix, validated findings, defense implementation handoff, fix task and retest. Broader tool packs activate according to the actual project.
+## Open operational checks
 
-No live target is supplied. Tool installation, fixture tests and operational scanning are separate milestones and must be reported separately.
+1. Install and inspect the pinned packages in the dedicated cyber profile; verify exact loaded resources and explicit search-provider configuration.
+2. Confirm model sign-in in that profile and test one bounded child task with context and tool grants.
+3. Connect the selected browser MCP and validate a signed-out/member/admin flow against Cyberbench.
+4. Run the documented first engagement against `127.0.0.1` only, then inspect the recorded evidence and remediation handoff.
+5. Review platform-specific tool validation results; keep every unavailable, skipped or unsupported executable visible in doctor output.
+
+No external target is configured. Mode prompts and package tool schemas are workflow controls, not an operating-system sandbox or general authorization boundary.

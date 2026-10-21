@@ -1,8 +1,8 @@
 # Pi Cyber Harness
 
-A working, deliberately small Pi extension for offense and defense investigation. It adds `/cyber` plus the top-level `/offense` and `/defense` commands, a structured `cyber_state` tool, mode instructions, durable session checkpoints and a single blue cyber theme. Pi remains the agent runtime; its native read/bash/edit/write tools and automatic compaction remain available.
+A lean Pi extension harness for offense and defense investigation. It adds `/cyber` plus `/offense` and `/defense`, a structured `cyber_state` tool, typed scanner tools, serialized job tracking, evidence storage, browser-session leases, local knowledge search, mode instructions and durable session checkpoints. The theme stays blue in both modes; the mode badge is colored. Pi remains the agent runtime and its native tools and automatic compaction stay available.
 
-This is the foundation described in [the design](PI-CYBER-HARNESS-DESIGN.md). Browser, scanner, REA, evidence database and specialist orchestration integrations remain planned. No assessment target is configured.
+See [the design](PI-CYBER-HARNESS-DESIGN.md), [build status](docs/BUILD-STATUS.md), and the [first local engagement](docs/FIRST-ENGAGEMENT.md). No external assessment target is configured. The included Cyberbench target binds only to loopback and is intentionally vulnerable.
 
 ## Run locally
 
@@ -16,7 +16,7 @@ bun run doctor
 bun run pi
 ```
 
-`bun run pi` uses the local pinned Pi CLI and defaults `PI_CODING_AGENT_DIR` to `.pi-cyber` in this directory. It explicitly loads this extension and its theme directory, preserving existing personal Pi configuration. Set `PI_CODING_AGENT_DIR` explicitly to choose another dedicated directory. Configure your provider/login there; this project does not copy personal credentials. Pi still uses its normal project trust, project instructions and resource discovery. No global installs are needed.
+`bun run pi` uses the local pinned Pi CLI and defaults `PI_CODING_AGENT_DIR` to `config/cyber` in this directory. It explicitly loads this extension, preserving existing personal Pi configuration. Set `PI_CODING_AGENT_DIR` explicitly to choose another dedicated directory. Configure provider login there; this project does not copy personal credentials. Pi still uses its normal project trust and project instructions.
 
 For use from another project directory, provide absolute paths:
 
@@ -68,7 +68,9 @@ Offense follows objective-driven discovery, deep enumeration, discriminating act
 
 Defense investigates with the same evidence discipline. Its default output is an implementation-ready remediation dossier with reproduction, affected roles/routes, root cause, proposed correction, implementation scope, regression cases and retest criteria. It applies changes when implementation is part of the task, and distinguishes proposed, applied and verified outcomes.
 
-The six files under `agents/` are recon, web, auth, reverse, reviewer and remediation role templates. A separately installed/configured `pi-subagents` runtime would be needed to use them as workers. This package neither installs that dependency nor automatically loads/spawns workers. Their tool lists have not been validated against an installed pi-subagents release. Obscura, REA, scanners, knowledge ingestion, task scheduling, job budgets, cancellation/session leases and reviewed evidence merging are not implemented here.
+The six specialist profiles and their task/result contract are available for bounded delegation when `pi-subagents` is installed in the dedicated profile. Definitions do not prove that workers inherit all parent context or that the host enforces budgets, isolation or cancellation; verify those behaviors before relying on them. See [package setup and limits](docs/PACKAGES.md).
+
+`cyber_knowledge` searches the local skills, research and documentation index after an explicit rebuild. It does not mirror every OWASP or cybersecurity document and does not fetch or rebuild content automatically. `cyber_browser` coordinates one active owner for a browser session; it does not install or sandbox an external browser. Scanner tools use typed parameters and the job runner; their availability and validation state are reported separately by `bun run doctor`.
 
 ## Evidence and execution boundaries
 
@@ -112,7 +114,7 @@ Before/after records remain in the ordinary tool result; the extension adds no a
 
 ## Verification
 
-Tests run without a model, target service or external tools. They exercise the actual pinned Pi extension loader and real temporary on-disk sessions with host UI/runtime test doubles. Cases cover persisted mode and per-mode briefs, active/nested work refusal, failed theme transitions, native-compaction recovery, branch/session separation, corrupt checkpoint refusal, secret-pattern rejection, and read-only doctor behavior. Both themes pass Pi's full schema and theme renderer in truecolor and 256-color modes.
+Tests run without a model, external target or external scanner. They exercise the pinned Pi extension loader and temporary sessions, typed adapter/job/evidence paths, browser lease transitions, knowledge FTS over fixtures, specialist contracts, the loopback Cyberbench app and reporting utilities.
 
 Interactive terminal appearance, a native Node runtime, provider calls, live automatic token-threshold compaction, pi-subagents and external tools remain untested. Themes derive from Pi 1.3.0's complete dark theme, retaining its success/error/warning semantics; light-terminal visual QA remains open. Dependency lifecycle scripts are not required for these checks and were left blocked by Bun.
 
