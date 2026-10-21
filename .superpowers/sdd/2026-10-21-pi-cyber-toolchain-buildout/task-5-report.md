@@ -40,3 +40,56 @@ Branch: `feat/adapter-registry` · Commit: `4135fb3` · Date: 2026-10-21
 5. **`interactsh-client` writes a session file by default** (operator-visible filesystem side effect). Left to Task 6 runner / operator `extra` — deliberately not smuggled into buildArgs path construction here.
 6. The parse layer never throws; malformed input surfaces as fewer `Normalized` rows while the runner's raw artifact (Task 6) preserves the untouched output — that "evidence survives even when parsing can't" contract is commented at the top of `util.ts` and in `ffuf`/`vulnx`/`semgrep`.
 7. `vulnx` — the PD tool is a CVE/advisory query client (search/id/analyze), NOT a target scanner, per the repo's research ledger; the schema forces that framing (no target param exists). If an upstream releases a scanning behavior later, it would need its own adapter, not this one.
+
+---
+
+# Task 5 Fix Report — review findings (F1, F2, M1–M5)
+
+Branch: `feat/adapter-registry` · Commit: `2369101` (`fix: adapter flag-injection guards and argv ordering`) · Date: 2026-10-21
+
+## F1 (IMPORTANT) — `-`-prefix flag-smuggling guard, applied centrally and everywhere
+
+- **`src/adapters/util.ts`** gained the single choke point `rejectFlagLike(value, paramName)` → throws `TypeError` with exactly `field-param "<param>" must not start with "-"`, plus narrow combinators that funnel every model-supplied free string through it:
+  - `modelList(value, paramName)` / `modelString(value, paramName)` — for free-string **model** params,
+  - `requireModelList` / `requireModelString` — which also carry the M3 missing-input throws,
+  - `stringList` stays the plain filter, still used for **closed-set enums** (`nuclei.severity`, `uncover.engines` — literal-validated Type.Literal unions, flagged in comments) and inside the helpers.
+- Applied to every model-controlled value before it enters argv: httpx `targets`, katana `targets`, dnsx `domains`, naabu `hosts`, nuclei `targets` + `templates`, subfinder `domain` + `sources`, ffuf `target` + `extensions`, uncover `query`, vulnx `query` + `cveIds`, semgrep `paths`. Closed enums (severities/recordTypes/engines/ruleSets/methods/scanTypes) deliberately not re-guarded — they are `Type.Literal` unions. Ints (`ports`, `statusCodes`, `limit`, `depth` become `String(int)`) cannot carry `-`.
+- **`extra` is deliberately NOT guarded and keeps verbatim append** — it is the operator-approved flag surface by design (now via `operatorExtra`, see M4). Test pins this behavior explicitly, plus a test pinning the cap under a 5-element attempt.
+- Tests: 11 case rows across 8 adapters (incl. the reviewer's `["-l","/etc/passwd"]` httpx case, `--config`/`scan`/`--sarif` semgrep smuggling examples, `--json` via vulnx cveIds, `--help` via uncover query) all assert the exact `field-param …` error.
+
+## F2 (IMPORTANT) — semgrep argv ordering
+
+Canonical order now: `semgrep scan --sarif --config <ruleSet> <paths?> <operator extra?>` — subcommand + flags first, model paths last, operator `extra` always last. Comment in semgrep.ts documents the canonical form rationale; snapshot test updated; paths can never precede `scan`.
+
+## M1 — ffuf fixture key
+
+`tests/fixtures/adapters/ffuf.json` run-configuration key renamed `configdata` → `config` (ffuf ≥2.1 nests it under `config`). Parse path only touches `results`, unaffected.
+
+## M2 — vulnx doc-comment mojibake
+
+Stray `одель` cleaned from `vulnx.ts`.
+
+## M3 — degenerate argv on missing required input
+
+Centralized in `requireModelString`/`requireModelList` (`<adapter>: missing required param "<param>"`): bare `,-json` argv (subfinder), empty positional targets (httpx/katana/semgrep/naabu paths), and `String(undefined)` (ffuf `-u undefined`) are all gone — missing required target/domain/targets/query/hosts stops buildArgs with a named-param error. vulnx keeps its action-specific messages (also mapped into the same matrix).
+
+## M4 — local `extra` cap
+
+New `operatorExtra(value)` = filter + `.slice(0, 4)`; used by all 11 adapters, so the ≤4 cap is now a local invariant in buildArgs, redundantly safe against schema-bypass validation.
+
+## M5 — registry drift test
+
+New registry test: iterates all 11 adapters' schema `properties` and requires any `type: "array"` param to carry a numeric `maxItems > 0` (the binding constraint). 42 model-controlled `-`-prefix rejection + degenerate-argv cases across the suite stay pinned.
+
+## Verification
+
+- `bun run typecheck` → clean.
+- `bun test` → **101 pass, 0 fail** (all 77 from the initial Task 5 state still pass; +24 tests mandated by review findings: 11 flag-injection rows, 9 degenerate-argv rows, operator-extra verbatim + cap, maxItems registry test, semgrep reorder, ffuf missing-target/subfinder missing-domain error names; count grew 28 → 52 in tests/adapters.test.ts).
+- `src/index.ts` and `tests/extension.test.ts` untouched (git diff shows only `src/adapters/*`, `tests/adapters.test.ts`, `tests/fixtures/adapters/ffuf.json`).
+- Ledgered (NOT fixed, per ruling): vulnx fixture shape verification waits for the Task 3 validate run against pinned binaries.
+
+## Added concerns
+
+1. `field-param` error text is the registry's contract for Task 6 — the job runner should surface these verbatim to the model rather than re-wrapping them, so the model can self-correct without an operator round-trip.
+2. Flag guard is `-`-prefix-only; Windows-style `/flag` isn't a concern on darwin/arm64 targets (all tools here are POSIX-argv CLIs), and values with embedded `--` (e.g. `ssl.cert.subject.CN:-`) are unaffected since the guard inspects only the first character.
+
