@@ -1,90 +1,140 @@
-import type { Tool, ToolParams } from "@earendil-works/pi-coding-agent";
-import { Type } from "typebox";
-import { execSync } from "node:child_process";
+import type { AgentToolResult, ExtensionAPI, ExtensionToolContext, ToolDefinition } from "@earendil-works/pi-coding-agent";
+import { Type, type Static } from "typebox";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+import { accessSync, constants } from "node:fs";
+import { delimiter, join } from "node:path";
 
-const ghExec = (args: string[], cwd?: string): string => {
-  try {
-    return execSync(`gh ${args.join(" ")}`, {
-      encoding: "utf-8",
-      cwd,
-      maxBuffer: 10 * 1024 * 1024,
-      timeout: 30_000,
-    });
-  } catch (e: any) {
-    throw new Error(`gh failed: ${e.stderr?.trim() || e.message}`);
+/**
+ * GitHub tool backed by the local `gh` CLI.
+ *
+ * Safety contract: the model's parameters are treated strictly as data. Every gh
+ * invocation goes through promisified `execFile` with an argument array — never a
+ * shell string — so metacharacters, spaces and newlines inside parameters cannot
+ * break out of their argv slot. Output is clipped to a bounded size before it
+ * re-enters the model context.
+ */
+
+const GH_TIMEOUT_MS = 30_000;
+const GH_MAX_BUFFER_BYTES = 32 * 1024 * 1024;
+const MAX_OUTPUT_CHARS = 32_000;
+const TRUNCATED = "[truncated]";
+
+const execFileAsync = promisify(execFile);
+
+/** Find an executable `gh` in the given search paths (defaults to process.env.PATH). */
+export function resolveGhPath(paths?: string[]): string | null {
+  const directories = paths ?? (process.env.PATH ? process.env.PATH.split(delimiter) : []);
+  for (const directory of directories) {
+    if (!directory) continue;
+    const candidate = join(directory, "gh");
+    try {
+      accessSync(candidate, constants.X_OK);
+      return candidate;
+    } catch {
+      // Not on this path entry; keep searching.
+    }
   }
+  return null;
+}
+
+function clip(text: string): string {
+  return text.length > MAX_OUTPUT_CHARS ? text.slice(0, MAX_OUTPUT_CHARS) + TRUNCATED : text;
+}
+
+async function runGh(ghPath: string, args: string[], signal: AbortSignal | undefined): Promise<string> {
+  try {
+    const { stdout } = (await execFileAsync(ghPath, args, {
+      encoding: "utf-8",
+      timeout: GH_TIMEOUT_MS,
+      maxBuffer: GH_MAX_BUFFER_BYTES,
+      signal,
+    })) as unknown as { stdout: string };
+    return stdout;
+  } catch (error) {
+    const err = error as NodeJS.ErrnoException & { stderr?: string | Buffer };
+    if (err.code === "ENOENT") throw new Error("gh CLI not available");
+    const stderr = typeof err.stderr === "string" ? err.stderr : "";
+    const detail = (stderr.trim() || err.message || "").split("\n")[0].slice(0, 500);
+    throw new Error(`gh failed: ${detail}`);
+  }
+}
+
+const parameters = Type.Object({
+  action: Type.Union([
+    Type.Literal("search"),
+    Type.Literal("read"),
+    Type.Literal("cve"),
+    Type.Literal("issues"),
+    Type.Literal("prs"),
+  ], { description: "GitHub interaction to perform." }),
+  query: Type.Optional(Type.String({ description: "Search query (search), or CVE id/keyword (cve)." })),
+  repo: Type.Optional(Type.String({ description: "owner/repo for read, issues and prs." })),
+  path: Type.Optional(Type.String({ description: "File path inside repo (read)." })),
+  limit: Type.Optional(Type.Number({ minimum: 1, maximum: 50, default: 10, description: "Max results; default 10." })),
+}, { additionalProperties: false });
+
+type GithubParams = Static<typeof parameters>;
+
+/** Map actions to gh argv arrays. Every parameter stays inside a single argv element. */
+function buildArgs(params: GithubParams): string[] {
+  const limit = String(params.limit ?? 10);
+  switch (params.action) {
+    case "search": {
+      const kind = params.query!.includes(" ") ? "issues" : "repos";
+      return kind === "issues"
+        ? ["search", "issues", params.query!, "--limit", limit, "--json", "title,url,repository"]
+        : ["search", "repos", params.query!, "--limit", limit, "--json", "fullName,description,url,stargazersCount"];
+    }
+    case "read":
+      return ["api", `repos/${params.repo}/contents/${params.path}`, "-H", "Accept: application/vnd.github.raw"];
+    case "cve":
+      return ["api", `advisories?keyword=${encodeURIComponent(params.query!)}`, "--jq", ".[] | {ghsaId, summary, severity, published_at, url}"];
+    case "issues":
+      return ["issue", "list", "--repo", params.repo!, "--limit", limit, "--json", "number,title,state,url,labels"];
+    case "prs":
+      return ["pr", "list", "--repo", params.repo!, "--limit", limit, "--json", "number,title,state,url,headRefName"];
+  }
+}
+
+function requireFields(params: GithubParams): void {
+  const { action, query, repo, path } = params;
+  if ((action === "search" || action === "cve") && !query) throw new Error(`query required for the ${action} action.`);
+  if (action === "read" && (!repo || !path)) throw new Error("repo and path required for the read action.");
+  if ((action === "issues" || action === "prs") && !repo) throw new Error(`repo required for the ${action} action.`);
+}
+
+const githubTool: ToolDefinition<typeof parameters> = {
+  name: "github",
+  label: "GitHub API",
+  description:
+    "Search repos, read files, list issues/PRs, look up CVEs using the gh CLI. " +
+    "Actions: search (code/repos/issues), read (file from repo), cve (search advisories), issues, prs.",
+  promptSnippet:
+    "Use the github tool for CVE research, exploit sourcing, or examining target source code via GitHub. " +
+    "It uses the authenticated gh CLI on this machine.",
+  parameters,
+  executionMode: "sequential",
+  annotations: { readOnlyHint: true, openWorldHint: true, idempotentHint: true },
+  async execute(
+    _toolCallId: string,
+    params: GithubParams,
+    signal: AbortSignal | undefined,
+    _onUpdate,
+    _ctx: ExtensionToolContext
+  ): Promise<AgentToolResult> {
+    requireFields(params);
+    const ghPath = resolveGhPath();
+    if (!ghPath) throw new Error("gh CLI not available");
+    const argv = buildArgs(params);
+    const stdout = await runGh(ghPath, argv, signal);
+    return {
+      content: [{ type: "text", text: clip(stdout) }],
+      details: { action: params.action, argv: [ghPath, ...argv] },
+    };
+  },
 };
 
-export function registerGithubTool(pi: { registerTool: (tool: Tool) => void }): void {
-  pi.registerTool({
-    name: "github",
-    label: "GitHub API",
-    description:
-      "Search repos, read files, list issues/PRs, look up CVEs using the gh CLI. " +
-      "Actions: search (code/repos/issues), read (file from repo), cve (search advisories), issues, prs.",
-    promptSnippet:
-      "Use the github tool for CVE research, exploit sourcing, or examining target source code via GitHub. " +
-      "It uses the authenticated gh CLI on this machine.",
-    parameters: Type.Object({
-      action: Type.Union([
-        Type.Literal("search"),
-        Type.Literal("read"),
-        Type.Literal("cve"),
-        Type.Literal("issues"),
-        Type.Literal("prs"),
-      ]),
-      query: Type.Optional(Type.String({ description: "Search query" })),
-      repo: Type.Optional(Type.String({ description: "owner/repo" })),
-      path: Type.Optional(Type.String({ description: "File path in repo (for read action)" })),
-      limit: Type.Optional(Type.Number({ description: "Max results (default 10)", default: 10 })),
-    }),
-    executionMode: "sequential",
-    async execute(
-      _id: string,
-      params: ToolParams,
-      _signal: AbortSignal,
-      _onUpdate: any,
-      _ctx: any
-    ): Promise<{ content: { type: "text"; text: string }[] }> {
-      const { action, query, repo, path, limit = 10 } = params as any;
-
-      switch (action) {
-        case "search": {
-          if (!query) throw new Error("query required for search");
-          const kind = query.includes(" ") ? "issues" : "repos";
-          const out = ghExec([kind, "search", `"${query}"`, "--limit", String(limit), "--json", "url,title,repository"]);
-          return { content: [{ type: "text", text: out }] };
-        }
-        case "read": {
-          if (!repo || !path) throw new Error("repo and path required for read");
-          const out = ghExec(["repo", "view", repo, "--json", "description,url"]);
-          const content = ghExec(["repo", "view", repo, "--json", "files"]);
-          // Use raw content via API
-          const raw = execSync(`gh api repos/${repo}/contents/${path}`, {
-            encoding: "utf-8", maxBuffer: 10 * 1024 * 1024, timeout: 15_000,
-          });
-          const parsed = JSON.parse(raw);
-          const text = Buffer.from(parsed.content, "base64").toString("utf-8");
-          return { content: [{ type: "text", text }] };
-        }
-        case "cve": {
-          if (!query) throw new Error("CVE ID or search term required");
-          const out = ghExec(["api", `advisories?keyword=${encodeURIComponent(query)}`, "--jq", ".[] | {id,summary,severity,published_at,url}"]);
-          return { content: [{ type: "text", text: out || "No advisories found" }] };
-        }
-        case "issues": {
-          if (!repo) throw new Error("repo required for issues");
-          const out = ghExec(["issue", "list", "--repo", repo, "--limit", String(limit), "--json", "number,title,state,url,labels"]);
-          return { content: [{ type: "text", text: out }] };
-        }
-        case "prs": {
-          if (!repo) throw new Error("repo required for prs");
-          const out = ghExec(["pr", "list", "--repo", repo, "--limit", String(limit), "--json", "number,title,state,url,headRefName"]);
-          return { content: [{ type: "text", text: out }] };
-        }
-        default:
-          throw new Error(`Unknown action: ${action}`);
-      }
-    },
-  });
+export function registerGithubTool(pi: Pick<ExtensionAPI, "registerTool">): void {
+  pi.registerTool(githubTool);
 }

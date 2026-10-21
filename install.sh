@@ -40,4 +40,4 @@ print(settings_path)
 PY
 
 echo "pi-cyber: installed. Start with: $(command -v pi || echo "$HOME/.bun/bin/pi")"
-echo "Provider key stays outside the repo: ~/.config/opencode/aimylove.key"
+echo "pi-cyber: provider credentials are configured separately, never inside this repo."
