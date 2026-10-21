@@ -13,7 +13,7 @@
  */
 import { Type, type Static } from "typebox";
 import type { AdapterDef, Normalized, ToolParams } from "./types.ts";
-import { clipRaw, jsonLines, stringList } from "./util.ts";
+import { clipRaw, jsonLines, modelString, operatorExtra } from "./util.ts";
 
 type InteractshParams = Static<typeof interactshSchema>;
 
@@ -36,11 +36,12 @@ export const interactsh: AdapterDef = {
   buildArgs(params: ToolParams, _opts: { wordlistPath?: string; templatesDir?: string }): string[] {
     const p = params as InteractshParams;
     const args: string[] = ["-json"];
-    if (typeof p.server === "string" && p.server.length > 0) args.push("-server", p.server);
+    const server = modelString(p.server, "server"); // `-`-prefix guard, like every model param
+    if (server !== undefined) args.push("-server", server);
     if (typeof p.pollIntervalSec === "number" && Number.isInteger(p.pollIntervalSec)) {
       args.push("-i", String(p.pollIntervalSec));
     }
-    args.push(...stringList(p.extra));
+    args.push(...operatorExtra(p.extra)); // local ≤4 cap, like every adapter
     return args;
   },
   parse(stdout: string, _stderr: string): Normalized[] {

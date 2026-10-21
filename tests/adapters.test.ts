@@ -329,6 +329,7 @@ const FLAG_LIKE_FIELDS: Array<{ adapter: string; params: Record<string, unknown>
   { adapter: "uncover", params: { query: "-help" }, message: "query" },
   { adapter: "vulnx", params: { action: "search", query: "-h" }, message: "query" },
   { adapter: "vulnx", params: { action: "id", cveIds: ["CVE-2025-24990", "--json"] }, message: "cveIds" },
+  { adapter: "interactsh", params: { server: "-foo" }, message: "server" },
 ];
 
 function adapterByName(name: string): AdapterDef {
@@ -357,7 +358,11 @@ describe("flag-injection guards (F1)", () => {
       byName("httpx")!.buildArgs({ targets: ["https://a.example.com"], extra: ["-a", "-b", "-c", "-d", "-e"] }, {}),
     ).toEqual(["https://a.example.com", "-json", "-a", "-b", "-c", "-d"]);
   });
-});
+  test("interactsh extra is capped locally at 4 items too (M4 residual)", () => {
+    expect(
+      byName("interactsh")!.buildArgs({ extra: ["-a", "-b", "-c", "-d", "-e"] }, {}),
+    ).toEqual(["-json", "-a", "-b", "-c", "-d"]);
+  });});
 
 describe("degenerate argv guards (M3): missing required input throws instead of junk argv", () => {
   const CASES: Array<[string, Record<string, unknown>, string]> = [
