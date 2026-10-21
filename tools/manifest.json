@@ -1,0 +1,26 @@
+{
+  "tools": [
+    { "name": "subfinder", "category": "recon", "repo": "projectdiscovery/subfinder", "version": "pin-at-install", "disposition": "core" },
+    { "name": "dnsx", "category": "discovery", "repo": "projectdiscovery/dnsx", "version": "pin-at-install", "disposition": "core" },
+    { "name": "httpx", "category": "web", "repo": "projectdiscovery/httpx", "version": "pin-at-install", "disposition": "core" },
+    { "name": "katana", "category": "web", "repo": "projectdiscovery/katana", "version": "pin-at-install", "disposition": "core" },
+    { "name": "nuclei", "category": "web", "repo": "projectdiscovery/nuclei", "version": "pin-at-install", "disposition": "core" },
+    { "name": "uncover", "category": "recon", "repo": "projectdiscovery/uncover", "version": "pin-at-install", "disposition": "core" },
+    { "name": "vulnx", "category": "defense", "repo": "projectdiscovery/vulnx", "version": "pin-at-install", "disposition": "core" },
+    { "name": "interactsh-client", "category": "recon", "repo": "projectdiscovery/interactsh", "version": "pin-at-install", "disposition": "core" },
+    { "name": "naabu", "category": "discovery", "repo": "projectdiscovery/naabu", "version": "pin-at-install", "disposition": "core" },
+    { "name": "ffuf", "category": "web", "repo": "ffuf/ffuf", "version": "pin-at-install", "disposition": "core" },
+    { "name": "obscura", "category": "browser", "repo": "h4ckf0r0day/obscura", "version": "pin-at-install", "disposition": "core" },
+    { "name": "zap", "category": "browser", "repo": "zaproxy/zap", "version": "pin-at-install", "disposition": "core" },
+    { "name": "semgrep", "category": "defense", "repo": "semgrep/semgrep", "version": "pin-at-install", "disposition": "core" },
+    { "name": "trivy", "category": "defense", "repo": "aquasecurity/trivy", "version": "pin-at-install", "disposition": "core" },
+    { "name": "osv-scanner", "category": "defense", "repo": "google/osv-scanner", "version": "pin-at-install", "disposition": "core" },
+    { "name": "gitleaks", "category": "defense", "repo": "gitleaks/gitleaks", "version": "pin-at-install", "disposition": "core" },
+    { "name": "syft", "category": "defense", "repo": "anchore/syft", "version": "pin-at-install", "disposition": "core" },
+    { "name": "nmap", "category": "discovery", "repo": "nmap/nmap", "version": "pin-at-install", "disposition": "on-demand", "note": "official macOS installer is x86_64-only; cataloged/never validated on darwin/arm64 until an arm64 route exists" },
+    { "name": "rea", "category": "reverse", "repo": "morluto/rea", "version": "pin-at-install", "disposition": "on-demand" },
+    { "name": "ghidra", "category": "reverse", "repo": "NationalSecurityAgency/ghidra", "version": "pin-at-install", "disposition": "deferred", "note": "deferred per operator decision 2026-10-21" },
+    { "name": "jdk21", "category": "misc", "repo": "Adoptium/temurin21-binaries", "version": "pin-at-install", "disposition": "deferred", "note": "deferred per operator decision 2026-10-21" },
+    { "name": "understand-anything", "category": "misc", "version": "pin-at-install", "disposition": "reference", "note": "comprehension lane reference" }
+  ]
+}

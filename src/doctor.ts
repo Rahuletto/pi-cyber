@@ -1,10 +1,13 @@
 import { access, stat } from "node:fs/promises";
 import { constants } from "node:fs";
 import { delimiter, resolve } from "node:path";
+import { loadManifest, toolStates, type ToolState } from "./tools/manifest.ts";
+
 export interface ToolPresence { name: string; available: boolean; path: string | null; validated: false }
-const catalog = ["bun", "node", "pi", "rg", "git", "ast-grep", "sg", "nmap", "vulnx", "ffuf", "subfinder", "dnsx", "httpx", "uncover", "katana", "nuclei", "interactsh-client", "semgrep", "trivy", "gitleaks", "osv-scanner", "obscura", "rea", "ghidra", "java", "tshark", "yara"];
+/** Harness runtime binaries, not part of the manifest catalog. */
+const runtimeCatalog = ["bun", "node", "pi", "rg", "git", "ast-grep", "sg"];
 /** PATH metadata only. Never runs an executable, probes a target, installs, or writes configuration. */
-export async function inventory(path = process.env.PATH ?? "", names: readonly string[] = catalog): Promise<ToolPresence[]> {
+export async function inventory(path = process.env.PATH ?? "", names: readonly string[] = runtimeCatalog): Promise<ToolPresence[]> {
   const directories = path.split(delimiter).filter(Boolean);
   return Promise.all(names.map(async (name) => {
     for (const directory of directories) {
@@ -18,10 +21,37 @@ export async function inventory(path = process.env.PATH ?? "", names: readonly s
     return { name, available: false, path: null, validated: false as const };
   }));
 }
+
+export interface ToolRow { name: string; category: string; disposition: string; state: ToolState }
+export interface DoctorReport {
+  platform: string;
+  architecture: string;
+  note: string;
+  runtime: ToolPresence[];
+  tools: ToolRow[];
+}
+export const DOCTOR_NOTE =
+  "PATH presence and operator state file only; versions, identity, compatibility and target behavior are unvalidated. " +
+  "An executable named httpx may be unrelated. The doctor never executes tools.";
+
+export async function report(options: {
+  manifestPath?: string | URL;
+  statePath?: string;
+  envPath?: string;
+  runtimeNames?: readonly string[];
+} = {}): Promise<DoctorReport> {
+  const pathEnv = options.envPath ?? process.env.PATH ?? "";
+  const manifest = await loadManifest(options.manifestPath);
+  const [runtime, states] = await Promise.all([
+    inventory(pathEnv, options.runtimeNames),
+    toolStates(manifest, options.statePath, pathEnv),
+  ]);
+  const tools: ToolRow[] = manifest.tools.map((tool) => ({
+    name: tool.name, category: tool.category, disposition: tool.disposition, state: states[tool.name] as ToolState,
+  }));
+  return { platform: process.platform, architecture: process.arch, note: DOCTOR_NOTE, runtime, tools };
+}
+
 if (import.meta.main) {
-  console.log(JSON.stringify({
-    platform: process.platform, architecture: process.arch,
-    note: "PATH presence only; versions, identity, compatibility, credentials, Pi integration and target behavior are unvalidated. An executable named httpx/sg may be unrelated. No tools were executed.",
-    tools: await inventory(),
-  }, null, 2));
+  console.log(JSON.stringify(await report(), null, 2));
 }
