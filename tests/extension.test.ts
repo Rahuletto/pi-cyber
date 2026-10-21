@@ -66,7 +66,7 @@ test("actual SDK loader registers commands and state tool writes durable mode-sp
   expect(state.scope).toEqual(["local fixture only"]);
   expect(state.modes.offense.nextSteps).toEqual(["prepare dossier"]);
   expect(state.modes.defense.nextSteps).toEqual(["validate fixture hypothesis"]);
-  expect(h.extension.tools.size).toBe(16);
+  expect(h.extension.tools.size).toBe(17);
 });
 
 test("top-level /offense and /defense share the /cyber mode guard and switch path", async () => {
