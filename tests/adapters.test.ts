@@ -57,6 +57,17 @@ describe("adapter registry", () => {
   test("all adapters are non-mutating, i.e. no target-state writes by design", () => {
     for (const adapter of adapters) expect(adapter.mutating).toBe(false);
   });
+
+  test("every array param carries an explicit maxItems cap (binding, pinned against drift)", () => {
+    for (const adapter of adapters) {
+      const schema = adapter.schema as { properties: Record<string, Record<string, unknown>> };
+      for (const [name, property] of Object.entries(schema.properties)) {
+        if (property.type !== "array") continue;
+        expect([adapter.name, name, property.maxItems]).toStrictEqual([adapter.name, name, expect.any(Number)]);
+        expect(property.maxItems).toBeGreaterThan(0);
+      }
+    }
+  });
 });
 
 describe("subfinder", () => {
@@ -285,12 +296,84 @@ describe("semgrep", () => {
     expect(adapter.parse(MALFORMED_DOCUMENT, "")).toEqual([]);
   });
 
-  test("buildArgs emits positional paths + --sarif + enumerated rule set", () => {
+  test("buildArgs emits canonical order (subcommand + flags first, paths last)", () => {
     expect(adapter.buildArgs({ paths: ["src/", "fixtures/"], ruleSet: "p/owasp-top-ten" }, {})).toEqual([
-      "src/", "fixtures/", "scan", "--sarif", "--config", "p/owasp-top-ten",
+      "scan", "--sarif", "--config", "p/owasp-top-ten", "src/", "fixtures/",
     ]);
     expect(adapter.buildArgs({ paths: ["src/"], ruleSet: "auto" }, {})).toEqual([
-      "src/", "scan", "--sarif", "--config", "auto",
+      "scan", "--sarif", "--config", "auto", "src/",
     ]);
   });
+
+  test("paths are scan targets, not options — flags and missing input are rejected", () => {
+    // the reviewer's smuggling example: paths must never reach the --config slot
+    expect(() => adapter.buildArgs({ paths: ["--config", "p/exploit-pack"], ruleSet: "auto" }, {})).toThrow(
+      'field-param "paths" must not start with "-"',
+    );
+    expect(() => adapter.buildArgs({ paths: ["scan", "--sarif"], ruleSet: "auto" }, {})).toThrow(
+      'field-param "paths" must not start with "-"',
+    );
+    expect(() => adapter.buildArgs({ ruleSet: "auto" }, {})).toThrow('semgrep: missing required param "paths"');
+  });
+});
+
+const FLAG_LIKE_FIELDS: Array<{ adapter: string; params: Record<string, unknown>; message: string }> = [
+  { adapter: "httpx", params: { targets: ["https://a.example.com", "-l", "/etc/passwd"] }, message: "targets" },
+  { adapter: "katana", params: { targets: ["-l", "/etc/hosts"] }, message: "targets" },
+  { adapter: "dnsx", params: { domains: ["-l", "/etc/hosts"] }, message: "domains" },
+  { adapter: "naabu", params: { hosts: ["-host", "evil"] }, message: "hosts" },
+  { adapter: "nuclei", params: { targets: ["-l", "/etc/passwd"] }, message: "targets" },
+  { adapter: "subfinder", params: { domain: "-d", sources: [] }, message: "domain" },
+  { adapter: "subfinder", params: { domain: "example.com", sources: ["crtsh", "-d"] }, message: "sources" },
+  { adapter: "ffuf", params: { target: "-w /etc/passwd" }, message: "target" },
+  { adapter: "uncover", params: { query: "-help" }, message: "query" },
+  { adapter: "vulnx", params: { action: "search", query: "-h" }, message: "query" },
+  { adapter: "vulnx", params: { action: "id", cveIds: ["CVE-2025-24990", "--json"] }, message: "cveIds" },
+];
+
+function adapterByName(name: string): AdapterDef {
+  const adapter = byName(name);
+  if (!adapter) throw new Error(`test setup: missing adapter ${name}`);
+  return adapter;
+}
+
+describe("flag-injection guards (F1)", () => {
+  for (const { adapter: name, params, message } of FLAG_LIKE_FIELDS) {
+    test(`${name}: a "-${message}"-like value in "${message}" is rejected before argv`, () => {
+      expect(() => adapterByName(name).buildArgs(params, { wordlistPath: "/operator/wordlists/common.txt" })).toThrow(
+        `field-param "${message}" must not start with "-"`,
+      );
+    });
+  }
+
+  test("operator-approved extra stays verbatim (flag-capable, never model-authored)", () => {
+    expect(byName("httpx")!.buildArgs({ targets: ["https://a.example.com"], extra: ["-file", "list.txt"] }, {})).toEqual([
+      "https://a.example.com", "-json", "-file", "list.txt",
+    ]);
+  });
+
+  test("operator extra is capped locally at 4 items even without schema validation (M4)", () => {
+    expect(
+      byName("httpx")!.buildArgs({ targets: ["https://a.example.com"], extra: ["-a", "-b", "-c", "-d", "-e"] }, {}),
+    ).toEqual(["https://a.example.com", "-json", "-a", "-b", "-c", "-d"]);
+  });
+});
+
+describe("degenerate argv guards (M3): missing required input throws instead of junk argv", () => {
+  const CASES: Array<[string, Record<string, unknown>, string]> = [
+    ["subfinder", {}, "subfinder: missing required param \"domain\""],
+    ["httpx", { targets: [] }, "httpx: missing required param \"targets\""],
+    ["dnsx", { domains: [] }, "dnsx: missing required param \"domains\""],
+    ["katana", { targets: [] }, "katana: missing required param \"targets\""],
+    ["ffuf", {}, "ffuf: missing required param \"target\""],
+    ["naabu", { hosts: [] }, "naabu: missing required param \"hosts\""],
+    ["nuclei", { targets: [] }, "nuclei: missing required param \"targets\""],
+    ["uncover", { engines: [] }, "uncover: missing required param \"query\""],
+    ["vulnx", { action: "search", query: "" }, "vulnx: action \"search\" requires a query string"],
+  ];
+  for (const [name, params, expected] of CASES) {
+    test(`${name}: missing required input → ${expected}`, () => {
+      expect(() => adapterByName(name).buildArgs(params, {})).toThrow(expected);
+    });
+  }
 });

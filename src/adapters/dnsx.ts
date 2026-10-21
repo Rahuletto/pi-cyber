@@ -7,7 +7,7 @@
  */
 import { Type, type Static } from "typebox";
 import type { AdapterDef, Normalized, ToolParams } from "./types.ts";
-import { clipRaw, jsonLines, stringList } from "./util.ts";
+import { clipRaw, jsonLines, modelList, operatorExtra, requireModelList, stringList } from "./util.ts";
 
 type DnsxParams = Static<typeof dnsxSchema>;
 
@@ -51,13 +51,13 @@ export const dnsx: AdapterDef = {
   buildArgs(params: ToolParams, _opts: { wordlistPath?: string; templatesDir?: string }): string[] {
     const p = params as DnsxParams;
     const args: string[] = [];
-    for (const domain of stringList(p.domains)) args.push("-d", domain);
+    for (const domain of requireModelList(p.domains, "domains", "dnsx")) args.push("-d", domain);
     args.push("-json");
     if (typeof p.recordType === "string") {
       const flag = RECORD_TYPE_FLAGS[p.recordType];
       if (flag) args.push(flag);
     }
-    args.push(...stringList(p.extra));
+    args.push(...operatorExtra(p.extra));
     return args;
   },
   parse(stdout: string, _stderr: string): Normalized[] {

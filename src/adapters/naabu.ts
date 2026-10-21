@@ -7,7 +7,7 @@
  */
 import { Type, type Static } from "typebox";
 import type { AdapterDef, Normalized, ToolParams } from "./types.ts";
-import { clipRaw, intList, jsonLines, stringList } from "./util.ts";
+import { clipRaw, intList, jsonLines, modelList, operatorExtra, requireModelList } from "./util.ts";
 
 type NaabuParams = Static<typeof naabuSchema>;
 
@@ -31,12 +31,12 @@ export const naabu: AdapterDef = {
   buildArgs(params: ToolParams, _opts: { wordlistPath?: string; templatesDir?: string }): string[] {
     const p = params as NaabuParams;
     const args: string[] = [];
-    for (const host of stringList(p.hosts)) args.push("-host", host);
+    for (const host of requireModelList(p.hosts, "hosts", "naabu")) args.push("-host", host);
     args.push("-json");
     const ports = intList(p.ports);
     if (ports.length > 0) args.push("-p", ports.join(","));
     if (p.scanType === "syn") args.push("-s", "syn"); // connect stays the default scan type
-    args.push(...stringList(p.extra));
+    args.push(...operatorExtra(p.extra));
     return args;
   },
   parse(stdout: string, _stderr: string): Normalized[] {

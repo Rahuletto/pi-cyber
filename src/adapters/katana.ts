@@ -8,7 +8,7 @@
  */
 import { Type, type Static } from "typebox";
 import type { AdapterDef, Normalized, ToolParams } from "./types.ts";
-import { clipRaw, jsonLines, stringList } from "./util.ts";
+import { clipRaw, jsonLines, modelList, operatorExtra, requireModelList } from "./util.ts";
 
 type KatanaParams = Static<typeof katanaSchema>;
 
@@ -31,10 +31,10 @@ export const katana: AdapterDef = {
   buildArgs(params: ToolParams, _opts: { wordlistPath?: string; templatesDir?: string }): string[] {
     const p = params as KatanaParams;
     const args: string[] = [];
-    for (const target of stringList(p.targets)) args.push(target); // positional targets
+    for (const target of requireModelList(p.targets, "targets", "katana")) args.push(target); // positional targets
     args.push("-jsonl");
     if (typeof p.depth === "number" && Number.isInteger(p.depth)) args.push("-d", String(p.depth));
-    args.push(...stringList(p.extra));
+    args.push(...operatorExtra(p.extra));
     return args;
   },
   parse(stdout: string, _stderr: string): Normalized[] {

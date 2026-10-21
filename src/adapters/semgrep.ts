@@ -10,7 +10,7 @@
  */
 import { Type, type Static } from "typebox";
 import type { AdapterDef, Normalized, ToolParams } from "./types.ts";
-import { clipRaw, jsonDocument, stringList } from "./util.ts";
+import { clipRaw, jsonDocument, modelList, operatorExtra, requireModelList } from "./util.ts";
 
 type SemgrepParams = Static<typeof semgrepSchema>;
 
@@ -37,10 +37,11 @@ export const semgrep: AdapterDef = {
   schema: semgrepSchema,
   buildArgs(params: ToolParams, _opts: { wordlistPath?: string; templatesDir?: string }): string[] {
     const p = params as SemgrepParams;
-    const args: string[] = [];
-    for (const path of stringList(p.paths)) args.push(path); // explicit positional scan targets
-    args.push("scan", "--sarif", "--config", typeof p.ruleSet === "string" ? p.ruleSet : "auto");
-    args.push(...stringList(p.extra));
+    // canonical order: `semgrep scan --sarif --config <ruleSet> <paths>` —
+    // subcommand + flags first, model paths LAST (never before `scan`).
+    const args = ["scan", "--sarif", "--config", typeof p.ruleSet === "string" ? p.ruleSet : "auto"];
+    for (const path of requireModelList(p.paths, "paths", "semgrep")) args.push(path);
+    args.push(...operatorExtra(p.extra)); // operator-approved extra always last
     return args;
   },
   parse(stdout: string, _stderr: string): Normalized[] {

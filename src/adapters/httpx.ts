@@ -8,7 +8,7 @@
  */
 import { Type, type Static } from "typebox";
 import type { AdapterDef, Normalized, ToolParams } from "./types.ts";
-import { clipRaw, intList, jsonLines, stringList } from "./util.ts";
+import { clipRaw, intList, jsonLines, modelList, operatorExtra, requireModelList } from "./util.ts";
 
 type HttpxParams = Static<typeof httpxSchema>;
 
@@ -31,11 +31,11 @@ export const httpx: AdapterDef = {
   buildArgs(params: ToolParams, _opts: { wordlistPath?: string; templatesDir?: string }): string[] {
     const p = params as HttpxParams;
     const args: string[] = [];
-    for (const target of stringList(p.targets)) args.push(target); // positional targets
+    for (const target of requireModelList(p.targets, "targets", "httpx")) args.push(target); // positional targets
     args.push("-json");
     const ports = intList(p.ports);
     if (ports.length > 0) args.push("-p", ports.join(","));
-    args.push(...stringList(p.extra));
+    args.push(...operatorExtra(p.extra));
     return args;
   },
   parse(stdout: string, _stderr: string): Normalized[] {

@@ -68,3 +68,56 @@ export function intList(value: unknown): number[] {
   if (!Array.isArray(value)) return [];
   return value.filter((item): item is number => Number.isInteger(item));
 }
+
+/**
+ * F1 flag-smuggling guard: a model-supplied value that starts with `-` is not
+ * a target/path/query/id, it is an argv flag injection (e.g. `-l /etc/passwd`
+ * or semgrep `--config`). Closed-set enums (severities, record types, engines,
+ * rule sets, methods) are literal-validated, so only free-string slots pass
+ * through here. Operator-approved `extra` is deliberately NOT guarded — it is
+ * flags by definition and never model-authored.
+ */
+export function rejectFlagLike(value: string, paramName: string): string {
+  if (value.startsWith("-")) {
+    throw new TypeError(`field-param "${paramName}" must not start with "-"`);
+  }
+  return value;
+}
+
+/** Model-supplied free-string list: non-strings drop, `-`-prefixed values rejected. */
+export function modelList(value: unknown, paramName: string): string[] {
+  return stringList(value).map((item) => rejectFlagLike(item, paramName));
+}
+
+/** Model-supplied free string: undefined when absent, `-`-prefixed rejected. */
+export function modelString(value: unknown, paramName: string): string | undefined {
+  const items = stringList([value]);
+  if (items.length === 0) return undefined;
+  return rejectFlagLike(items[0], paramName);
+}
+
+/**
+ * Degenerate-argv guard: a required target param absent from the validated
+ * model input must stop buildArgs — never emit junk argv like bare `["-json"]`
+ * or `String(undefined)`.
+ */
+export function requireModelList(value: unknown, paramName: string, adapter: string): string[] {
+  const items = modelList(value, paramName);
+  if (items.length === 0) throw new Error(`${adapter}: missing required param "${paramName}"`);
+  return items;
+}
+
+export function requireModelString(value: unknown, paramName: string, adapter: string): string {
+  const item = modelString(value, paramName);
+  if (item === undefined) throw new Error(`${adapter}: missing required param "${paramName}"`);
+  return item;
+}
+
+/**
+ * Operator-approved `extra` slots: appended verbatim as separate argv
+ * elements (flags by design). Schema caps them at 4; the same cap is enforced
+ * locally so the invariant holds even without a validation pass.
+ */
+export function operatorExtra(value: unknown): string[] {
+  return stringList(value).slice(0, 4);
+}

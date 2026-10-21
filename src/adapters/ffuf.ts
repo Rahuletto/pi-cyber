@@ -13,7 +13,7 @@
  */
 import { Type, type Static } from "typebox";
 import type { AdapterDef, Normalized, ToolParams } from "./types.ts";
-import { clipRaw, intList, jsonDocument, stringList } from "./util.ts";
+import { clipRaw, intList, jsonDocument, modelList, operatorExtra, requireModelString } from "./util.ts";
 
 type FfufParams = Static<typeof ffufSchema>;
 
@@ -42,15 +42,16 @@ export const ffuf: AdapterDef = {
   artifactKind: "json",
   schema: ffufSchema,
   buildArgs(params: ToolParams, opts: { wordlistPath?: string; templatesDir?: string }): string[] {
-    if (!opts.wordlistPath) throw new Error("operator wordlist required");
     const p = params as FfufParams;
-    const args = ["-json", "-u", String(p.target), "-w", opts.wordlistPath];
+    const target = requireModelString(p.target, "target", "ffuf"); // never String(undefined)
+    if (!opts.wordlistPath) throw new Error("operator wordlist required");
+    const args = ["-json", "-u", target, "-w", opts.wordlistPath];
     if (typeof p.method === "string") args.push("-X", p.method);
     const statusCodes = intList(p.statusCodes);
     if (statusCodes.length > 0) args.push("-mc", statusCodes.join(","));
-    const extensions = stringList(p.extensions);
+    const extensions = modelList(p.extensions, "extensions");
     if (extensions.length > 0) args.push("-e", extensions.join(","));
-    args.push(...stringList(p.extra));
+    args.push(...operatorExtra(p.extra));
     return args;
   },
   parse(stdout: string, _stderr: string): Normalized[] {

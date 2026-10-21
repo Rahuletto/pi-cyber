@@ -8,7 +8,7 @@
  */
 import { Type, type Static } from "typebox";
 import type { AdapterDef, Normalized, ToolParams } from "./types.ts";
-import { clipRaw, jsonLines, stringList } from "./util.ts";
+import { clipRaw, jsonLines, modelString, operatorExtra, requireModelString, stringList } from "./util.ts";
 
 type UncoverParams = Static<typeof uncoverSchema>;
 
@@ -40,12 +40,10 @@ export const uncover: AdapterDef = {
   schema: uncoverSchema,
   buildArgs(params: ToolParams, _opts: { wordlistPath?: string; templatesDir?: string }): string[] {
     const p = params as UncoverParams;
-    const args = ["-json"];
-    if (typeof p.query === "string" && p.query.length > 0) args.push("-q", p.query);
-    const engines = stringList(p.engines);
-    for (const engine of engines) args.push("-e", engine);
+    const args = ["-json", "-q", requireModelString(p.query, "query", "uncover")];
+    for (const engine of stringList(p.engines)) args.push("-e", engine); // closed enum, literal-validated
     if (typeof p.limit === "number" && Number.isInteger(p.limit)) args.push("-l", String(p.limit)); // result-count limit, NOT a list file
-    args.push(...stringList(p.extra));
+    args.push(...operatorExtra(p.extra));
     return args;
   },
   parse(stdout: string, _stderr: string): Normalized[] {

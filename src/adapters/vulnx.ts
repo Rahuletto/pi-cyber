@@ -3,7 +3,7 @@
  *
  * This is a CVE/advisory query CLI (search / id / analyze commands, JSON or
  * CSV output), NOT a target scanner — per the research ledger its output is
- * advisory evidence, never evidence that an asset is affected.одель
+ * advisory evidence, never evidence that an asset is affected.
  *
  * Target handling: vulnx takes sub-command + free-form query/CVE ID operands
  * as bare data arguments (no `-l` list mode is documented upstream); the
@@ -12,7 +12,7 @@
  */
 import { Type, type Static } from "typebox";
 import type { AdapterDef, Normalized, ToolParams } from "./types.ts";
-import { clipRaw, jsonDocument, stringList } from "./util.ts";
+import { clipRaw, jsonDocument, modelList, modelString, operatorExtra } from "./util.ts";
 
 type VulnxParams = Static<typeof vulnxSchema>;
 
@@ -39,21 +39,22 @@ export const vulnx: AdapterDef = {
   schema: vulnxSchema,
   buildArgs(params: ToolParams, _opts: { wordlistPath?: string; templatesDir?: string }): string[] {
     const p = params as VulnxParams;
-    const cveIds = stringList(p.cveIds);
+    const cveIds = modelList(p.cveIds, "cveIds");
     switch (p.action) {
       case "search": {
-        if (typeof p.query !== "string" || p.query.length === 0) {
+        const query = modelString(p.query, "query");
+        if (query === undefined) {
           throw new Error(`vulnx: action "search" requires a query string`);
         }
-        return ["search", p.query, "-json", ...stringList(p.extra)];
+        return ["search", query, "-json", ...operatorExtra(p.extra)];
       }
       case "id": {
         if (cveIds.length === 0) throw new Error(`vulnx: action "id" requires cveIds`);
-        return ["id", ...cveIds, "-json", ...stringList(p.extra)];
+        return ["id", ...cveIds, "-json", ...operatorExtra(p.extra)];
       }
       case "analyze": {
         if (cveIds.length === 0) throw new Error(`vulnx: action "analyze" requires cveIds`);
-        return ["analyze", ...cveIds, "-json", ...stringList(p.extra)];
+        return ["analyze", ...cveIds, "-json", ...operatorExtra(p.extra)];
       }
       default:
         throw new TypeError(`vulnx: unknown action "${String(p.action)}"`);

@@ -8,7 +8,7 @@
  */
 import { Type, type Static } from "typebox";
 import type { AdapterDef, Normalized, ToolParams } from "./types.ts";
-import { clipRaw, jsonLines, stringList } from "./util.ts";
+import { clipRaw, jsonLines, modelList, operatorExtra, requireModelString } from "./util.ts";
 
 type SubfinderParams = Static<typeof subfinderSchema>;
 
@@ -31,9 +31,9 @@ export const subfinder: AdapterDef = {
   schema: subfinderSchema,
   buildArgs(params: ToolParams, _opts: { wordlistPath?: string; templatesDir?: string }): string[] {
     const p = params as SubfinderParams;
-    const args = ["-json", ...stringList([p.domain]).flatMap((d) => ["-d", d])];
-    for (const source of stringList(p.sources)) args.push("-source", source);
-    args.push(...stringList(p.extra));
+    const args = ["-json", "-d", requireModelString(p.domain, "domain", "subfinder")];
+    for (const source of modelList(p.sources, "sources")) args.push("-source", source);
+    args.push(...operatorExtra(p.extra));
     return args;
   },
   parse(stdout: string, _stderr: string): Normalized[] {

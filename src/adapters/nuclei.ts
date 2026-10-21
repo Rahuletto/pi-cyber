@@ -14,7 +14,7 @@
  */
 import { Type, type Static } from "typebox";
 import type { AdapterDef, Normalized, ToolParams } from "./types.ts";
-import { clipRaw, jsonLines, stringList } from "./util.ts";
+import { clipRaw, jsonLines, modelList, operatorExtra, requireModelList, stringList } from "./util.ts";
 
 type NucleiParams = Static<typeof nucleiSchema>;
 
@@ -46,12 +46,12 @@ export const nuclei: AdapterDef = {
   buildArgs(params: ToolParams, opts: { wordlistPath?: string; templatesDir?: string }): string[] {
     const p = params as NucleiParams;
     const args: string[] = [];
-    for (const target of stringList(p.targets)) args.push("-u", target);
+    for (const target of requireModelList(p.targets, "targets", "nuclei")) args.push("-u", target);
     args.push("-json");
-    for (const sev of stringList(p.severity)) args.push("-severity", sev);
-    for (const template of stringList(p.templates)) args.push("-id", template);
-    if (opts.templatesDir) args.push("-t", opts.templatesDir); // operator-side, task 6 wiring
-    args.push(...stringList(p.extra));
+    for (const sev of stringList(p.severity)) args.push("-severity", sev); // closed enum, literal-validated
+    for (const template of modelList(p.templates, "templates")) args.push("-id", template);
+    if (opts.templatesDir) args.push("-t", opts.templatesDir); // operator-provided, Task 6 wiring
+    args.push(...operatorExtra(p.extra));
     return args;
   },
   parse(stdout: string, _stderr: string): Normalized[] {
