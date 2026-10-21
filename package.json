@@ -10,7 +10,9 @@
     "doctor": "bun src/doctor.ts",
     "install:packages": "bun scripts/install-packages.ts",
     "pi": "bash ./scripts/pi.sh",
-    "pi:ast": "bash ./scripts/pi.sh --ast"
+    "pi:ast": "bash ./scripts/pi.sh --ast",
+    "packages": "bun scripts/install-packages.ts",
+    "packages:check": "bun scripts/install-packages.ts --check"
   },
   "pi": {
     "extensions": [
@@ -18,6 +20,9 @@
     ],
     "themes": [
       "./themes"
+    ],
+    "skills": [
+      "./config/cyber/skills"
     ]
   },
   "devDependencies": {

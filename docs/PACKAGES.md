@@ -1,16 +1,84 @@
-# Optional Pi packages
+# Packages in the cyber profile
 
-`bun install --frozen-lockfile` installs the exact package versions into this repository's `node_modules`. `config/cyber/settings.json` loads them from those local paths in the isolated Pi profile; `scripts/pi.sh` points Pi at this profile by default. `bun run install:packages` verifies pins and profile paths and refreshes the six selected bigpowers skills. It performs no network access and does not copy personal provider credentials.
+What the cyber harness installs, why, what it risks, and what it deliberately
+leaves out. Source basis: `research/PACKAGES-ORCHESTRATION-RESEARCH.md`,
+`research/PACKAGES-CONTEXT-WEB.md`, `research/PACKAGES-WORKFLOW-SIDECONVERSATIONS.md`
+(source review only, 2026-10-21). The pins below are the versions those notes
+reviewed; the harness pins them as repository dependencies and installs them
+with `bun install --frozen-lockfile` so runtime and manifest agree.
 
-| Package | Pin | Use | Limits |
-| --- | --- | --- | --- |
-| `pi-subagents` | 0.79.2 | Optional bounded worker runtime for the six role templates | Parent context, tool grants, isolation, cancellation and budgets need runtime verification; contracts in this repository validate handoffs only. |
-| `pi-web-access` | 0.43.0 | Explicit DuckDuckGo search and selected-page fetch | Search is explicitly set to DuckDuckGo, workflow is `none`, hosted fetch providers and browser cookies are disabled; provider availability and compatibility can change. |
-| `pi-btw` | 0.8.0 | Optional side conversation command | Shares the working directory and is not an isolated coding worker. Use read-only for parallel interpretation. |
-| `bigpowers` | 2.88.9 | Optional on-demand workflow skills | Broad skills are not enabled wholesale; do not run its project initializer. Its guardrails are not a security boundary. |
+## Installed
 
-The Pi profile loads `pi-subagents`, `pi-web-access`, and `pi-btw` from the pinned local packages. Bigpowers contributes only six copied skills; its extension, prompts, themes and remaining skill catalog are excluded. To inspect loaded package resources, launch the dedicated profile and use Pi's `/settings` or `pi list`. A cataloged package is not evidence of a working capability.
+| Package | Pin | Role | Loaded from the profile |
+|---|---|---|---|
+| `pi-subagents` | 0.79.2 | Specialist worker engine (foreground + background children, role discovery, spawn budgets) | extension `index.js`, its 2 skills, its 6 prompt templates |
+| `pi-web-access` | 0.43.0 | Search and extraction (`web_search`, `fetch_content`, `get_search_content`, `source_check`) | extension `dist/index.js` only — the MCP CLI bundle is not loaded as an extension |
+| `pi-btw` | 0.8.0 | Optional side conversation (`/btw`, `/btw:ask`, `/btw:tangent`) | extension `extensions/btw.ts` and its skill |
+| `bigpowers` | 2.88.9 | Engineering workflow skills for defense remediation | **no extension**; six skills copied into `config/cyber/skills/` |
 
-Bigpowers has many workflows. Keep only the selected skills in scope: `survey-context`, `research-first`, `plan-work`, `develop-tdd`, `verify-work`, and `audit-code`. Avoid enabling KXM, billion-context features, the full Feynman pack, broad default prompt overlays, or `bigpowers init`; those add unrelated context or mutate a project. `pi-btw` does not replace the specialist worker boundary.
+All four are declared in `config/cyber/settings.json` as local package sources
+(`../../node_modules/...`). Pi loads them from this repository's `node_modules`
+instead of downloading a second copy, and the version check in
+`bun scripts/install-packages.ts` fails loudly when a pin drifts.
 
-Pins reviewed from package manifests and local package contents on 2026-10-21. Runtime behavior in a native Node Pi process, authenticated worker inheritance, provider calls and macOS-specific package scripts remain unverified. See the source reviews in [`research/PACKAGES-ORCHESTRATION-RESEARCH.md`](../research/PACKAGES-ORCHESTRATION-RESEARCH.md), [`research/PACKAGES-WORKFLOW-SIDECONVERSATIONS.md`](../research/PACKAGES-WORKFLOW-SIDECONVERSATIONS.md), and [`research/SEARCH-AND-COMPACTION.md`](../research/SEARCH-AND-COMPACTION.md).
+## Why these, in one line each
+
+- **pi-subagents** is Pi's supported child-session engine. A custom worker
+  engine would duplicate lifecycle and result handoff machinery before there is
+  evidence it is needed. The harness keeps its own task contract
+  (`src/specialists/contracts.ts`) on top of it and lowers the spawn budget.
+- **pi-web-access** is the source-led research lane: bounded search plus
+  explicit fetch, with `source_check` for passage provenance. It complements
+  Obscura (search/extraction versus rendered interaction) and does not replace
+  it.
+- **pi-btw** is an operator convenience, not the specialist engine: a side
+  conversation that stays out of the main transcript. `/btw:ask` is read-only;
+  `/btw` shares the working directory and is used only when writes are intended.
+- **bigpowers** contributes a bounded engineering loop (survey, research, plan,
+  TDD, verify, audit) that fits defense remediation. Its project lifecycle
+  ceremonies do not belong in an assessment run.
+
+## Risks that stay with the operator
+
+- **Every child is another model run.** Specialists cost tokens and inherit the
+  provider credentials. The caps (2 concurrent, 8 per run, 16 per session) bound
+  the blast radius; the coordinator still decides whether to delegate at all.
+- **Capability lists are not sandboxes.** A role's `tools` allowlist narrows
+  what a child may call inside Pi; it does not confine the operating system.
+  Children share the operator's own privileges.
+- **Search providers see the query.** `web-search.json` pins keyless
+  DuckDuckGo, disables the curator, browser cookies and hosted extractors, and
+  keeps `workflow: "none"`, so the harness never opens a summary model or a
+  curator window on its own. Switching to a keyed provider changes who receives
+  the query and the fetched text.
+- **The bigpowers skills are not native to this repository.** They expect
+  `scripts/bp-*.sh` and `specs/` state that the harness does not provide; those
+  steps cannot run here.
+- **pi-btw has no filesystem isolation.** `/btw` and the main session can touch
+  the same files.
+- **Upstream moves fast.** pi-subagents shipped 0.79.2 and 0.80.0 within days
+  of the review; pi-web-access 0.43.0 and 0.44.0 likewise, and the research
+  notes already flag a catalog-versus-`main` mismatch for pi-web-access. Pins
+  are the only reason this harness is reproducible: bump deliberately, run
+  `bun scripts/install-packages.ts --check`, then re-run the suite.
+
+## Deliberately excluded
+
+| Excluded | Why |
+|---|---|
+| `billion-context` | A proxy that rewrites provider requests and streaming responses. Context pressure is not yet demonstrated, and Pi's native compaction plus the evidence store cover the need. If it is ever evaluated, use one integration mode only, and never treat compressed history as the forensic record. |
+| `@kontextmind/kxm` | Adds a hub, a separate CLI/Runtime, tokens and project state — a service plane for cross-harness coordination that this single-process harness does not need. Revisit only if durable coordination across harnesses becomes a requirement. |
+| `@companion-ai/feynman` (full stack) | Its CLI owns the whole Pi stack, its roles are academic-research oriented, and it bundles PostHog telemetry. Its planning/verification patterns are the useful part; the package is not. |
+| bigpowers extension + 75 other skills | The extension is a workflow guardrail implemented by string matching, not an authorization boundary; the full lifecycle (`orchestrate-project`, release ceremonies, the 94% audit gate) does not belong in an assessment run. Only six skills are exposed. |
+| pi-subagents built-in agents (`scout`, `researcher`, `worker`, …) | They stay available but are not advertised to the coordinator; the six cyber roles are the intended roster. |
+| Anthropic-Cybersecurity-Skills copies | The 48 curated skills are already installed in `~/.agents/skills` and Pi loads them natively — copying them into the profile would duplicate them. |
+
+## Verification status
+
+Verified offline in this repository: the pins install from the frozen lock;
+`pi list` resolves all four local package paths; the package checker verifies
+the selected skill copies, role files, spawn caps and explicit search config.
+Pi's interactive extension loading, skill discovery, and worker registration
+were not exercised in this run. **Not** verified here (needs a provider and,
+for some paths, network access): an actual child launch, a real search request,
+and any hosted extraction path.
