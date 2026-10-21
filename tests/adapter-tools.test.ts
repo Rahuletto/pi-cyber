@@ -167,6 +167,37 @@ describe("stub-bin happy paths through the typed tools", () => {
     }
   });
 
+  test("ffuf receives only the operator-configured wordlist path", async () => {
+    const dir = tempDir();
+    const binary = join(dir, "ffuf");
+    const previous = {
+      path: process.env.PATH,
+      binDir: process.env.CYBER_TOOLS_BIN_DIR,
+      wordlist: process.env.CYBER_FFUF_WORDLIST,
+      evidence: process.env.CYBER_EVIDENCE_DIR,
+    };
+    writeFileSync(binary, '#!/bin/sh\nprintf \'{"results":[]}\\n\'\n', { mode: 0o755 });
+    process.env.PATH = `${dir}:${process.env.PATH ?? ""}`;
+    process.env.CYBER_TOOLS_BIN_DIR = dir;
+    process.env.CYBER_FFUF_WORDLIST = "/operator/wordlists/common.txt";
+    process.env.CYBER_EVIDENCE_DIR = join(dir, "evidence");
+    try {
+      const result = await call("ffuf", { target: "http://127.0.0.1:4747/FUZZ" });
+      expect(result.details).toMatchObject({ adapter: "ffuf", state: "succeeded", parsedRows: 0 });
+      expect(result.details.argv).toContain("/operator/wordlists/common.txt");
+      expect(result.details.argv).toContain("-w");
+    } finally {
+      if (previous.path === undefined) delete process.env.PATH;
+      else process.env.PATH = previous.path;
+      if (previous.binDir === undefined) delete process.env.CYBER_TOOLS_BIN_DIR;
+      else process.env.CYBER_TOOLS_BIN_DIR = previous.binDir;
+      if (previous.wordlist === undefined) delete process.env.CYBER_FFUF_WORDLIST;
+      else process.env.CYBER_FFUF_WORDLIST = previous.wordlist;
+      if (previous.evidence === undefined) delete process.env.CYBER_EVIDENCE_DIR;
+      else process.env.CYBER_EVIDENCE_DIR = previous.evidence;
+    }
+  });
+
   test("adapter schema and guard errors surface verbatim through the typed tools", async () => {
     await expect(call("subfinder", { domain: "" }))
       .rejects.toThrow("params for subfinder rejected by schema at /domain (minLength): must not have fewer than 1 characters");

@@ -104,9 +104,9 @@ describe("httpx", () => {
     expect(findings[0].meta?.tech).toEqual(["HSTS", "Bootstrap"]);
   });
 
-  test("buildArgs joins targets positionally (no -l list file, no temp files)", () => {
+  test("buildArgs emits repeated -u targets (no -l list file, no temp files)", () => {
     expect(adapter.buildArgs({ targets: ["https://a.example.com", "https://b.example.com"], ports: [80, 8443] }, {}))
-      .toEqual(["https://a.example.com", "https://b.example.com", "-json", "-p", "80,8443"]);
+      .toEqual(["-u", "https://a.example.com", "-u", "https://b.example.com", "-json", "-p", "80,8443"]);
   });
 });
 
@@ -138,9 +138,9 @@ describe("katana", () => {
     expect(findings[0].meta?.status).toBe(200);
   });
 
-  test("buildArgs emits positional targets with -jsonl and bounded depth", () => {
+  test("buildArgs emits -u targets with -jsonl and bounded depth", () => {
     expect(adapter.buildArgs({ targets: ["https://api.example.com"], depth: 3 }, {}))
-      .toEqual(["https://api.example.com", "-jsonl", "-d", "3"]);
+      .toEqual(["-u", "https://api.example.com", "-jsonl", "-d", "3"]);
   });
 });
 
@@ -207,7 +207,7 @@ describe("nuclei", () => {
 
   test("buildArgs repeats -u targets, -severity per value, -id per template; -t only via opts", () => {
     expect(adapter.buildArgs({ targets: ["https://a.example.com", "https://b.example.com"] }, {})).toEqual([
-      "-u", "https://a.example.com", "-u", "https://b.example.com", "-json",
+      "-u", "https://a.example.com", "-u", "https://b.example.com", "-jsonl",
     ]);
     expect(
       adapter.buildArgs(
@@ -215,7 +215,7 @@ describe("nuclei", () => {
         { templatesDir: "/operator/templates" },
       ),
     ).toEqual([
-      "-u", "https://a.example.com", "-json",
+      "-u", "https://a.example.com", "-jsonl",
       "-severity", "high", "-severity", "critical", "-id", "CVE-2024-1234",
       "-t", "/operator/templates",
     ]);
@@ -349,14 +349,14 @@ describe("flag-injection guards (F1)", () => {
 
   test("operator-approved extra stays verbatim (flag-capable, never model-authored)", () => {
     expect(byName("httpx")!.buildArgs({ targets: ["https://a.example.com"], extra: ["-file", "list.txt"] }, {})).toEqual([
-      "https://a.example.com", "-json", "-file", "list.txt",
+      "-u", "https://a.example.com", "-json", "-file", "list.txt",
     ]);
   });
 
   test("operator extra is capped locally at 4 items even without schema validation (M4)", () => {
     expect(
       byName("httpx")!.buildArgs({ targets: ["https://a.example.com"], extra: ["-a", "-b", "-c", "-d", "-e"] }, {}),
-    ).toEqual(["https://a.example.com", "-json", "-a", "-b", "-c", "-d"]);
+    ).toEqual(["-u", "https://a.example.com", "-json", "-a", "-b", "-c", "-d"]);
   });
   test("interactsh extra is capped locally at 4 items too (M4 residual)", () => {
     expect(

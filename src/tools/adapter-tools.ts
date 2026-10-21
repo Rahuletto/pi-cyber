@@ -123,7 +123,7 @@ const DESCRIPTIONS: Record<string, string> = {
   httpx: "Run httpx to probe target URLs/hosts and confirm live HTTP services (writes evidence, validated state required).",
   dnsx: "Run dnsx to resolve DNS records for given domains (writes evidence, validated state required).",
   katana: "Run katana to crawl targets up to a configured depth (writes evidence, validated state required).",
-  ffuf: "Run ffuf to fuzz a single URL target (writes evidence, validated state required).",
+  ffuf: "Run ffuf to fuzz a single URL target. Configure CYBER_FFUF_WORDLIST with an operator-owned wordlist path (writes evidence, validated state required).",
   naabu: "Run naabu to port-scan given hosts (writes evidence, validated state required).",
   nuclei: "Run nuclei to scan targets with template IDs and a severity filter (writes evidence, validated state required).",
   uncover: "Run uncover to query search engines (shodan/censys/…) for one query (writes evidence, validated state required).",
@@ -220,7 +220,13 @@ function buildTool(adapter: AdapterDef): ToolDefinition {
       if (!readiness.ready) {
         throw new Error(`bin not available: ${adapter.bin} — run tools/install.sh (state: ${readiness.state})`);
       }
-      const result = await runJob({ tool: adapter.name, params: params as Record<string, unknown> });
+      const buildOpts = adapter.name === "ffuf" && process.env.CYBER_FFUF_WORDLIST?.trim()
+        ? { wordlistPath: process.env.CYBER_FFUF_WORDLIST.trim() }
+        : undefined;
+      const result = await runJob(
+        { tool: adapter.name, params: params as Record<string, unknown> },
+        buildOpts ? { buildOpts } : {},
+      );
       // Global constraint: secret check on the return path that carries the
       // FULL argv (the store records/checks only a 250-entry head).
       assertArgvSecretFree(result.argv);

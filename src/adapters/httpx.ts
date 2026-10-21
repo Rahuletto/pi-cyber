@@ -1,8 +1,8 @@
 /**
  * httpx — HTTP probe / tech fingerprinting (ProjectDiscovery).
  *
- * Target handling: httpx accepts multiple positional targets (as of 1.6.x),
- * so the targets array joins as repeated positional argv elements. The `-l`
+ * Target handling: the targets array uses repeated `-u` flags, matching the
+ * pinned v1.12 CLI. List-file mode is deliberately unused — buildArgs never creates temp files
  * list-file mode is deliberately unused — buildArgs never creates temp files
  * (`-l path` stays reachable via the operator-approved `extra`, if ever).
  */
@@ -31,7 +31,7 @@ export const httpx: AdapterDef = {
   buildArgs(params: ToolParams, _opts: { wordlistPath?: string; templatesDir?: string }): string[] {
     const p = params as HttpxParams;
     const args: string[] = [];
-    for (const target of requireModelList(p.targets, "targets", "httpx")) args.push(target); // positional targets
+    for (const target of requireModelList(p.targets, "targets", "httpx")) args.push("-u", target);
     args.push("-json");
     const ports = intList(p.ports);
     if (ports.length > 0) args.push("-p", ports.join(","));

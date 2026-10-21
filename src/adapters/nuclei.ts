@@ -47,7 +47,7 @@ export const nuclei: AdapterDef = {
     const p = params as NucleiParams;
     const args: string[] = [];
     for (const target of requireModelList(p.targets, "targets", "nuclei")) args.push("-u", target);
-    args.push("-json");
+    args.push("-jsonl");
     for (const sev of stringList(p.severity)) args.push("-severity", sev); // closed enum, literal-validated
     for (const template of modelList(p.templates, "templates")) args.push("-id", template);
     if (opts.templatesDir) args.push("-t", opts.templatesDir); // operator-provided, Task 6 wiring

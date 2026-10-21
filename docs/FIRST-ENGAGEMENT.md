@@ -142,10 +142,10 @@ Measured on this host against `http://127.0.0.1:4747` with the installed binarie
 | Tool | Feasible offline | Measured result |
 | --- | --- | --- |
 | `naabu` | yes | **2 rows** — `{"ip":"127.0.0.1","port":4747,"protocol":"tcp","tls":false}` (twice) |
-| `httpx` | yes | **0 rows** — adapter passes the target positionally; httpx v1.12.0 wants `-u/--target` (`Usage: httpx [flags]`) and ignores positional targets |
-| `katana` | yes | **0 rows** — same drift; katana v1.8.0 exposes `-u, --list` |
-| `nuclei` | yes | **exit 2**, `flag provided but not defined: -json` — nuclei v3.11.1 uses `-j, --jsonl`; the adapter emits `-json` |
-| `ffuf` | yes | refuses with `operator wordlist required` — the wordlist arrives through operator `buildOpts`, and no tool wiring supplies one |
+| `httpx` | yes | Previously emitted no rows because targets were positional; adapter now passes repeated `-u` targets, retest pending |
+| `katana` | yes | Previously emitted no rows because targets were positional; adapter now passes repeated `-u` targets, retest pending |
+| `nuclei` | yes | Previously exited 2 on `-json`; adapter now emits `-jsonl`, retest pending |
+| `ffuf` | yes | Set `CYBER_FFUF_WORDLIST` to an operator-owned wordlist path; the adapter passes it as `-w` |
 | `subfinder`, `dnsx` | no | passive/active DNS against real domains; a loopback fixture has no domain to resolve |
 | `uncover` | no | queries search indexes (Shodan/Censys) with credentials and free limits |
 | `vulnx` | no | CVE advisory lookup against an upstream dataset |
@@ -156,11 +156,10 @@ Measured on this host against `http://127.0.0.1:4747` with the installed binarie
 into `~/.pi/tools/bin`); the rule set is fetched from the semgrep registry on first use and
 cached locally afterwards.
 
-Only `naabu` produces evidence rows through the typed tools as the adapters are written today;
-`semgrep` runs cleanly but finds nothing on this fixture. The other three web adapters are
-blocked by **adapter/binary flag drift**, not by the target: `-json` → `-jsonl` for nuclei,
-positional → `-u` for httpx and katana. Fixing those four `buildArgs` functions is a code
-change, not an operator step.
+`naabu` produces evidence rows through the typed tools, while `semgrep` runs cleanly but finds
+nothing on this fixture. The corrected web adapter flags are covered by argv tests; the
+walkthrough still requires a loopback rerun to establish scanner execution and parsed
+evidence.
 
 Working typed call (this is the only adapter run that produced rows):
 
@@ -253,7 +252,7 @@ directory*, not an arbitrary filesystem write.
 ### 5c. Record the lane's state
 
 Update `cyber_state` coverage with every route, identity, negative result and gap — including
-the four adapters that produced zero rows and the browser path that was not exercised.
+the corrected adapters whose live retest is pending and the browser path that was not exercised.
 
 ---
 
@@ -423,6 +422,6 @@ is not part of the repository.
   installed by the operator with uv from its PyPI wheel and is `validated`; `ghidra` and
   `jdk21` are deferred; `nmap`, `rea`, `understand-anything` and the two catalog-only sources
   are catalog entries, never installed.
-- The four adapter/binary flag drifts (httpx, katana, nuclei, ffuf) are **open code defects**,
-  not environment noise: the typed lane produces zero rows for them until `buildArgs` is fixed.
+- The httpx, katana and nuclei adapter flags have been corrected and contract-tested; end-to-end
+  scanner runs remain pending. Configure `CYBER_FFUF_WORDLIST` before using ffuf.
 - `vulnx` and `obscura` are validated on a `--help` marker probe only.

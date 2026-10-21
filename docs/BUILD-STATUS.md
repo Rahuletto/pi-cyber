@@ -27,9 +27,9 @@ other tools were installed and probed through the pinned toolchain.
 | --- | --- | --- | --- |
 | `subfinder` | 2.17.0 | `-version` | version string |
 | `dnsx` | 1.3.1 | `-version` | version string |
-| `httpx` | 1.12.0 | `-version` | version string; **input-flag drift, see below** |
-| `katana` | 1.8.0 | `-version` | version string; **input-flag drift, see below** |
-| `nuclei` | 3.11.1 | `-version` | version string; **output-flag drift, see below** |
+| `httpx` | 1.12.0 | `-version` | version string; adapter passes targets with `-u` |
+| `katana` | 1.8.0 | `-version` | version string; adapter passes targets with `-u` |
+| `nuclei` | 3.11.1 | `-version` | version string; adapter emits JSONL with `-jsonl` |
 | `uncover` | 1.2.1 | `-version` | version string |
 | `vulnx` | `help-ok` | `--help` | **marker probe only** — `-version` does not exist upstream; v2.0.2 `--help` exits 0 and prints the version, so the recorded version is `help-ok`, not a parsed semver |
 | `interactsh-client` | 1.4.1 | `-version` | version string |
@@ -48,7 +48,7 @@ that wraps it.
 
 ## Store states asserted by the automated suite
 
-`bun test` (250 pass / 0 fail / 4 skip) asserts these contracts without a model, an external
+The baseline run (250 pass / 0 fail / 4 skip) asserted these contracts without a model, an external
 target or an external scanner:
 
 - **Evidence store** — schema, persistence, per-row SHA-256, secret-pattern refusal on every write path, list/summary rendering, bounded output.
@@ -58,6 +58,9 @@ target or an external scanner:
 - **Browser lease** — acquire/release/status, single-owner conflict, `mode: "act"` readiness refusal, export-before-close reminder.
 - **Knowledge layer** — FTS index build, search, staleness marker over the local corpus.
 - **Extension wiring** — pinned Pi extension loader, temporary sessions, theme resolution, AST preview/apply guards.
+
+After the adapter corrections on 2026-10-21, the latest full run passed **259 tests, 4 skipped,
+0 failed across 20 files** (1,896 `expect()` calls), and `bun run typecheck` passed.
 
 ## Executed for real on this host
 
@@ -81,24 +84,25 @@ target or an external scanner:
 - **`nmap`, `rea`, `understand-anything`, `piebald-claude-code-system-prompts` and `awesome-claude-code`** are catalog entries only — never installed, never run.
 - **No provider call, no interactive terminal QA, no light-terminal visual check, no native Node runtime** (the `node` command on this host is a Bun shim), no real compaction-threshold measurement, and no specialist worker spawn.
 
-## Open adapter/binary drift (defects, not environment noise)
+## Adapter/binary compatibility check
 
 The installed binary versions and the adapter `buildArgs` disagree on four tools. Measured
 against the loopback fixture on 2026-10-21:
 
 | Tool | Adapter emits | Installed binary expects | Effect through the typed lane |
 | --- | --- | --- | --- |
-| `httpx` v1.12.0 | positional target | `-u, --target` (`Usage: httpx [flags]`) | job succeeds with **0 rows** |
-| `katana` v1.8.0 | positional target | `-u, --list` | job succeeds with **0 rows** |
-| `nuclei` v3.11.1 | `-json` | `-j, --jsonl` | job **fails**, exit 2, `flag provided but not defined: -json` |
-| `ffuf` v2.3.0 | needs `opts.wordlistPath` | — | refuses with `operator wordlist required`; no tool wiring supplies an operator wordlist |
+| `httpx` v1.12.0 | repeated `-u <target>` | `-u, --target` (`Usage: httpx [flags]`) | adapter flag corrected; live rerun remains an operator check |
+| `katana` v1.8.0 | repeated `-u <target>` | `-u, --list` | adapter flag corrected; live rerun remains an operator check |
+| `nuclei` v3.11.1 | `-jsonl` | `-j, --jsonl` | adapter flag corrected; live rerun remains an operator check |
+| `ffuf` v2.3.0 | `CYBER_FFUF_WORDLIST` operator environment setting → `-w` | operator-owned wordlist required | Pi adapter wiring added; configure a local wordlist path before use |
 
 The job runner spawns binaries by name through `PATH`. `scripts/pi.sh` now prepends
 `~/.pi/tools/bin` (or `$PI_TOOLS_DIR/bin`) for `bun run pi`; direct Pi invocations still need
 the directory on `PATH` or adapters fail with `Executable not found in $PATH: "<bin>"`.
 
-Only `naabu` currently produces evidence rows through the typed tools. The four fixes above
-are code changes to `src/adapters/*.ts` and are not part of this documentation task.
+`naabu` and `semgrep` have been exercised through the typed tools. The adapter corrections
+above are covered by argv contract tests; successful scanner runs after those corrections
+remain to be confirmed against the loopback fixture.
 
 ---
 
@@ -106,10 +110,9 @@ are code changes to `src/adapters/*.ts` and are not part of this documentation t
 
 | # | Item | Owner | Notes |
 | --- | --- | --- | --- |
-| 1 | `httpx` / `katana` positional-target drift (0 rows) | Harness maintainer | Change `buildArgs` to `-u`; add a regression test against a fixture binary |
-| 2 | `nuclei` `-json` → `-jsonl` drift (exit 2) | Harness maintainer | Same, plus a template-dir note for the first run |
-| 3 | `ffuf` operator wordlist wiring | Harness maintainer + Operator | Decide where `buildOpts.wordlistPath` comes from; today no path supplies it |
-| 4 | `~/.pi/tools/bin` on `PATH` for direct Pi invocations | Operator | `scripts/pi.sh` sets it for `bun run pi`; direct invocations must add it |
+| 1 | Re-run httpx, katana and nuclei adapters against Cyberbench | Operator | Adapter flags are corrected and contract-tested; end-to-end scanner runs remain unverified |
+| 2 | Configure ffuf wordlist | Operator | Set `CYBER_FFUF_WORDLIST` to an operator-owned wordlist path |
+| 3 | `~/.pi/tools/bin` on `PATH` for direct Pi invocations | Operator | `scripts/pi.sh` sets it for `bun run pi`; direct invocations must add it |
 | 5 | Live target engagement | Operator | Only loopback has been exercised; no external host was touched |
 | 6 | Obscura MCP registration + authenticated browser flow | Operator | `obscura` is installed and validated on `--help`; the MCP server is not registered |
 | 7 | REA server setup and one real REA run | Operator | `rea setup` is an operator step; no REA analysis has run |
@@ -209,7 +212,7 @@ clean; doctor reports **16 `validated` / 8 `cataloged`** tools on `darwin/arm64`
 1. Launch Pi with `bun run pi`; confirm the extension, theme and OFFENSE badge load, and confirm the configured web provider is available. The launcher adds the scanner directory to `PATH`.
 2. Confirm model sign-in in that profile and test one bounded child task with context and tool grants.
 3. Connect the selected browser MCP (Obscura) and validate a signed-out/member/admin flow against Cyberbench.
-4. Fix the four adapter/binary drifts listed above, then re-run the loopback lane and confirm that `httpx`, `katana` and `nuclei` produce evidence rows.
+4. Re-run the loopback lane and confirm that `httpx`, `katana` and `nuclei` produce evidence rows; configure `CYBER_FFUF_WORDLIST` before using ffuf.
 5. Run the documented first engagement against `127.0.0.1` only, then inspect the recorded evidence and remediation handoff.
 
 No external target is configured. Mode prompts and package tool schemas are workflow controls,

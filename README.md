@@ -106,6 +106,8 @@ The eleven adapter tools share one contract: typed parameters validated against 
 own schema, a serialized job with a durable ledger entry, parsed findings persisted as evidence
 rows, and a fast-fail readiness check (`bin not available: <bin> — run tools/install.sh (state:
 <state>)`). Adapter and validation errors surface verbatim so they can be corrected.
+For `ffuf`, set `CYBER_FFUF_WORDLIST` to an operator-owned wordlist file before calling the
+tool; the path stays outside model-authored parameters.
 
 ## Native tool install and validation
 
@@ -216,4 +218,4 @@ Interactive terminal appearance, a native Node runtime, provider calls, live aut
 
 Optional AST tests use the actual pinned Pi loader, the installed native ast-grep engine, and temporary files. They cover structural capture matching, unchanged previews, Unicode/comment-preserving substitutions, mode-preserving apply, parser and missing-token failures, overlap, stale/session/branch rejection, workspace containment and response/source limits. Native AST execution was verified on this host; other engine platform binaries remain untested.
 
-The recorded suite result on this host (2026-10-21) is **250 pass, 4 skip, 0 fail** across 19 files, with a clean `tsc --noEmit`. The loopback engagement was exercised against the local fixture only; no external target, no real browser and no provider call were involved. The verbatim command output is recorded in [docs/BUILD-STATUS.md](docs/BUILD-STATUS.md).
+The baseline suite result on this host (2026-10-21) was 250 pass / 4 skip / 0 fail across 19 files. After correcting the adapter flags and ffuf wordlist wiring, the latest full run passed **259 tests, 4 skipped, 0 failed across 20 files**, and `tsc --noEmit` passed. Scanner reruns against the fixture remain an operator check; no external target, real browser or provider call was involved. See [docs/BUILD-STATUS.md](docs/BUILD-STATUS.md).

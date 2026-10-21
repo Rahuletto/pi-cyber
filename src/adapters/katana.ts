@@ -1,9 +1,8 @@
 /**
  * katana — JS-aware crawler (ProjectDiscovery).
  *
- * Target handling: katana accepts a positional target list upstream, so the
- * targets array joins as repeated positional argv elements; the `-l` list
- * file mode stays available to the operator via `extra` only, since
+ * Target handling: the targets array uses repeated `-u` flags, matching the
+ * pinned v1.8 CLI; list-file mode stays available to the operator via `extra` only, since
  * buildArgs never builds temporary files.
  */
 import { Type, type Static } from "typebox";
@@ -31,7 +30,7 @@ export const katana: AdapterDef = {
   buildArgs(params: ToolParams, _opts: { wordlistPath?: string; templatesDir?: string }): string[] {
     const p = params as KatanaParams;
     const args: string[] = [];
-    for (const target of requireModelList(p.targets, "targets", "katana")) args.push(target); // positional targets
+    for (const target of requireModelList(p.targets, "targets", "katana")) args.push("-u", target);
     args.push("-jsonl");
     if (typeof p.depth === "number" && Number.isInteger(p.depth)) args.push("-d", String(p.depth));
     args.push(...operatorExtra(p.extra));
