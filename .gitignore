@@ -3,3 +3,5 @@ node_modules
 .DS_Store
 *.log
 dist
+# Derived knowledge index (rebuildable with the cyber_knowledge rebuild action)
+config/cyber/knowledge/

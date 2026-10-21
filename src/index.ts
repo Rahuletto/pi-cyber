@@ -7,6 +7,7 @@ import { registerGithubTool } from "./tools/github.ts";
 import { registerEvidenceTool } from "./tools/evidence.ts";
 import { registerCyberJobsTool } from "./tools/jobs.ts";
 import { registerAdapterTools } from "./tools/adapter-tools.ts";
+import { registerKnowledgeTool } from "./tools/knowledge.ts";
 import { contextLine } from "./evidence/db.ts";
 
 const CYBER_THEME = "cyber-defense"; // Single blue accent in both modes; nothing rethemes on mode change.
@@ -23,6 +24,7 @@ export default function cyber(pi: ExtensionAPI): void {
   registerEvidenceTool(pi);
   registerCyberJobsTool(pi);
   registerAdapterTools(pi);
+  registerKnowledgeTool(pi);
   const runningTools = new Set<string>();
   let agentRunning = false;
   let visualReady = false;
