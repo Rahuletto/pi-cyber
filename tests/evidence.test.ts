@@ -115,9 +115,14 @@ describe("evidence store (in-memory)", () => {
     const store = openEvidence(":memory:");
     try {
       store.addSession({ sessionId: "obs-1", owner: "offense", mode: "offense", purpose: "fixture login walk" });
+      // Acquisition writes no event; the sanctioned release does (kind "session").
+      expect(store.briefSummary()).toContain("events 0 ·");
       expect(() => store.addSession({ sessionId: "obs-1", owner: "defense", mode: "defense", purpose: "shadow" })).toThrow(/active lease/);
       store.releaseSession("obs-1");
-      store.releaseSession("obs-1"); // idempotent
+      // Typed event records the released lease with owner and action.
+      expect(store.briefSummary()).toContain("events 1 ·");
+      store.releaseSession("obs-1"); // idempotent: no row changed, no extra event
+      expect(store.briefSummary()).toContain("events 1 ·");
       store.addSession({ sessionId: "obs-1", owner: "defense", mode: "defense", purpose: "reload" });
       expect(store.briefSummary()).toContain("sessions 2 (1 active)");
     } finally { store.close(); }
@@ -135,6 +140,37 @@ describe("evidence store (in-memory)", () => {
       expect(() => store.addFinding({ title: "clean", evidenceIds: [], impact: `impact ${sk}` })).toThrow(SECRET_REFUSAL_MESSAGE);
       expect(() => store.addSession({ sessionId: "s", owner: "o", mode: "m", purpose: `leak ${ghp}` })).toThrow(SECRET_REFUSAL_MESSAGE);
       expect(store.recordCount()).toBe(0);
+    } finally { store.close(); }
+  });
+
+  test("addJob refuses secret-like argv and startedAt with the canonical message", () => {
+    const store = openEvidence(":memory:");
+    try {
+      const ghp = `ghp_${"e".repeat(36)}`;
+      const sk = "sk-ant-api03-abcdefghij";
+      expect(() => store.addJob({ jobId: "j-1", adapter: "nuclei", argv: ["nuclei", ghp], state: "queued" })).toThrow(SECRET_REFUSAL_MESSAGE);
+      expect(() => store.addJob({ jobId: "j-2", adapter: "subfinder", argv: ["subfinder", sk], state: "queued" })).toThrow(SECRET_REFUSAL_MESSAGE);
+      expect(store.recordCount()).toBe(0);
+    } finally { store.close(); }
+  });
+
+  test("addJob startedAt accepts undefined, ISO-8601 and epochs, rejects garbage", () => {
+    const store = openEvidence(":memory:");
+    try {
+      store.addJob({ jobId: "j-a1", adapter: "a", argv: [], state: "queued" });
+      expect(store.listJobs().at(0)!.startedAt).toBeNull(); // newest first
+      store.addJob({ jobId: "j-a2", adapter: "a", argv: [], state: "running" });
+      const derived = store.listJobs().at(0)!;
+      expect(derived.startedAt).not.toBeNull();
+      expect(() => new Date(derived.startedAt!).toISOString()).not.toThrow();
+      store.addJob({ jobId: "j-a3", adapter: "a", argv: [], state: "running", startedAt: "2026-10-21T12:30:00.000Z" });
+      expect(store.listJobs().at(0)!.startedAt).toBe("2026-10-21T12:30:00.000Z");
+      store.addJob({ jobId: "j-a4", adapter: "a", argv: [], state: "queued", startedAt: 1730000000000 });
+      expect(store.listJobs().at(0)!.startedAt).toBe(new Date(1730000000000).toISOString());
+      expect(() => store.addJob({ jobId: "j-b1", adapter: "a", argv: [], state: "queued", startedAt: "not-a-date" })).toThrow(/startedAt/);
+      expect(() => store.addJob({ jobId: "j-b2", adapter: "a", argv: [], state: "queued", startedAt: Number.NaN })).toThrow(/startedAt/);
+      expect(() => store.addJob({ jobId: "j-b3", adapter: "a", argv: [], state: "queued", startedAt: Number.POSITIVE_INFINITY })).toThrow(/startedAt/);
+      expect(() => store.addJob({ jobId: "j-b4", adapter: "a", argv: [], state: "queued", startedAt: "   " })).toThrow(/startedAt/);
     } finally { store.close(); }
   });
 
@@ -239,9 +275,14 @@ describe("evidence store (files)", () => {
       store.appendEvent("override", { ok: true });
       expect(store.path).toBe(override);
     } finally { store.close(); }
+    // Even when no default DB exists in the ambient environment, construct one
+    // at a default path via env override so this check always exercises.
+    process.env.CYBER_EVIDENCE_DIR = tempDir();
+    process.env.CYBER_ENGAGEMENT_ID = "default";
+    const withDefault = openEvidence();
+    try { withDefault.appendEvent("default", { ok: true }); } finally { withDefault.close(); }
     const expectedDefault = resolveEvidencePath();
-    const throughDefault = contextLine(); // default DB in this environment
-    if (throughDefault) expect(throughDefault.endsWith(expectedDefault)).toBe(true);
+    expect(contextLine()).toBe(formatEvidenceLine(1, expectedDefault));
   });
 
   test("contextLine: null without a database, count line with one, null when opening fails", () => {

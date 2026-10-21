@@ -10,7 +10,12 @@
 
 const KNOWN_SECRETS = /(?:sk-(?:proj-)?[a-zA-Z0-9_-]{20,}|AKIA[A-Z0-9]{16}|-----BEGIN [A-Z ]*PRIVATE KEY-----|\bBearer\s+[a-zA-Z0-9._~+/-]{12,}|\b(?:password|api[_-]?key|access[_-]?token|secret)\s*[:=]\s*\S+|https?:\/\/[^\s/:]+:[^\s@]+@)/i;
 
-const EXTRA_SECRETS = /(?:ghp_[A-Za-z0-9]{36}|gho_[A-Za-z0-9]{36}|-----BEGIN OPENSSH PRIVATE KEY-----|xox[bp]-|sk-ant-)/i;
+/**
+ * Extended token families: classic GitHub tokens, fine-grained GitHub PATs
+ * (prefix + ~82-char tail), the OpenSSH PEM marker, Slack tokens
+ * (xoxa-/xoxb-/xoxp-/xoxr-/xoxs-) and Anthropic keys.
+ */
+const EXTRA_SECRETS = /(?:ghp_[A-Za-z0-9]{36}|gho_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{50,}|-----BEGIN OPENSSH PRIVATE KEY-----|xox[abprs]-|sk-ant-)/i;
 
 export const SECRET_REFUSAL_MESSAGE = "possible raw secret: store a redacted artifact reference instead.";
 

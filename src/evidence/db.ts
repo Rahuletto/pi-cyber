@@ -4,8 +4,10 @@
  * Append-only discipline: events, evidence, findings and browser_sessions are
  * INSERT-only — no UPDATE or DELETE is ever exposed for them. The only
  * mutable table is `jobs`, whose rows legitimately transition through a
- * state machine; every job transition is also recorded as a `job` event so
- * the event log stays a complete audit trail.
+ * state machine, and the lease-release column of `browser_sessions`
+ * (`released_at`, NULL → timestamp, sanctioned 2026-10-21). Every job
+ * transition and every lease release is also recorded as a typed event
+ * (`job` / `session`) so the event log stays a complete audit trail.
  *
  * Path resolution (worker env):
  * - `CYBER_EVIDENCE_DIR` — base directory, default `<repoRoot>/config/cyber/evidence`
@@ -105,7 +107,7 @@ export interface EvidenceStore {
   appendEvent(kind: string, payload: unknown): number;
   addEvidence(input: { kind: string; refs: string[]; text: string; sensitivity: Sensitivity }): { id: number; hash: string };
   addFinding(init: { state?: FindingState; title: string; evidenceIds: number[]; impact: string; confidence?: number }): { id: number };
-  addJob(row: { jobId: string; adapter: string; argv: string[]; state: JobState; startedAt?: string; artifactPath?: string }): number;
+  addJob(row: { jobId: string; adapter: string; argv: string[]; state: JobState; startedAt?: string | number; artifactPath?: string }): number;
   updateJobState(jobId: string, state: JobState): void;
   addSession(row: { sessionId: string; owner: string; mode: string; purpose: string }): void;
   releaseSession(sessionId: string): void;
@@ -119,6 +121,25 @@ export interface EvidenceStore {
 
 function now(): string {
   return new Date().toISOString();
+}
+
+/**
+ * startedAt accepts undefined (derived from state), an ISO-8601 string, or a
+ * numeric epoch (ms). Anything else is rejected with a clear error.
+ */
+function normalizeStartedAt(value: string | number | null | undefined, state: JobState): string | null {
+  if (value === undefined || value === null) return state === "running" ? now() : null;
+  if (typeof value !== "string" && typeof value !== "number") {
+    throw new Error("Job startedAt must be undefined, an ISO-8601 string, or a numeric epoch.");
+  }
+  if (typeof value === "string" && !value.trim()) {
+    throw new Error("Job startedAt must be undefined, an ISO-8601 string, or a numeric epoch.");
+  }
+  const time = new Date(value).getTime();
+  if (!Number.isFinite(time)) {
+    throw new Error("Job startedAt must be undefined, an ISO-8601 string, or a numeric epoch.");
+  }
+  return new Date(time).toISOString();
 }
 
 function sha256(text: string): string {
@@ -176,7 +197,7 @@ function createStore(db: Database, path: string): EvidenceStore {
   const updateJobStateStmt = db.prepare("UPDATE jobs SET state = ?, ended_at = ? WHERE jobId = ?");
   const insertSession = db.prepare("INSERT INTO browser_sessions (sessionId, owner, mode, purpose, acquired_at, released_at) VALUES (?, ?, ?, ?, ?, NULL)");
   const selectActiveSession = db.prepare("SELECT owner FROM browser_sessions WHERE sessionId = ? AND released_at IS NULL");
-  const releaseSessionStmt = db.prepare("UPDATE browser_sessions SET released_at = ? WHERE sessionId = ? AND released_at IS NULL");
+  const releaseSessionStmt = db.prepare("UPDATE browser_sessions SET released_at = ? WHERE sessionId = ? AND released_at IS NULL RETURNING owner");
   const selectEvidenceAll = db.prepare("SELECT id, ts, kind, refs, text, sensitivity, hash FROM evidence ORDER BY id DESC LIMIT ?");
   const selectEvidenceByKind = db.prepare("SELECT id, ts, kind, refs, text, sensitivity, hash FROM evidence WHERE kind = ? ORDER BY id DESC LIMIT ?");
   const selectFindingsAll = db.prepare("SELECT id, state, title, evidence_ids, impact, confidence, created_at FROM findings ORDER BY id DESC LIMIT ?");
@@ -201,7 +222,8 @@ function createStore(db: Database, path: string): EvidenceStore {
     if (!existing) throw new Error(`Unknown job id: ${jobId}`);
     const terminal = JOB_TERMINAL_STATES.includes(state) ? now() : null;
     updateJobStateStmt.run(state, terminal, jobId);
-    insertEvent.run(now(), "job", JSON.stringify({ jobId, state }));
+    // Going through saveEvent guarantees the secret/size check on the payload.
+    saveEvent("job", { jobId, state });
   });
 
   const saveEvent = (kind: string, payload: unknown): number => {
@@ -214,6 +236,13 @@ function createStore(db: Database, path: string): EvidenceStore {
     const inserted = insertEvent.get(now(), kind, payloadJson) as { id: unknown };
     return Number(inserted.id);
   };
+
+  /** Lease release: sanctioned column update (NULL→timestamp) + typed `session` event. */
+  const releaseSessionTx = db.transaction((id: string) => {
+    const released = releaseSessionStmt.get(now(), id) as { owner: unknown } | null;
+    // Idempotent semantic: a release with no active lease changes nothing and writes no event.
+    if (released) saveEvent("session", { sessionId: id, owner: String(released.owner), action: "released" });
+  });
 
   const parseRefs = (raw: string): string[] => {
     try { const parsed = JSON.parse(raw); return Array.isArray(parsed) ? parsed.map(String) : []; }
@@ -262,7 +291,7 @@ function createStore(db: Database, path: string): EvidenceStore {
       const argv = checkedRefList(row.argv, "Job argv", 256);
       const state = assertEnum(row.state, JOB_STATES, "Job state");
       const artifactPath = row.artifactPath === undefined || row.artifactPath === null ? null : checkedId(row.artifactPath, "Job artifact path", 1000);
-      const startedAt = row.startedAt?.trim() || (state === "running" ? now() : null);
+      const startedAt = normalizeStartedAt(row.startedAt, state);
       const inserted = insertJob.get(jobId, adapter, JSON.stringify(argv), state, startedAt, artifactPath) as { id: unknown };
       saveEvent("job", { jobId, state, event: "queued" });
       return Number(inserted.id);
@@ -282,7 +311,7 @@ function createStore(db: Database, path: string): EvidenceStore {
     },
     releaseSession(sessionId): void {
       const id = checkedId(sessionId, "Session id", 500);
-      releaseSessionStmt.run(now(), id);
+      releaseSessionTx(id);
     },
     listEvidence(opts): EvidenceRow[] {
       const rows = (opts?.kind
