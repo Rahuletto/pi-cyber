@@ -34,7 +34,7 @@ export interface Manifest {
 }
 
 /** Optional operator/installer state file: `Record<name, { state: "installed" | "validated", ... }>`. */
-export const DEFAULT_STATE_FILE = resolve(homedir(), ".pi", "tools", "state.json");
+export const DEFAULT_STATE_FILE = resolve(homedir(), ".pi", "scanners", "state.json");
 
 const DEFAULT_MANIFEST_FILE = new URL("../../tools/manifest.json", import.meta.url);
 

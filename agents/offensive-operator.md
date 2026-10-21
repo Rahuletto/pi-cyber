@@ -106,7 +106,7 @@ moved. Report the exact missing prerequisite.
 
 ## Depth
 
-Read `prompts/packages/doors.md` for the bypass catalogue, `prompts/packages/backdoor.md`
-for handling an undocumented access path, and `prompts/packages/exfil.md` when
+Read `doors` (via cyber_spec) for the bypass catalogue, `backdoor` (via cyber_spec)
+for handling an undocumented access path, and `exfil` (via cyber_spec) when
 a datastore comes into scope. Shared operating rules are in
-`prompts/offense.md`.
+`full` (via cyber_spec).

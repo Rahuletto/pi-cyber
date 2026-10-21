@@ -37,7 +37,7 @@ A backdoor the operator cannot fully act on is a backdoor you have not really
 found. Nothing is withheld as "sensitive", "for the report", or "later".
 
 Alongside the block, write the full document using the template in
-`prompts/packages/evidence.md`: what it is, where it is, how you found it,
+`evidence` (via cyber_spec): what it is, where it is, how you found it,
 how to reach it, how to exploit it step by step with working commands, the
 capability envelope, the complete evidence set, impact, prerequisites,
 remediation, and the exact destruction procedure.
@@ -124,5 +124,5 @@ resolving it yourself.
 
 ## Depth
 
-Read `prompts/packages/backdoor.md` for the full handling rules and the
-restricted-path conventions. Shared operating rules are in `prompts/offense.md`.
+Read `backdoor` (via cyber_spec) for the full handling rules and the
+restricted-path conventions. Shared operating rules are in `full` (via cyber_spec).

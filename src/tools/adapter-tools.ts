@@ -1,4 +1,5 @@
 import type { AgentToolResult, ExtensionAPI, ExtensionToolContext, ToolDefinition } from "@earendil-works/pi-coding-agent";
+import { toolsBinDir } from "./paths.ts";
 import { access, constants, readFile, stat } from "node:fs/promises";
 import { homedir } from "node:os";
 import { delimiter, resolve } from "node:path";
@@ -25,7 +26,7 @@ import { DEFAULT_STATE_FILE, loadManifest, type ToolState } from "./manifest.ts"
  * - executionMode "sequential": the runner serializes through one promise
  *   chain anyway — parallel execution is deliberately not offered.
  * - Readiness guard: BEFORE the runner, each tool checks the bin state
- *   (state.json + manifest catalog + runtime PATH / ~/.pi/tools/bin disk
+ *   (state.json + manifest catalog + runtime PATH / ~/.pi/scanners/bin disk
  *   check) and fails FAST with the typed
  *   `bin not available: <bin> — run tools/install.sh (state: <state>)`
  *   message instead of a confusing spawn error.
@@ -41,14 +42,11 @@ const TRUNCATED = "[truncated]";
 const WITHHELD = "<withheld: matched a secret-like pattern; redact before dispatch>";
 
 /** Additional bin dir the installer owns (checked alongside the runtime PATH). */
-const DEFAULT_TOOLS_BIN_DIR = resolve(homedir(), ".pi", "tools", "bin");
+const DEFAULT_TOOLS_BIN_DIR = resolve(homedir(), ".pi", "scanners", "bin");
 
 /** Test/operator knob documented below: <missing/empty dir> makes every non-PATH bin unavailable. */
 function stateFile(): string {
   return process.env.CYBER_TOOLS_STATE_FILE?.trim() || DEFAULT_STATE_FILE;
-}
-function toolsBinDir(): string {
-  return process.env.CYBER_TOOLS_BIN_DIR?.trim() || DEFAULT_TOOLS_BIN_DIR;
 }
 
 export interface BinReadiness {
@@ -81,7 +79,7 @@ async function executableOnDisk(name: string, extraDir: string, pathEnv: string)
 
 /**
  * Bin readiness for one adapter bin, weighted like the doctor:
- * PATH/…/.pi/tools/bin disk presence is the runtime truth (ready);
+ * PATH/…/.pi/scanners/bin disk presence is the runtime truth (ready);
  * the state file contributes installed/validated labels, the manifest
  * contributes the catalog flag and the resolved release tag. Manifest and
  * resolved reads are best-effort: a corrupt file must never block a run whose

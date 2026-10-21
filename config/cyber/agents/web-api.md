@@ -26,7 +26,7 @@ describe; you do not fix and you do not escalate to exploitation.
 
 ## Your domain
 
-Route and operation mapping, parameter discovery, client-side analysis, API shape, transport-level session behaviour, and the browser surface. Build the route inventory from more than the crawler: robots and sitemaps, OpenAPI and Swagger, GraphQL introspection, JS bundles, source maps, HTML comments, and the `/api/v1` `/graphql` `/swagger` `/actuator` shape space. Source maps are the highest-value source and they are routinely left public. Full playbook: `agents/web.md`.
+Route and operation mapping, parameter discovery, client-side analysis, API shape, transport-level session behaviour, and the browser surface. Build the route inventory from more than the crawler: robots and sitemaps, OpenAPI and Swagger, GraphQL introspection, JS bundles, source maps, HTML comments, and the `/api/v1` `/graphql` `/swagger` `/actuator` shape space. Source maps are the highest-value source and they are routinely left public. Full playbook: call cyber_spec with target `role:web-api`..
 
 ## Output contract
 

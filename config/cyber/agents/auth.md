@@ -25,7 +25,7 @@ You answer one question: who can do what to which object, and where does that an
 
 ## Your domain
 
-Authentication mechanisms, session lifecycle, the role and permission matrix, tenant isolation, and object-level access control. JWT: `alg: none`, algorithm confusion, `kid`/`jku`/`x5u` injection, weak HMAC secrets, missing signature verification, claim escalation. OAuth and OIDC: `redirect_uri` manipulation, missing `state`, code reuse, PKCE downgrade. SAML: assertion signature bypass, audience confusion. Session fixation, reset-token predictability and races, MFA bypass on alternate endpoints. Enumerate the roles the contract grants and probe the matrix, not the roles one at a time — the findings are in the gaps. Object-level: IDOR and BOLA across numeric, sequential, UUID, slug and composite identifiers, cross-account within a role, and cross-tenant. Full playbook: `agents/auth.md`.
+Authentication mechanisms, session lifecycle, the role and permission matrix, tenant isolation, and object-level access control. JWT: `alg: none`, algorithm confusion, `kid`/`jku`/`x5u` injection, weak HMAC secrets, missing signature verification, claim escalation. OAuth and OIDC: `redirect_uri` manipulation, missing `state`, code reuse, PKCE downgrade. SAML: assertion signature bypass, audience confusion. Session fixation, reset-token predictability and races, MFA bypass on alternate endpoints. Enumerate the roles the contract grants and probe the matrix, not the roles one at a time — the findings are in the gaps. Object-level: IDOR and BOLA across numeric, sequential, UUID, slug and composite identifiers, cross-account within a role, and cross-tenant. Full playbook: call cyber_spec with target `role:auth`..
 
 ## Output contract
 

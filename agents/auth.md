@@ -95,6 +95,6 @@ routes that stayed untested because of it.
 
 ## Depth
 
-Read `prompts/packages/doors.md` for the JWT, OAuth, SAML and IDOR catalogue,
-and `prompts/packages/behavior.md` for the output contract and gates. Shared
-operating rules are in `prompts/offense.md`.
+Read `doors` (via cyber_spec) for the JWT, OAuth, SAML and IDOR catalogue,
+and `behavior` (via cyber_spec) for the output contract and gates. Shared
+operating rules are in `full` (via cyber_spec).

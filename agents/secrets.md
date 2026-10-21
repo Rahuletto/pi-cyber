@@ -117,5 +117,5 @@ Report the credential's location and type in that case, not its value.
 
 ## Depth
 
-Read `prompts/packages/secrets.md` for the full discovery-surface list and
-the disclosure format. Shared operating rules are in `prompts/offense.md`.
+Read `secrets` (via cyber_spec) for the full discovery-surface list and
+the disclosure format. Shared operating rules are in `full` (via cyber_spec).

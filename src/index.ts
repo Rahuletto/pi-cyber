@@ -19,6 +19,18 @@ const instructions = Object.fromEntries(["base", "offense"].map((name) => [name,
 
 /** Absolute path to the prompt tree. Injected into the runtime prompt so the agent can reach the full spec and packages by absolute path. */
 const PROMPTS_DIR = resource("prompts");
+/**
+ * Specialist role playbooks. The wired role definition under
+ * config/cyber/agents/ points here by name instead of a path relative to the
+ * working directory, so a specialist can load its full playbook from any cwd.
+ */
+const ROLE_FILES: Record<string, string> = {
+  recon: "recon.md", "web-api": "web.md", auth: "auth.md", secrets: "secrets.md",
+  exfil: "exfil.md", backdoor: "backdoor.md", reverse: "reverse.md", reviewer: "reviewer.md",
+  validation: "validation.md", "vulnerability-research": "vuln-research.md",
+  "offensive-operator": "offensive-operator.md", "source-remediation": "remediation.md",
+};
+
 /** Package names the agent may pull on demand. Each maps to a file under prompts/packages/. */
 const PACKAGE_FILES: Record<string, string> = {
   behavior: "behavior.md", contract: "contract.md", doctrine: "doctrine.md", doors: "doors.md",
@@ -207,13 +219,21 @@ export default function cyber(pi: ExtensionAPI): void {
     annotations: { readOnlyHint: true, openWorldHint: false },
     async execute(_id, params, _signal, _onUpdate, ctx) {
       const requested = params.target.trim().toLowerCase();
+      if (requested.startsWith("role:")) {
+        const role = requested.slice("role:".length);
+        const file = ROLE_FILES[role];
+        if (!file) throw new Error(`Unknown role "${role}". Known roles: ${Object.keys(ROLE_FILES).join(", ")}.`);
+        const body = readPrompt(join("..", "agents", file));
+        if (!body) throw new Error(`Role playbook "${role}" is not installed at agents/${file}.`);
+        return { content: [{ type: "text", text: body }], details: { target: requested, chars: body.length } };
+      }
       if (requested === "full" || requested === "offense-full" || requested === "spec") {
         const body = readPrompt("offense-full.md");
         if (!body) throw new Error("The offense specification is not installed at prompts/offense-full.md.");
         return { content: [{ type: "text", text: body }], details: { target: "full", chars: body.length } };
       }
       const file = PACKAGE_FILES[requested];
-      if (!file) throw new Error(`Unknown specification target "${params.target}". Use "full" or one of: ${Object.keys(PACKAGE_FILES).join(", ")}.`);
+      if (!file) throw new Error(`Unknown specification target "${params.target}". Use "full", "role:<name>", or one of: ${Object.keys(PACKAGE_FILES).join(", ")}.`);
       const body = readPrompt(join("packages", file));
       if (!body) throw new Error(`Package "${requested}" is not installed at prompts/packages/${file}.`);
       return { content: [{ type: "text", text: body }], details: { target: requested, chars: body.length } };

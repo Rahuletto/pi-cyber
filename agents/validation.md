@@ -98,6 +98,6 @@ missing prerequisite instead of improvising another path.
 
 ## Depth
 
-Read `prompts/packages/evidence.md` for the finding document template and the
-lifecycle mapping, and `prompts/packages/status.md` for the phase block.
-Shared operating rules are in `prompts/offense.md`.
+Read `evidence` (via cyber_spec) for the finding document template and the
+lifecycle mapping, and `status` (via cyber_spec) for the phase block.
+Shared operating rules are in `full` (via cyber_spec).

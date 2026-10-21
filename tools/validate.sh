@@ -6,11 +6,11 @@
 # and the failure is explicit (never silent). semgrep special case: binary missing → print the
 # pip installation instruction and leave state "installed".
 #
-# Env: PI_TOOLS_DIR (default ~/.pi/tools). Usage: validate.sh
+# Env: PI_TOOLS_DIR (default ~/.pi/scanners). Usage: validate.sh
 set -u -o pipefail
 
 ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
-PI_TOOLS_DIR="${PI_TOOLS_DIR:-$HOME/.pi/tools}"
+PI_TOOLS_DIR="${PI_TOOLS_DIR:-$HOME/.pi/scanners}"
 BIN_DIR="$PI_TOOLS_DIR/bin"
 STATE_FILE="$PI_TOOLS_DIR/state.json"
 TOOLCTL="$ROOT/tools/toolctl.ts"

@@ -79,7 +79,7 @@ bash tools/install.sh       # download pinned core binaries; requires network ac
 bash tools/validate.sh      # probe installed binaries and update readiness state
 ```
 
-The installer verifies release digests and writes binaries under `~/.pi/tools/bin` by default. Set `PI_TOOLS_DIR` to use another location. The doctor is read-only and does not execute tools. The validator performs a bounded version or help probe; that is not an end-to-end target test.
+The installer verifies release digests and writes binaries under `~/.pi/scanners/bin` by default. Set `PI_TOOLS_DIR` to use another location. The doctor is read-only and does not execute tools. The validator performs a bounded version or help probe; that is not an end-to-end target test.
 
 Install the pinned SecLists common web-content wordlist for `ffuf` separately:
 
@@ -87,7 +87,7 @@ Install the pinned SecLists common web-content wordlist for `ffuf` separately:
 bash tools/install-ffuf-wordlist.sh
 ```
 
-The launcher uses `~/.pi/tools/wordlists/seclists-common.txt` automatically. Set `CYBER_FFUF_WORDLIST` to use another operator-managed list.
+The launcher uses `~/.pi/scanners/wordlists/seclists-common.txt` automatically. Set `CYBER_FFUF_WORDLIST` to use another operator-managed list.
 
 `TOOLS.md` catalogs 149 researched candidates. It is documentation, not an install manifest or callable-tool registry. Search it through `cyber_knowledge` after rebuilding the `doc` source; candidates need a registered adapter and an available binary before Pi can invoke them. For example, ZAP and Nmap are cataloged, but this extension does not currently expose them as typed adapter tools.
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-TOOLS_DIR="${PI_TOOLS_DIR:-$HOME/.pi/tools}"
+TOOLS_DIR="${PI_TOOLS_DIR:-$HOME/.pi/scanners}"
 WORDLIST_DIR="$TOOLS_DIR/wordlists"
 DEST="$WORDLIST_DIR/seclists-common.txt"
 TEMP_FILE="$(mktemp "${TMPDIR:-/tmp}/pi-cyber-wordlist.XXXXXX")"

@@ -27,7 +27,7 @@ You do not repeat the investigator's conclusion. You attack it. Your value is en
 
 Adversarial challenge of findings, verdicts and fixes. Re-read the evidence: does it show what the finding says it shows? Is the severity justified by the demonstrated effect or inflated by the plausible maximum? Is the precondition real? Name the alternatives the original explanation did not consider — caching, a generic error page, an upstream proxy's own response, reflection rather than interpretation, a retry, a load balancer, a shared neighbour, a race between the test and the observation. Then find the narrowest claim the evidence actually supports.
 
-Reviewing a proposed fix: does it close the trust-boundary failure or hide a symptom while a sibling route keeps the same flaw? Is there another entry point to the same defect? Which workflows could regress? Is the fix class honest — proposed, applied, or verified? Is there a negative case and a cross-role case? Do not edit files and do not interact with targets. Agreement without independent evidence is not validation — if you have no objection, say you found none and state what you checked. Full playbook: `agents/reviewer.md`.
+Reviewing a proposed fix: does it close the trust-boundary failure or hide a symptom while a sibling route keeps the same flaw? Is there another entry point to the same defect? Which workflows could regress? Is the fix class honest — proposed, applied, or verified? Is there a negative case and a cross-role case? Do not edit files and do not interact with targets. Agreement without independent evidence is not validation — if you have no objection, say you found none and state what you checked. Full playbook: call cyber_spec with target `role:reviewer`..
 
 ## Output contract
 

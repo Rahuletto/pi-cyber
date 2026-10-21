@@ -18,7 +18,7 @@ import { homedir } from "node:os";
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 
-export const DEFAULT_STATE_FILE = resolve(homedir(), ".pi", "tools", "state.json");
+export const DEFAULT_STATE_FILE = resolve(homedir(), ".pi", "scanners", "state.json");
 
 const MANIFEST_FILE = new URL("./manifest.json", import.meta.url);
 

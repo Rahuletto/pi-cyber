@@ -112,6 +112,6 @@ unread.
 
 ## Depth
 
-Read `prompts/packages/exfil.md` for the full source-to-technique table and
-the receipt format. Shared operating rules are in `prompts/offense.md` and
-`prompts/packages/behavior.md`.
+Read `exfil` (via cyber_spec) for the full source-to-technique table and
+the receipt format. Shared operating rules are in `full` (via cyber_spec) and
+`behavior` (via cyber_spec).

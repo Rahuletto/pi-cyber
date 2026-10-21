@@ -52,6 +52,7 @@ import { adapters, byName } from "../adapters/index.ts";
 import type { AdapterDef } from "../adapters/types.ts";
 import { openEvidence, type EvidenceStore, type JobState } from "../evidence/db.ts";
 import { containsSecretLike, SECRET_REFUSAL_MESSAGE } from "../evidence/secrets.ts";
+import { resolveToolBin } from "../tools/paths.ts";
 
 /** Per-run timeout: default 120 s; any override clamps at 600 s. */
 export const DEFAULT_TIMEOUT_MS = 120_000;

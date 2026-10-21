@@ -26,7 +26,7 @@ anything and you do not decide scope; you report assets.
 
 ## Your domain
 
-Passive sources, DNS records and zone transfer, certificate transparency, subdomain acquisition, IP and range mapping, ASN and hosting attribution, and the ownership question. Passive before active, always, and record which phase produced each asset. A name resolving to a private range is a finding, not a target. A dangling CNAME, NS or MX is a takeover candidate — report the record and the provider, do not claim it. Full playbook: `agents/recon.md`.
+Passive sources, DNS records and zone transfer, certificate transparency, subdomain acquisition, IP and range mapping, ASN and hosting attribution, and the ownership question. Passive before active, always, and record which phase produced each asset. A name resolving to a private range is a finding, not a target. A dangling CNAME, NS or MX is a takeover candidate — report the record and the provider, do not claim it. Full playbook: call cyber_spec with target `role:recon`..
 
 ## Output contract
 

@@ -96,6 +96,6 @@ token in any field — record the reference.
 
 ## Depth
 
-Read `prompts/packages/doors.md` for the full bypass catalogue before
-concluding that a route is closed, and `prompts/packages/evidence.md` for the
-finding document template. Shared operating rules are in `prompts/offense.md`.
+Read `doors` (via cyber_spec) for the full bypass catalogue before
+concluding that a route is closed, and `evidence` (via cyber_spec) for the
+finding document template. Shared operating rules are in `full` (via cyber_spec).

@@ -94,6 +94,6 @@ the required isolation explicitly.
 
 ## Depth
 
-Read `prompts/packages/evidence.md` for the finding document template and
-`prompts/packages/secrets.md` for the disclosure and redaction rules.
-Shared operating rules are in `prompts/offense.md`.
+Read `evidence` (via cyber_spec) for the finding document template and
+`secrets` (via cyber_spec) for the disclosure and redaction rules.
+Shared operating rules are in `full` (via cyber_spec).

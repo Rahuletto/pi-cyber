@@ -12,13 +12,13 @@
 # Per-tool failures are always explicit (tool + reason on stderr, non-zero exit for that tool),
 # other tools continue, and the overall exit is non-zero if any tool failed. Nothing is skipped silently.
 #
-# Env: PI_TOOLS_DIR (default ~/.pi/tools) — bin dir, state file; override for tests.
+# Env: PI_TOOLS_DIR (default ~/.pi/scanners) — bin dir, state file; override for tests.
 #      PI_RESOLVED_FILE (default <repo>/tools/manifest.resolved.json).
 # Usage: install.sh [-n | --dry-run]  — prints the plan (repo, asset pattern, target) and touches nothing.
 set -u -o pipefail
 
 ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
-PI_TOOLS_DIR="${PI_TOOLS_DIR:-$HOME/.pi/tools}"
+PI_TOOLS_DIR="${PI_TOOLS_DIR:-$HOME/.pi/scanners}"
 BIN_DIR="$PI_TOOLS_DIR/bin"
 STATE_FILE="$PI_TOOLS_DIR/state.json"
 RESOLVED_FILE="${PI_RESOLVED_FILE:-$ROOT/tools/manifest.resolved.json}"

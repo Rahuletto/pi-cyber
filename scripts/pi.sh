@@ -7,9 +7,9 @@ mkdir -p "$PROFILE"
 export PI_CODING_AGENT_DIR="${PI_CODING_AGENT_DIR:-$PROFILE}"
 # The job runner spawns pinned scanner binaries by name. Make the installer-owned
 # directory visible to those child processes in sessions launched from this script.
-TOOLS_BIN_DIR="${CYBER_TOOLS_BIN_DIR:-${PI_TOOLS_DIR:-$HOME/.pi/tools}/bin}"
+TOOLS_BIN_DIR="${CYBER_TOOLS_BIN_DIR:-${PI_TOOLS_DIR:-$HOME/.pi/scanners}/bin}"
 export PATH="$TOOLS_BIN_DIR:${PATH:-}"
-DEFAULT_FFUF_WORDLIST="${PI_TOOLS_DIR:-$HOME/.pi/tools}/wordlists/seclists-common.txt"
+DEFAULT_FFUF_WORDLIST="${PI_TOOLS_DIR:-$HOME/.pi/scanners}/wordlists/seclists-common.txt"
 if [[ -z "${CYBER_FFUF_WORDLIST:-}" && -f "$DEFAULT_FFUF_WORDLIST" ]]; then
   export CYBER_FFUF_WORDLIST="$DEFAULT_FFUF_WORDLIST"
 fi

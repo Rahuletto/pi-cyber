@@ -85,9 +85,11 @@ describe("offense specification tree", () => {
     expect(roster.length).toBeGreaterThanOrEqual(12);
     for (const role of WIRED_ROLES) {
       const body = readFileSync(join(ROOT, "config/cyber/agents", `${role}.md`), "utf8");
-      const playbook = /Full\s+playbook:\s*`agents\/([a-z-]+)\.md`/.exec(body);
+      // The playbook is reached through the tool, so the pointer stays valid
+      // from any working directory.
+      const playbook = /Full\s+playbook:\s*call cyber_spec with target `role:([a-z-]+)`/.exec(body);
       expect(playbook).not.toBeNull();
-      expect(existsSync(join(ROOT, "agents", `${playbook![1]}.md`))).toBe(true);
+      expect(playbook![1]).toBe(role);
       // Every wired specialist can reach the specification it depends on.
       expect(body).toContain("cyber_spec");
     }

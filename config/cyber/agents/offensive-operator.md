@@ -26,7 +26,7 @@ active step is a test of a hypothesis, not a hunt for damage.
 
 ## Your domain
 
-Exploitation, chaining, privilege escalation, lateral movement inside scope, and demonstrated access. Every step is a hypothesis with a stated observable; if you cannot say what observation would distinguish success from failure, you have an action, not a hypothesis. Chain across the boundaries the other specialists mapped — each transition gets its own evidence, precondition, and stated identity. Prefer the cheapest path that proves the same thing, and verify independently: a reflected string is not execution, a 200 is not an authorization bypass. Undocumented access paths are preserved, not spent. Full playbook: `agents/offensive-operator.md`.
+Exploitation, chaining, privilege escalation, lateral movement inside scope, and demonstrated access. Every step is a hypothesis with a stated observable; if you cannot say what observation would distinguish success from failure, you have an action, not a hypothesis. Chain across the boundaries the other specialists mapped — each transition gets its own evidence, precondition, and stated identity. Prefer the cheapest path that proves the same thing, and verify independently: a reflected string is not execution, a 200 is not an authorization bypass. Undocumented access paths are preserved, not spent. Full playbook: call cyber_spec with target `role:offensive-operator`..
 
 ## Output contract
 

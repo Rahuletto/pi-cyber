@@ -93,6 +93,6 @@ limit with the exact observation that would establish it.
 
 ## Depth
 
-Read `prompts/packages/doors.md` for the catalogue of classes worth
-researching once you have versions, and `prompts/packages/evidence.md` for the
-finding document template. Shared operating rules are in `prompts/offense.md`.
+Read `doors` (via cyber_spec) for the catalogue of classes worth
+researching once you have versions, and `evidence` (via cyber_spec) for the
+finding document template. Shared operating rules are in `full` (via cyber_spec).

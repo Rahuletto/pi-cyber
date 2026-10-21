@@ -90,7 +90,7 @@ to a private or reserved address is a finding to report, not a target to probe.
 
 ## Depth
 
-Read `prompts/packages/doors.md` for the full bypass catalogue and
-`prompts/offense-full.md` §12 before you conclude that a surface is closed.
+Read `doors` (via cyber_spec) for the full bypass catalogue and
+`full` (via cyber_spec) §12 before you conclude that a surface is closed.
 Shared operating rules — evidence, candor, read-only posture — are in
-`prompts/offense.md` and `prompts/packages/evidence.md`.
+`full` (via cyber_spec) and `evidence` (via cyber_spec).

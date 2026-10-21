@@ -19,7 +19,7 @@ from capabilities actually exercised, and it records what is still unverified an
 
 ## Installed and validated native tools (16)
 
-These 16 tools are currently present and marked `validated` in `~/.pi/tools/state.json`;
+These 16 tools are currently present and marked `validated` in `~/.pi/scanners/state.json`;
 `bun run doctor` reports them as `validated` and the remaining 8 catalog entries as
 `cataloged`. Semgrep was installed separately and its version probe was run directly; the
 other tools were installed and probed through the pinned toolchain.
@@ -41,7 +41,7 @@ other tools were installed and probed through the pinned toolchain.
 | `osv-scanner` | 2.7.0 | `--version` | version string |
 | `gitleaks` | 8.30.1 | `--version` | version string |
 | `syft` | 1.55.0 | `--version` | version string |
-| `semgrep` | 1.181.0 | `--version` | installed by the operator with `uv tool install --python 3.12` from its macOS arm64 PyPI wheel and symlinked into `~/.pi/tools/bin`; the pinned GitHub-release installer has no darwin/arm64 asset route for it |
+| `semgrep` | 1.181.0 | `--version` | installed by the operator with `uv tool install --python 3.12` from its macOS arm64 PyPI wheel and symlinked into `~/.pi/scanners/bin`; the pinned GitHub-release installer has no darwin/arm64 asset route for it |
 
 "Validated" means *a version probe exited 0*. It does not mean the tool was run against a
 target, that its output parses into this harness, or that it is compatible with the adapter
@@ -79,7 +79,7 @@ After the adapter corrections on 2026-10-21, the latest full run passed **259 te
 - **REA operator step pending.** The REA server is not run or registered; `rea setup` remains an operator step when binary assessment starts. The reverse lane is research-only posture; no REA analysis path has run.
 - **`ghidra` and `jdk21` deferred** by operator decision (2026-10-21); deep decompilation is unavailable until revisited.
 - **KXM and billion-context deferred** by design (see [PACKAGES.md](PACKAGES.md) and [TOOL-SELECTION.md](TOOL-SELECTION.md)): KXM adds a hub/CLI/service plane, billion-context a request-rewriting proxy. Neither is installed or evaluated at runtime.
-- **`zap` (dmg-only) install path unresolved.** `tools/install.sh` explicitly refuses `.dmg`/`.pkg` artifacts and has no darwin/arm64 asset match for zap; it stays `cataloged`. Semgrep 1.181.0 was installed separately with uv (`~/.pi/tools/uv/semgrep/bin/semgrep`, symlinked into `~/.pi/tools/bin`) and its direct `--version` probe passed; `bun run doctor` reports it as `validated`.
+- **`zap` (dmg-only) install path unresolved.** `tools/install.sh` explicitly refuses `.dmg`/`.pkg` artifacts and has no darwin/arm64 asset match for zap; it stays `cataloged`. Semgrep 1.181.0 was installed separately with uv (`~/.pi/tools/uv/semgrep/bin/semgrep`, symlinked into `~/.pi/scanners/bin`) and its direct `--version` probe passed; `bun run doctor` reports it as `validated`.
 - **`vulnx` and `obscura` are validated on a `--help` marker probe only** (`help-ok`); no semver was scraped and neither tool was run against a target.
 - **`nmap`, `rea`, `understand-anything`, `piebald-claude-code-system-prompts` and `awesome-claude-code`** are catalog entries only — never installed, never run.
 - **No provider call, no interactive terminal QA, no light-terminal visual check, no native Node runtime** (the `node` command on this host is a Bun shim), no real compaction-threshold measurement, and no specialist worker spawn.
@@ -97,7 +97,7 @@ against the loopback fixture on 2026-10-21:
 | `ffuf` v2.3.0 | `CYBER_FFUF_WORDLIST` operator environment setting → `-w` | operator-owned wordlist required | Pi adapter wiring added; configure a local wordlist path before use |
 
 The job runner spawns binaries by name through `PATH`. `scripts/pi.sh` now prepends
-`~/.pi/tools/bin` (or `$PI_TOOLS_DIR/bin`) for `bun run pi`; direct Pi invocations still need
+`~/.pi/scanners/bin` (or `$PI_TOOLS_DIR/bin`) for `bun run pi`; direct Pi invocations still need
 the directory on `PATH` or adapters fail with `Executable not found in $PATH: "<bin>"`.
 
 `naabu` and `semgrep` have been exercised through the typed tools. The adapter corrections
@@ -111,8 +111,8 @@ remain to be confirmed against the loopback fixture.
 | # | Item | Owner | Notes |
 | --- | --- | --- | --- |
 | 1 | Re-run httpx, katana and nuclei adapters against Cyberbench | Operator | Adapter flags are corrected and contract-tested; end-to-end scanner runs remain unverified |
-| 2 | Configure ffuf wordlist for direct Pi launches | Operator | `bun run pi` detects `~/.pi/tools/wordlists/seclists-common.txt`; direct launches can set `CYBER_FFUF_WORDLIST` |
-| 3 | `~/.pi/tools/bin` on `PATH` for direct Pi invocations | Operator | `scripts/pi.sh` sets it for `bun run pi`; direct invocations must add it |
+| 2 | Configure ffuf wordlist for direct Pi launches | Operator | `bun run pi` detects `~/.pi/scanners/wordlists/seclists-common.txt`; direct launches can set `CYBER_FFUF_WORDLIST` |
+| 3 | `~/.pi/scanners/bin` on `PATH` for direct Pi invocations | Operator | `scripts/pi.sh` sets it for `bun run pi`; direct invocations must add it |
 | 5 | Live target engagement | Operator | Only loopback has been exercised; no external host was touched |
 | 6 | Obscura MCP registration + authenticated browser flow | Operator | `obscura` is installed and validated on `--help`; the MCP server is not registered |
 | 7 | REA server setup and one real REA run | Operator | `rea setup` is an operator step; no REA analysis has run |
