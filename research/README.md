@@ -13,6 +13,7 @@ Research date: 2026-10-21. The controlling proposal is [Pi Cyber Harness](../PI-
 7. Package evaluations: [orchestration/research](PACKAGES-ORCHESTRATION-RESEARCH.md), [context/web access](PACKAGES-CONTEXT-WEB.md), and [engineering/side conversations](PACKAGES-WORKFLOW-SIDECONVERSATIONS.md). These evaluate the user's proposed packages and the discovered pi-subagents dependency without installing them.
 8. [Offense instruction proposal](OFFENSE-INSTRUCTIONS-PROPOSAL.md): an environment-neutral active investigation, exploitation, chaining, and objective-pursuit overlay, not installed agent configuration.
 9. [Defense instruction proposal](DEFENSE-INSTRUCTIONS-PROPOSAL.md) and [testing/implementation handoff requirements](TESTING-COVERAGE-AND-HANDOFF.md): role coverage through real sign-in, confirmed vulnerability evidence, secret handling, and an implementation-ready remediation dossier.
+10. [Prompt source corpus](../docs/PROMPT-SOURCE-CORPUS.md): lineage for the base/offense/defense overlays and the diagrammatic reporting helpers — the source each section was mined from, what was ported, what was written fresh, and what was rejected.
 
 ## How to interpret the catalog
 
