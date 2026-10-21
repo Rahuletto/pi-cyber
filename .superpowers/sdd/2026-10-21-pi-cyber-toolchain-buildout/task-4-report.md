@@ -27,3 +27,28 @@
 - Job-state *transition matrix* (which state may follow which) is deliberately deferred to Task 6's runner; `updateJobState` here only validates membership in the 7-state enum and records every transition as a `job` event.
 - WAL creates `-wal`/`-shm` sidecars next to the DB; temp-dir tests clean up wholesale.
 - Uncommitted-plan delta: extension tests now observe 3 registered tools; Task 7 must update counts again as more tools register.
+
+---
+
+## Fix Report (review findings) — 2026-10-21
+
+**Status:** COMPLETE
+**Commit:** `2f219fa` — `fix: evidence job-event secret check and secret-pattern widening`
+**Verification:** `bun run typecheck` clean; `bun test` → **69 pass, 0 fail** (all 67 prior + 2 new tests, no regressions).
+
+### Finding outcomes
+
+1. **IMPORTANT — job event bypassed `saveEvent`** → FIXED. `updateJobTx` now calls `saveEvent("job", {jobId, state})` inside the transaction, so every job-transition payload passes the same secret/size check as `appendEvent` (a refusal also rolls back the row UPDATE atomically).
+2. **MINOR — widen secret superset** → FIXED. `EXTRA_SECRETS` now uses `xox[abprs]-` (single pattern covering xoxa-/xoxb-/xoxp-/xoxr-/xoxs-, keeping the xox[bp]- semantics) and adds `github_pat_[A-Za-z0-9_]{50,}` for fine-grained PATs.
+3. **MINOR — `startedAt` guard** → FIXED. `normalizeStartedAt` accepts undefined/null (derive from state), ISO-8601 strings, and finite numeric epochs (stored as ISO); any other string/garbage/NaN/Infinity/whitespace is rejected with `Job startedAt must be undefined, an ISO-8601 string, or a numeric epoch.` Interface widened to `startedAt?: string | number`.
+4. **MINOR — missing addJob secret test** → ADDED. `addJob` with `ghp_…`/`sk-ant-…` in `argv` (and in jobId/adapter via `checkedId`) is refused with the exact canonical message; verified store stays empty (0 rows) after refusal.
+5. **MINOR — vacuous `if (throughDefault)`** → FIXED. The override test now constructs a default-path DB through `CYBER_EVIDENCE_DIR` env override and asserts `contextLine()` deterministically equals `formatEvidenceLine(1, expectedDefault)` on every run.
+6. **RULING — browser_sessions release sanctioned** → APPLIED. `releaseSession` runs inside a `releaseSessionTx` that issues the sanctioned `UPDATE … SET released_at` with `RETURNING owner` and, when a row actually changed, appends a typed `session` event `{sessionId, owner, action: "released"}` via `saveEvent`. Idempotent release (no active lease) writes no event — noted here so the event log stays a faithful audit trail. Acquisition still writes no event; the review's proposed payload shape {sessionId, owner, action:"released"} was kept.
+
+### Missing-event test added
+The existing session-lease test now asserts: acquisition → `events 0`, first release → `events 1`, idempotent second release → still `events 1`.
+
+### Notes
+- Started using `.run(...)`→`.get(...)` for the release statement (RETURNING) — still a single prepared statement, compiled at open.
+- The `sk-ant-…` fixture in test 4 matches by the `sk-ant-` prefix regardless of tail length, by design.
+
