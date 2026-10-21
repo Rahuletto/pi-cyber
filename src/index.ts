@@ -11,7 +11,7 @@ import { registerAdapterTools } from "./tools/adapter-tools.ts";
 import { registerBrowserTool } from "./tools/browser.ts";
 import { registerKnowledgeTool } from "./tools/knowledge.ts";
 import { contextLine } from "./evidence/db.ts";
-import { writeExitCard } from "./exit-card.ts";
+import { isPersistedSession, writeExitCard } from "./exit-card.ts";
 
 const CYBER_THEME = "cyber-offense";
 const resource = (path: string) => fileURLToPath(new URL(`../${path}`, import.meta.url));
@@ -115,7 +115,7 @@ export default function cyber(pi: ExtensionAPI): void {
     if (event.reason !== "quit" || ctx.mode !== "tui") return;
     const manager = ctx.sessionManager;
     const sessionId = manager.getSessionId();
-    if (!sessionId) return;
+    if (!sessionId || !isPersistedSession(manager.getSessionFile())) return;
     writeExitCard({ sessionId, sessionDir: manager.getSessionDir(), cwd: manager.getCwd() });
   });
   // No compaction override: Pi retains its native summarizer and overflow retry.

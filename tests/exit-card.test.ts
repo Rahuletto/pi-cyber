@@ -1,7 +1,8 @@
 import { describe, expect, test } from "bun:test";
-import { homedir } from "node:os";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
-import { renderExitCard, resumeCommand } from "../src/exit-card.ts";
+import { isPersistedSession, renderExitCard, resumeCommand } from "../src/exit-card.ts";
 
 describe("exit card", () => {
   const details = { sessionId: "1f3a9c2b" };
@@ -44,5 +45,18 @@ describe("exit card", () => {
   test("a path with a space is quoted so the command stays copy-pasteable", () => {
     const command = resumeCommand({ sessionId: "abc", sessionDir: "/with space/sessions" });
     expect(command).toContain("'/with space/sessions'");
+  });
+
+  test("only shows for a session file Pi has actually persisted", () => {
+    const dir = mkdtempSync(join(tmpdir(), "pi-cyber-session-"));
+    const file = join(dir, "session.jsonl");
+    try {
+      expect(isPersistedSession(undefined)).toBe(false);
+      expect(isPersistedSession(file)).toBe(false);
+      writeFileSync(file, '{"type":"session"}\n');
+      expect(isPersistedSession(file)).toBe(true);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });

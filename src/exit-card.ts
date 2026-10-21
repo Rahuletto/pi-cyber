@@ -7,6 +7,7 @@
  * restored terminal rather than the discarded alternate screen. That ordering
  * is the whole reason the card lives here instead of in the transcript.
  */
+import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
@@ -25,6 +26,11 @@ export interface ExitCardDetails {
   sessionDir?: string;
   /** Working directory the session ran in. */
   cwd?: string;
+}
+
+/** A session id is allocated before Pi writes a conversation to disk. */
+export function isPersistedSession(sessionFile: string | undefined): boolean {
+  return sessionFile !== undefined && existsSync(sessionFile);
 }
 
 /** Quote a path only when a shell would otherwise split it. */
