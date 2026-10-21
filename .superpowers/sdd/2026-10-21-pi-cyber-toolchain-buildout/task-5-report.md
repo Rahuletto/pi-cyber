@@ -93,3 +93,13 @@ New registry test: iterates all 11 adapters' schema `properties` and requires an
 1. `field-param` error text is the registry's contract for Task 6 — the job runner should surface these verbatim to the model rather than re-wrapping them, so the model can self-correct without an operator round-trip.
 2. Flag guard is `-`-prefix-only; Windows-style `/flag` isn't a concern on darwin/arm64 targets (all tools here are POSIX-argv CLIs), and values with embedded `--` (e.g. `ssl.cert.subject.CN:-`) are unaffected since the guard inspects only the first character.
 
+---
+
+# Task 5 Fix Note — re-review residuals (interactsh)
+
+Commit: `1f914eb` (`fix: interactsh flag guard and extra cap`) · Date: 2026-10-21
+
+- F1 residual: interactsh `server` now routes through the central guard (`modelString(p.server, "server")`), so `server: "-foo"` → `field-param "server" must not start with "-"`; argv row added to the existing F1 case matrix in `tests/adapters.test.ts`.
+- M4 residual: interactsh `extra` switched from bare `stringList` to `operatorExtra` (local ≤4 cap), matching the other 10 adapters; dedicated cap test row added.
+- Verified: `tsc --noEmit` clean; `bun test` → 103 pass, 0 fail (previous 101 stayed green, +2 new rows). Only `src/adapters/interactsh.ts` and `tests/adapters.test.ts` touched; `src/index.ts` and `tests/extension.test.ts` still untouched.
+
