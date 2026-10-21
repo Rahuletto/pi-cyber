@@ -463,7 +463,14 @@ function listMarkdownFiles(dirs: string[]): CandidateFile[] {
 function filesForSource(source: KnowledgeSource, paths: KnowledgePaths): CandidateFile[] {
   if (source === "skill") return listSkillFiles(paths.skillsDir);
   if (source === "research") return listMarkdownFiles(paths.researchDirs);
-  return listMarkdownFiles([paths.docsDir]);
+  const docs = listMarkdownFiles([paths.docsDir]);
+  // The root catalog is intentionally kept at TOOLS.md, but make it part of
+  // the same searchable documentation corpus exposed by cyber_knowledge.
+  const toolCatalog = join(repoRoot(), "TOOLS.md");
+  if (existsSync(toolCatalog) && !docs.some((file) => file.path === toolCatalog)) {
+    docs.push({ path: toolCatalog, mtimeMs: statSync(toolCatalog).mtimeMs });
+  }
+  return docs.sort((a, b) => a.path.localeCompare(b.path));
 }
 
 function isSource(value: string): value is KnowledgeSource {

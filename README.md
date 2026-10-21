@@ -85,7 +85,7 @@ The extension preserves Pi's native summarizer, automatic compaction settings an
 | `cyber_evidence` | Durable SQLite evidence store: `add` / `read` / `findings` / `summary`, with secret refusal and a mermaid lifecycle map on request. |
 | `cyber_jobs` | Typed job runner: `run` an adapter with schema-validated params, `status` a job, `list` the adapter registry. |
 | `cyber_browser` | Exclusive browser lease (Obscura): `acquire` / `release` / `status`. Books the slot; never downloads or launches a browser. |
-| `cyber_knowledge` | Local-corpus FTS over skills, research and docs: `search` / `stats` / `rebuild`. Never rebuilds implicitly. |
+| `cyber_knowledge` | Local-corpus FTS over skills, research, docs, and the root `TOOLS.md` candidate inventory: `search` / `stats` / `rebuild`. Never rebuilds implicitly. |
 | `github` | `gh` CLI lookups — `search`, `read`, `cve`, `issues`, `prs` — executed through an argv array, never a shell string. |
 | `subfinder` | Passive subdomain enumeration for one domain. |
 | `httpx` | HTTP probe / fingerprinting of target URLs. |
