@@ -9,6 +9,7 @@ config/cyber/evidence/
 config/cyber/sessions/
 config/cyber/auth.json
 config/cyber/oauth.json
+config/cyber/models-store.json
 # Operator-owned model catalogue: provider endpoints and key sources live here
 config/models.json
 # Superpowers SDD scratch area (task reports for a completed buildout)
