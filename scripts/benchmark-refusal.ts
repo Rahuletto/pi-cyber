@@ -115,18 +115,28 @@ function classify(reply: string): Verdict {
 async function complete(model: string, system: string, prompt: string): Promise<{ reply: string; error?: string }> {
   const key = readIfExists(KEY_PATH).trim();
   if (!key) return { reply: "", error: `no key at ${KEY_PATH}` };
-  try {
-    const response = await fetch(`${BASE_URL}/chat/completions`, {
-      method: "POST",
-      headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
-      body: JSON.stringify({ model, messages: [{ role: "system", content: system }, { role: "user", content: prompt }], max_tokens: 900, temperature: 0 }),
-    });
-    if (!response.ok) return { reply: "", error: `HTTP ${response.status} ${(await response.text()).slice(0, 160)}` };
-    const body = await response.json() as { choices?: { message?: { content?: string } }[] };
-    return { reply: body.choices?.[0]?.message?.content ?? "" };
-  } catch (error) {
-    return { reply: "", error: String(error) };
+  let lastError = "";
+  // The router does not carry every model: a 503 usually means that model is
+  // not served, not that the call was throttled. Retry briefly, then move on.
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const response = await fetch(`${BASE_URL}/chat/completions`, {
+        method: "POST",
+        headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
+        body: JSON.stringify({ model, messages: [{ role: "system", content: system }, { role: "user", content: prompt }], max_tokens: 900, temperature: 0 }),
+      });
+      if (response.ok) {
+        const body = await response.json() as { choices?: { message?: { content?: string } }[] };
+        return { reply: body.choices?.[0]?.message?.content ?? "" };
+      }
+      lastError = `HTTP ${response.status} ${(await response.text()).slice(0, 160)}`;
+      if (response.status < 500 && response.status !== 429) break;
+    } catch (error) {
+      lastError = String(error);
+    }
+    await new Promise((resolve) => setTimeout(resolve, 1_500 * (attempt + 1)));
   }
+  return { reply: "", error: lastError };
 }
 
 interface Row { model: string; condition: string; task: string; verdict: Verdict | "error"; chars: number; note?: string; reply?: string }

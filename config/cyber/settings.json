@@ -1,5 +1,6 @@
 {
   "$schema": "https://pi.dev/schemas/settings.schema.json",
+  "fullscreenExitOutput": "resume-hint",
   "packages": [
     {
       "source": "../../node_modules/pi-subagents",

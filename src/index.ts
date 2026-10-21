@@ -11,6 +11,7 @@ import { registerAdapterTools } from "./tools/adapter-tools.ts";
 import { registerBrowserTool } from "./tools/browser.ts";
 import { registerKnowledgeTool } from "./tools/knowledge.ts";
 import { contextLine } from "./evidence/db.ts";
+import { writeExitCard } from "./exit-card.ts";
 
 const CYBER_THEME = "cyber-offense";
 const resource = (path: string) => fileURLToPath(new URL(`../${path}`, import.meta.url));
@@ -108,6 +109,15 @@ export default function cyber(pi: ExtensionAPI): void {
   pi.on("resources_discover", () => ({ themePaths: [resource("themes/cyber-offense.json")] }));
   pi.on("session_start", (_event, ctx) => { restore(ctx); });
   pi.on("session_tree", (_event, ctx) => { restore(ctx); });
+  // The host stops the TUI before disposing the runtime, so this banner is
+  // written into the restored terminal instead of the discarded alt screen.
+  pi.on("session_shutdown", (event, ctx) => {
+    if (event.reason !== "quit" || ctx.mode !== "tui") return;
+    const manager = ctx.sessionManager;
+    const sessionId = manager.getSessionId();
+    if (!sessionId) return;
+    writeExitCard({ sessionId, sessionFile: manager.getSessionFile(), sessionDir: manager.getSessionDir(), cwd: manager.getCwd() });
+  });
   // No compaction override: Pi retains its native summarizer and overflow retry.
   pi.on("before_agent_start", (event, ctx) => {
     const state = current(ctx);
