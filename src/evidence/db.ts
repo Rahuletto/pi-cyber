@@ -9,6 +9,13 @@
  * transition and every lease release is also recorded as a typed event
  * (`job` / `session`) so the event log stays a complete audit trail.
  *
+ * Browser leases (browser_sessions) carry NO partial unique constraint: the
+ * table stays a plain append-only ledger so the schema is never rewritten.
+ * "One owner per live browser session" is therefore enforced one layer up,
+ * by the tool that reads `listSessions({ activeOnly: true })` before it
+ * acquires — see src/tools/browser.ts for why that check is sound under the
+ * tool's sequential execution mode.
+ *
  * Path resolution (worker env):
  * - `CYBER_EVIDENCE_DIR` — base directory, default `<repoRoot>/config/cyber/evidence`
  * - `CYBER_ENGAGEMENT_ID` — engagement subdirectory, default `"default"`
@@ -101,6 +108,11 @@ export interface JobRow {
   id: number; jobId: string; adapter: string; argv: string[]; state: JobState;
   startedAt: string | null; endedAt: string | null; artifactPath: string | null;
 }
+/** One browser lease row. `releasedAt` is null while the lease is live. */
+export interface SessionRow {
+  id: number; sessionId: string; owner: string; mode: string; purpose: string;
+  acquiredAt: string; releasedAt: string | null;
+}
 
 export interface EvidenceStore {
   readonly path: string;
@@ -111,6 +123,8 @@ export interface EvidenceStore {
   updateJobState(jobId: string, state: JobState): void;
   addSession(row: { sessionId: string; owner: string; mode: string; purpose: string }): void;
   releaseSession(sessionId: string): void;
+  /** Read-only lease query. `activeOnly` returns only leases that are still held. */
+  listSessions(opts?: { activeOnly?: boolean; limit?: number }): SessionRow[];
   listEvidence(opts?: { kind?: string; limit?: number }): EvidenceRow[];
   listFindings(opts?: { state?: FindingState; limit?: number }): FindingRow[];
   listJobs(opts?: { limit?: number }): JobRow[];
@@ -203,6 +217,8 @@ function createStore(db: Database, path: string): EvidenceStore {
   const selectFindingsAll = db.prepare("SELECT id, state, title, evidence_ids, impact, confidence, created_at FROM findings ORDER BY id DESC LIMIT ?");
   const selectFindingsByState = db.prepare("SELECT id, state, title, evidence_ids, impact, confidence, created_at FROM findings WHERE state = ? ORDER BY id DESC LIMIT ?");
   const selectJobsAll = db.prepare("SELECT id, jobId, adapter, argv, state, started_at, ended_at, artifact_path FROM jobs ORDER BY id DESC LIMIT ?");
+  const selectSessionsAll = db.prepare("SELECT id, sessionId, owner, mode, purpose, acquired_at, released_at FROM browser_sessions ORDER BY id DESC LIMIT ?");
+  const selectActiveSessions = db.prepare("SELECT id, sessionId, owner, mode, purpose, acquired_at, released_at FROM browser_sessions WHERE released_at IS NULL ORDER BY id DESC LIMIT ?");
   const selectRecentEvents = db.prepare("SELECT id, ts, kind FROM events ORDER BY id DESC LIMIT 5");
   const totalRows = db.prepare("SELECT (SELECT COUNT(*) FROM events) + (SELECT COUNT(*) FROM evidence) + (SELECT COUNT(*) FROM findings) + (SELECT COUNT(*) FROM jobs) + (SELECT COUNT(*) FROM browser_sessions) AS n");
   const countOf = (get: () => unknown): number => {
@@ -312,6 +328,16 @@ function createStore(db: Database, path: string): EvidenceStore {
     releaseSession(sessionId): void {
       const id = checkedId(sessionId, "Session id", 500);
       releaseSessionTx(id);
+    },
+    listSessions(opts): SessionRow[] {
+      const rows = (opts?.activeOnly
+        ? selectActiveSessions.all(limit(opts?.limit))
+        : selectSessionsAll.all(limit(opts?.limit))) as Array<Record<string, unknown>>;
+      return rows.map((row) => ({
+        id: Number(row.id), sessionId: String(row.sessionId), owner: String(row.owner),
+        mode: String(row.mode), purpose: String(row.purpose),
+        acquiredAt: String(row.acquired_at), releasedAt: (row.released_at as string | null) ?? null,
+      }));
     },
     listEvidence(opts): EvidenceRow[] {
       const rows = (opts?.kind

@@ -59,6 +59,12 @@ export interface BinReadiness {
   cataloged: boolean;
   /** GitHub release tag from manifest.resolved.json, when a pin is recorded. */
   resolvedTag?: string;
+  /**
+   * The state the operator's state file records for this bin
+   * ("installed" | "validated"), or undefined when the file says nothing.
+   * `state` above is the doctor-computed label; this is the recorded pin.
+   */
+  recorded?: "installed" | "validated";
 }
 
 async function executableOnDisk(name: string, extraDir: string, pathEnv: string): Promise<boolean> {
@@ -98,7 +104,7 @@ export async function binReadiness(bin: string): Promise<BinReadiness> {
     resolvedTag = typeof parsed[bin]?.tag === "string" ? parsed[bin].tag : undefined;
   } catch { /* resolved pins are informational only */ }
 
-  let recorded: ToolState | undefined;
+  let recorded: "installed" | "validated" | undefined;
   try {
     const parsed = JSON.parse(await readFile(stateFile(), "utf8")) as Record<string, { state?: string }>;
     const value = parsed[bin]?.state;
@@ -106,10 +112,10 @@ export async function binReadiness(bin: string): Promise<BinReadiness> {
   } catch { /* a missing state file is the documented all-cataloged state */ }
 
   if (onDisk) {
-    return { ready: true, state: recorded === "validated" ? "validated" : "available", cataloged, resolvedTag };
+    return { ready: true, state: recorded === "validated" ? "validated" : "available", cataloged, resolvedTag, ...(recorded ? { recorded } : {}) };
   }
   const state: ToolState = recorded ?? "cataloged"; // stale labels stay truthful in the fail-fast message
-  return { ready: false, state, cataloged, resolvedTag };
+  return { ready: false, state, cataloged, resolvedTag, ...(recorded ? { recorded } : {}) };
 }
 
 const DESCRIPTIONS: Record<string, string> = {
