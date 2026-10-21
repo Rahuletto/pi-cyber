@@ -195,12 +195,47 @@ else
   say "  $KEY_HINT"
 fi
 
+# ── agent-dir resources ──────────────────────────────────────────────────────
+# Two profile files are read from the agent directory by convention rather than
+# by path: the pi-subagents spawn caps and the web-search provider config.
+step "agent resources"
+mkdir -p "$AGENT/extensions/subagent"
+for rel in "extensions/subagent/config.json:config/cyber/extensions/subagent/config.json" "web-search.json:config/cyber/web-search.json"; do
+  dest="$AGENT/${rel%%:*}"
+  src="$ROOT/${rel##*:}"
+  if [[ -f "$src" ]]; then
+    ln -sfn "$src" "$dest"
+    say "linked $dest"
+  fi
+done
+
 # ── scanner toolchain ────────────────────────────────────────────────────────
 if [[ $CHECK_ONLY -eq 0 && "${SKIP_TOOLS:-0}" != "1" ]]; then
   step "scanner toolchain"
   (cd "$ROOT" && bash tools/install.sh) || say "one or more tools failed; see the output above and rerun tools/install.sh"
   step "toolchain validation"
   (cd "$ROOT" && bash tools/validate.sh) || say "validation reported gaps; see the output above"
+fi
+
+# A symlink whose target moved — for example when the toolchain directory was
+# relocated — is repointed at the same file under the current tools directory.
+if [[ -d "$TOOLS_DIR/bin" ]]; then
+  step "stale link repair"
+  repaired=0
+  for link in "$TOOLS_DIR"/bin/*; do
+    [[ -L "$link" ]] || continue
+    [[ -e "$link" ]] && continue
+    base="$(basename "$link")"
+    candidate="$(find "$TOOLS_DIR" -maxdepth 4 -name "$base" -type f 2>/dev/null | head -1)"
+    if [[ -n "$candidate" ]]; then
+      ln -sfn "$candidate" "$link"
+      say "repaired $base -> $candidate"
+      repaired=1
+    else
+      say "dangling link $base — no replacement found under $TOOLS_DIR"
+    fi
+  done
+  [[ $repaired -eq 0 ]] && say "none"
 fi
 
 if [[ $CHECK_ONLY -eq 0 && "${SKIP_WORDLIST:-0}" != "1" ]]; then
