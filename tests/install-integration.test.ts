@@ -1,10 +1,27 @@
 import { test, expect } from "bun:test";
-import { mkdtemp, readFile, readdir, rm } from "node:fs/promises";
+import { chmod, mkdtemp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { loadManifest } from "../src/tools/manifest.ts";
 import { freezeResolved, loadResolved, pickDarwinArm64Asset, type ResolvedRecord } from "../src/tools/installer.ts";
 import { spawn } from "node:child_process";
+
+/** Spawn bash (cwd = repo root), capture exit code + stdout/stderr. Args are an argv array — no shell-string surface of our own. */
+function runScript(args: string[], envOverrides?: NodeJS.ProcessEnv): Promise<{ code: number; stdout: string; stderr: string }> {
+  const proc = spawn("bash", args, {
+    cwd: resolve(import.meta.dir, ".."),
+    ...(envOverrides ? { env: { ...process.env, ...envOverrides } } : {}),
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+  return new Promise((done, reject) => {
+    let out = "";
+    let err = "";
+    proc.stdout.on("data", (c) => { out += String(c); });
+    proc.stderr.on("data", (c) => { err += String(c); });
+    proc.on("error", reject);
+    proc.on("close", (c) => done({ code: c ?? -1, stdout: out, stderr: err }));
+  });
+}
 
 test("pickDarwinArm64Asset matches only darwin/arm64 install assets (pure unit — no spawn, no network)", () => {
   const assets = [
@@ -21,6 +38,33 @@ test("pickDarwinArm64Asset matches only darwin/arm64 install assets (pure unit �
   expect(pickDarwinArm64Asset(assets.slice(4))?.url).toBe("https://x/7"); // dmg excluded, bare binary accepted
   expect(pickDarwinArm64Asset([{ name: "tool_darwin_amd64.zip", url: "https://x/9" }])).toBeNull();
 });
+
+test(
+  "toolctl list column contract — installed.sh-style parse binds the manifest sha pin to manifest_sha",
+  async () => {
+    // Fixture manifest with ALL five ToolEntry fields populated, in the exact columns toolctl emits.
+    const work = await mkdtemp(resolve(tmpdir(), "cyber-contract-"));
+    try {
+      const sha = "e".repeat(64);
+      const manifestPath = join(work, "manifest.json");
+      await writeFile(manifestPath, JSON.stringify({
+        tools: [{ name: "fixture-tool", category: "recon", repo: "example/fixture", version: "pin-at-install", disposition: "core", artifact: "fixture-tool_darwin_arm64.zip", sha256: sha, versionFlag: "-version" }],
+      }));
+      // Parse exactly the way tools/install.sh does: `IFS=$'\t' read -r name repo artifact versionFlag manifest_sha`.
+      const script = `while IFS=$'\\t' read -r name repo artifact versionFlag manifest_sha; do
+  [ -n "$name" ] || continue
+  echo "parsed: name=$name repo=$repo artifact=$artifact flag=$versionFlag sha=$manifest_sha"
+done < <(bun tools/toolctl.ts list core --file "${manifestPath}")`;
+      const result = await runScript(["-c", script]);
+      expect(result.stderr).toBe("");
+      expect(result.code).toBe(0);
+      // If any column ever drifts, the bind below moves and this assert fails.
+      expect(result.stdout.trim()).toBe(`parsed: name=fixture-tool repo=example/fixture artifact=fixture-tool_darwin_arm64.zip flag=-version sha=${sha}`);
+    } finally {
+      await rm(work, { recursive: true, force: true });
+    }
+  },
+);
 
 const NET = process.env.PI_CYBER_NET === "1";
 
@@ -93,6 +137,57 @@ test.skipIf(!NET)(
       // freeze is atomic + pretty-formatted, never mutates the reviewed manifest
       const manifestAfter = await readFile(resolve(import.meta.dir, "..", "tools", "manifest.json"));
       expect(manifestAfter.equals(manifestBefore)).toBe(true);
+    } finally {
+      await rm(work, { recursive: true, force: true });
+    }
+  },
+);
+
+test.skipIf(!NET)(
+  "second run skips already-installed tools with a frozen pin — no resolve, no download, no re-freeze",
+  async () => {
+    const work = await mkdtemp(resolve(tmpdir(), "cyber-skip-"));
+    try {
+      const manifest = await loadManifest();
+      const core = manifest.tools.filter((tool) => tool.disposition === "core");
+      const sha = "f".repeat(64);
+      // Fixture environment: every core tool marked installed, bin present+executable, pin frozen.
+      const state: Record<string, unknown> = {};
+      for (const tool of core) state[tool.name] = { state: "installed", version: "v9.9.9", sha256: sha };
+      await writeFile(join(work, "state.json"), JSON.stringify(state, null, 2));
+      await mkdir(join(work, "bin"), { recursive: true });
+      for (const tool of core) {
+        await writeFile(join(work, "bin", tool.name), "#!/bin/sh\nexit 0\n");
+        await chmod(join(work, "bin", tool.name), 0o755);
+      }
+      const resolvedPath = join(work, "resolved.json");
+      for (const tool of core) {
+        await freezeResolved(resolvedPath, {
+          name: tool.name, repo: tool.repo as string, tag: "v9.9.9",
+          assetUrl: "https://example.invalid/asset", sha256: sha, resolvedAt: "2026-10-21T00:00:00Z",
+        });
+      }
+
+      // If the skip logic ever regresses, this run would attempt GitHub resolve+download and fail
+      // (example.invalid) — i.e. a network-free test that still proves "no re-download".
+      const before = await readFile(resolvedPath);
+      const result = await runScript(["tools/install.sh"], { PI_TOOLS_DIR: work, PI_RESOLVED_FILE: resolvedPath });
+      expect(result.stderr).toBe("");
+      expect(result.code).toBe(0);
+      const skippedLines = result.stdout.split("\n").filter((line) => /^install: skip .* \(already installed/.test(line));
+      expect(skippedLines.length).toBe(core.length);
+      for (const tool of core) {
+        expect(skippedLines.some((line) => line.startsWith(`install: skip ${tool.name}`))).toBe(true);
+      }
+      expect(result.stdout).toContain(`${core.length} skipped (already installed), 0 failed`);
+      expect(result.stdout).not.toContain("[plan]");
+      // No re-freeze: resolved ledger keeps its exact bytes; state file keeps its installed pins.
+      expect((await readFile(resolvedPath)).equals(before)).toBe(true);
+      const stateAfter = JSON.parse(await readFile(join(work, "state.json"), "utf8")) as Record<string, { state: string; sha256: string }>;
+      for (const tool of core) {
+        expect(stateAfter[tool.name]?.state).toBe("installed");
+        expect(stateAfter[tool.name]?.sha256).toBe(sha);
+      }
     } finally {
       await rm(work, { recursive: true, force: true });
     }

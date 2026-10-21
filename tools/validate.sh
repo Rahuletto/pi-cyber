@@ -92,8 +92,13 @@ while IFS= read -r name; do
   probe_with_timeout "$bin" "${flag_args[@]}"
   rc=$PROBE_RC
 
-  version="$(grep -hoE '[0-9]+(\.[0-9]+)+' "$PROBE_OUT" "$PROBE_ERR" 2>/dev/null | head -n 1)"
-  [ -n "$version" ] || version="unknown"
+  # A --help probe is a marker probe: usage text has no trustworthy x.y.z to scrape — record help-ok.
+  if [ "$flag" = "--help" ]; then
+    version="help-ok"
+  else
+    version="$(grep -hoE '[0-9]+(\.[0-9]+)+' "$PROBE_OUT" "$PROBE_ERR" 2>/dev/null | head -n 1)"
+    [ -n "$version" ] || version="unknown"
+  fi
 
   if [ "$rc" -ne 0 ]; then
     if [ "$rc" = "124" ]; then

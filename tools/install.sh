@@ -41,6 +41,7 @@ command -v curl >/dev/null 2>&1 || { echo "install: curl is not on PATH" >&2; ex
 FAILURES=0
 PLANNED=0
 SUCCEEDED=0
+SKIPPED=0
 
 fail() { # fail <tool> <reason>
   echo "install: FAIL $1: $2" >&2
@@ -53,7 +54,11 @@ cleanup() { [ -n "${TMP_DIR:-}" ] && rm -rf "$TMP_DIR"; }
 LIST="$(bun "$TOOLCTL" list core)" || { echo "install: manifest list failed (strict loader rejected tools/manifest.json)" >&2; exit 1; }
 PATTERN="$(bun "$TOOLCTL" pattern)"
 
-while IFS=$'\t' read -r name repo manifest_sha artifact versionFlag; do
+# toolctl `list` TSV columns, in this exact order: name, repo, artifact, versionFlag, sha256.
+# (Regression history: v1 read `name repo manifest_sha artifact versionFlag`, which bound the
+# manifest sha256 pin to the artifact column and silently ignored the pin. The tests
+# `toolctl list column contract` exist to catch any future column drift.)
+while IFS=$'\t' read -r name repo artifact versionFlag manifest_sha; do
   [ -n "$name" ] || continue
   PLANNED=$((PLANNED + 1))
   if [ "$DRY_RUN" = "1" ]; then
@@ -64,6 +69,18 @@ while IFS=$'\t' read -r name repo manifest_sha artifact versionFlag; do
     fail "$name" "no repo recorded for a core entry — cannot pin a download"
     continue
   fi
+
+  # Second-run skip (plan §3 idempotency: run two = everything installed, no re-download):
+  # state already installed/validated AND the frozen sha256 pin exists AND the binary is in
+  # place → skip resolve/download/freezing entirely; the manifest pin stays intact as-is.
+  current_state="$(bun "$TOOLCTL" state-get --file "$STATE_FILE" "$name" 2>/dev/null)"
+  frozen_sha="$(bun "$TOOLCTL" resolved-get --file "$RESOLVED_FILE" "$name" 2>/dev/null)"
+  if [ -n "$current_state" ] && [ -n "$frozen_sha" ] && [ -x "$BIN_DIR/$name" ]; then
+    echo "install: skip $name (already installed, pinned sha=$frozen_sha)"
+    SKIPPED=$((SKIPPED + 1))
+    continue
+  fi
+
 
   TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/pi-cyber-$name.XXXXXX")"
   EXTRACT="$TMP_DIR/extract"
@@ -104,11 +121,25 @@ while IFS=$'\t' read -r name repo manifest_sha artifact versionFlag; do
     fi
   fi
 
-  # 4. Extract / stage the executable.
+  # 4. Extract / stage the executable — a corrupt archive must surface here, not downstream.
   mkdir -p "$EXTRACT"
   case "$asset_name" in
-    *.zip) unzip -q -o "$DL" -d "$EXTRACT" ;;
-    *.tar.gz|*.tgz|*.tar.xz|*.txz|*.tar.bz2|*.tbz2) tar -xf "$DL" -C "$EXTRACT" ;;
+    *.zip)
+      unzip -q -o "$DL" -d "$EXTRACT"
+      rc_extract=$?
+      if [ $rc_extract -ne 0 ]; then
+        fail "$name" "extraction failed (unzip exit $rc_extract)"
+        cleanup
+        continue
+      fi ;;
+    *.tar.gz|*.tgz|*.tar.xz|*.txz|*.tar.bz2|*.tbz2)
+      tar -xf "$DL" -C "$EXTRACT"
+      rc_extract=$?
+      if [ $rc_extract -ne 0 ]; then
+        fail "$name" "extraction failed (tar exit $rc_extract)"
+        cleanup
+        continue
+      fi ;;
     *.dmg|*.pkg|*.jar|*.sh|*.py|*.app) fail "$name" "unsupported artifact type \"$asset_name\" (needs zip/tar*/bare binary)"; cleanup; continue ;;
     *) mv "$DL" "$EXTRACT/$asset_name" ;;
   esac
@@ -180,7 +211,7 @@ if [ "$DRY_RUN" = "1" ]; then
   exit 0
 fi
 
-echo "install: $SUCCEEDED installed, $FAILURES failed, of $PLANNED core entries."
+echo "install: $SUCCEEDED installed, $SKIPPED skipped (already installed), $FAILURES failed, of $PLANNED core entries."
 if [ "$FAILURES" -gt 0 ]; then
   exit 1
 fi

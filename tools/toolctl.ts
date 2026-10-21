@@ -7,6 +7,7 @@
  *   list [disposition...]                        → TSV rows: name, repo, artifact, versionFlag, sha256
  *   resolve <name> <repo>                        → TSV: tag, assetName, assetUrl
  *   resolved-get <name> [--file PATH]            → frozen sha256 (empty string if unfrozen)
+ *   state-get <name> [--file PATH]              → state value (nothing if the name is absent)
  *   freeze <name> <repo> <tag> <assetUrl> <sha256> <resolvedAt> [--file PATH]
  *   installed [--file PATH]                      → names whose state file says "installed", one per line
  *   state-set <name> <state> [--file PATH] [--version V] [--sha256 S] [--validatedAt ISO]
@@ -74,11 +75,13 @@ async function main(): Promise<void> {
   const [command, ...args] = process.argv.slice(2);
   switch (command) {
     case "list": {
-      const filters = args;
+      const positional = takeFlag(args, "--file");
+      const manifestFile = flagValue(args, "--file") ? new URL(flagValue(args, "--file") as string, `file://${process.cwd()}/`) : MANIFEST_FILE;
+      const filters = positional;
       for (const f of filters) {
         if (!(DISPOSITIONS as readonly string[]).includes(f)) die(`toolctl: unknown disposition filter "${f}"`);
       }
-      const manifest = await loadManifest(MANIFEST_FILE);
+      const manifest = await loadManifest(manifestFile);
       const lines: string[] = [];
       for (const tool of manifest.tools) {
         if (filters.length > 0 && !filters.includes(tool.disposition)) continue;
@@ -119,6 +122,20 @@ async function main(): Promise<void> {
         await freezeResolved(flagValue(args, "--file") ?? RESOLVED_FILE, record);
       } catch (error) {
         die(`toolctl: freeze ${name}: ${error instanceof Error ? error.message : String(error)}`);
+      }
+      break;
+    }
+    case "state-get": {
+      const positional = takeFlag(args, "--file");
+      const [name] = positional;
+      if (!name) die("toolctl: state-get requires <name>");
+      const path = flagValue(args, "--file") ?? DEFAULT_STATE_FILE;
+      try {
+        const state = await readState(path);
+        const entry = state[name];
+        if (entry && entry.state) console.log(entry.state);
+      } catch (error) {
+        die(`toolctl: state-get ${name}: ${error instanceof Error ? error.message : String(error)}`);
       }
       break;
     }
