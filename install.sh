@@ -3,8 +3,7 @@
 # specialist roles, the operator commands, the workflow skills, and the pinned
 # scanner toolchain.
 #
-#   curl -fsSL -H "Authorization: token $(gh auth token)" \
-#     https://raw.githubusercontent.com/Rahuletto/pi-cyber/main/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/Rahuletto/pi-cyber/main/install.sh | bash
 #
 # or, from a clone:
 #   git clone https://github.com/Rahuletto/pi-cyber.git && ~/.pi/pi-cyber/install.sh
