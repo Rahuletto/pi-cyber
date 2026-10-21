@@ -6,6 +6,7 @@ import { STATE_ENTRY, brief, recoverState, switchMode, updateState, type CyberMo
 import { registerGithubTool } from "./tools/github.ts";
 import { registerEvidenceTool } from "./tools/evidence.ts";
 import { registerCyberJobsTool } from "./tools/jobs.ts";
+import { registerAdapterTools } from "./tools/adapter-tools.ts";
 import { contextLine } from "./evidence/db.ts";
 
 const resource = (path: string) => fileURLToPath(new URL(`../${path}`, import.meta.url));
@@ -20,6 +21,7 @@ export default function cyber(pi: ExtensionAPI): void {
   registerGithubTool(pi);
   registerEvidenceTool(pi);
   registerCyberJobsTool(pi);
+  registerAdapterTools(pi);
   const runningTools = new Set<string>();
   let agentRunning = false;
   let visualReady = false;
