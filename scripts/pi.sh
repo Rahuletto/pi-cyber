@@ -5,6 +5,10 @@ ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
 PROFILE="$ROOT/config/cyber"
 mkdir -p "$PROFILE"
 export PI_CODING_AGENT_DIR="${PI_CODING_AGENT_DIR:-$PROFILE}"
+# The job runner spawns pinned scanner binaries by name. Make the installer-owned
+# directory visible to those child processes in sessions launched from this script.
+TOOLS_BIN_DIR="${CYBER_TOOLS_BIN_DIR:-${PI_TOOLS_DIR:-$HOME/.pi/tools}/bin}"
+export PATH="$TOOLS_BIN_DIR:${PATH:-}"
 # The harness is repo scoped: run the session from the repository root so the
 # specialist roles, the evidence store and the job artifacts resolve there.
 cd "$ROOT"
