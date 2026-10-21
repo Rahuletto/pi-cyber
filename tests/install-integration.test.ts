@@ -3,7 +3,7 @@ import { chmod, mkdtemp, mkdir, readFile, readdir, rm, writeFile } from "node:fs
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { loadManifest } from "../src/tools/manifest.ts";
-import { freezeResolved, loadResolved, pickDarwinArm64Asset, type ResolvedRecord } from "../src/tools/installer.ts";
+import { freezeResolved, loadResolved, pickDarwinArm64Asset, resolveLatest, type ResolvedRecord } from "../src/tools/installer.ts";
 import { spawn } from "node:child_process";
 
 /** Spawn bash (cwd = repo root), capture exit code + stdout/stderr. Args are an argv array — no shell-string surface of our own. */
@@ -142,6 +142,85 @@ test.skipIf(!NET)(
     }
   },
 );
+
+test.skipIf(!NET)(
+  "binary_sha256 (additive installed-executable digest) round-trips through freezeResolved",
+  async () => {
+    const work = await mkdtemp(resolve(tmpdir(), "cyber-binsha-"));
+    try {
+      const resolvedPath = join(work, "manifest.resolved.json");
+      const archiveSha = "a".repeat(64);
+      const binarySha = "B".repeat(64); // uppercase on write; loader normalizes to lowercase
+      await freezeResolved(resolvedPath, {
+        name: "katana", repo: "projectdiscovery/katana", tag: "v1.4.0",
+        assetUrl: "https://example.invalid/a.zip", sha256: archiveSha, resolvedAt: "2026-10-21T00:00:00Z",
+        binary_sha256: binarySha,
+      });
+      const record = (await loadResolved(resolvedPath))["katana"];
+      expect(record?.sha256).toBe(archiveSha); // archive digest, verified pin
+      expect(record?.binary_sha256).toBe(binarySha.toLowerCase()); // executable digest, distinct file, normalized
+      // Records without the additive field (older ledger) still load.
+      await freezeResolved(resolvedPath, {
+        name: "dnsx", repo: "projectdiscovery/dnsx", tag: "v1.3.1",
+        assetUrl: "https://example.invalid/b.zip", sha256: "c".repeat(64), resolvedAt: "2026-10-21T00:00:01Z",
+      });
+      expect((await loadResolved(resolvedPath))["dnsx"]?.binary_sha256).toBeUndefined();
+    } finally {
+      await rm(work, { recursive: true, force: true });
+    }
+  },
+);
+
+test("resolveLatest retries HTTP 403 with backoff and succeeds on a later attempt (injectable fetch, no network)", async () => {
+  const release = { tag_name: "v9.8.7", assets: [{ name: "tool_9.8.7_darwin_arm64.zip", browser_download_url: "https://example.invalid/t.zip" }] };
+  const statuses = [403, 403, 200];
+  const seenUrls: string[] = [];
+  const delays: number[] = [];
+  const fakeFetch = async (url: string | URL): Promise<Response> => {
+    seenUrls.push(String(url));
+    const status = statuses.shift() ?? 200;
+    if (status === 200) return Response.json(release, { status: 200 });
+    return Response.json({ message: "API rate limit exceeded" }, { status });
+  };
+  const resolution = await resolveLatest("projectdiscovery/nuclei", {
+    fetchImpl: fakeFetch as unknown as typeof fetch,
+    delayMs: async (ms) => { delays.push(ms); },
+  });
+  expect(resolution.tag).toBe("v9.8.7");
+  expect(seenUrls.length).toBe(3);
+  expect(seenUrls.every((u) => u.startsWith("https://api.github.com/repos/projectdiscovery/nuclei/releases/latest"))).toBe(true);
+  expect(delays).toEqual([2000, 5000]); // exponential backoff 2s/5s/15s up to 3 retries
+});
+
+test("resolveLatest treats 404 as permanent (single attempt, distinct message)", async () => {
+  const calls: number[] = [];
+  const fakeFetch = async (): Promise<Response> => {
+    calls.push(1);
+    return Response.json({ message: "Not Found" }, { status: 404 });
+  };
+  await expect(resolveLatest("example/no-such-repo", { fetchImpl: fakeFetch as unknown as typeof fetch, delayMs: async () => {} }))
+    .rejects.toThrow(/HTTP 404.*no published release/);
+  expect(calls.length).toBe(1);
+});
+
+test("resolveLatest sends the GitHub token as Bearer and never leaks it in errors", async () => {
+  const release = { tag_name: "v1.0.0", assets: [{ name: "x_darwin_arm64.zip", browser_download_url: "https://example.invalid/x.zip" }] };
+  const authHeaders: string[] = [];
+  const fakeFetch = async (_url: string | URL, init?: RequestInit): Promise<Response> => {
+    authHeaders.push(new Headers(init?.headers).get("authorization") ?? "");
+    return Response.json(release, { status: 200 });
+  };
+  const previous = process.env.GITHUB_TOKEN;
+  process.env.GITHUB_TOKEN = "gh-token-for-test-only";
+  try {
+    const resolution = await resolveLatest("projectdiscovery/dnsx", { fetchImpl: fakeFetch as unknown as typeof fetch });
+    expect(resolution.tag).toBe("v1.0.0");
+    expect(authHeaders).toEqual(["Bearer gh-token-for-test-only"]);
+  } finally {
+    if (previous === undefined) delete process.env.GITHUB_TOKEN;
+    else process.env.GITHUB_TOKEN = previous;
+  }
+});
 
 test.skipIf(!NET)(
   "second run skips already-installed tools with a frozen pin — no resolve, no download, no re-freeze",

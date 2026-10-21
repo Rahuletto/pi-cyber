@@ -8,7 +8,7 @@
  *   resolve <name> <repo>                        → TSV: tag, assetName, assetUrl
  *   resolved-get <name> [--file PATH]            → frozen sha256 (empty string if unfrozen)
  *   state-get <name> [--file PATH]              → state value (nothing if the name is absent)
- *   freeze <name> <repo> <tag> <assetUrl> <sha256> <resolvedAt> [--file PATH]
+ *   freeze <name> <repo> <tag> <assetUrl> <sha256> <resolvedAt> [--file PATH] [--binary BINARY_SHA256]
  *   installed [--file PATH]                      → names whose state file says "installed", one per line
  *   state-set <name> <state> [--file PATH] [--version V] [--sha256 S] [--validatedAt ISO]
  */
@@ -119,6 +119,8 @@ async function main(): Promise<void> {
       }
       try {
         const record = { name, repo, tag, assetUrl, sha256, resolvedAt };
+        const binary = flagValue(args, "--binary");
+        if (binary !== undefined) (record as typeof record & { binary_sha256: string }).binary_sha256 = binary;
         await freezeResolved(flagValue(args, "--file") ?? RESOLVED_FILE, record);
       } catch (error) {
         die(`toolctl: freeze ${name}: ${error instanceof Error ? error.message : String(error)}`);

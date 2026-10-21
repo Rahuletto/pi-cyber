@@ -97,8 +97,9 @@ while IFS=$'\t' read -r name repo artifact versionFlag manifest_sha; do
   IFS=$'\t' read -r _r_name tag asset_name asset_url <<<"$RESOLVE_OUT"
 
   # 2. Download.
-  if ! curl -fsSL --output "$DL" "$asset_url"; then
-    fail "$name" "download failed for $asset_url"
+  if ! curl -fsSL --connect-timeout 30 --max-time 600 --output "$DL" "$asset_url"; then
+    rc_curl=$?
+    fail "$name" "download failed for $asset_url (curl exit $rc_curl)"
     cleanup
     continue
   fi
@@ -108,7 +109,8 @@ while IFS=$'\t' read -r name repo artifact versionFlag manifest_sha; do
     continue
   fi
 
-  # 3. Verify SHA-256: manifest pin first, then previously frozen pin; a first-ever pin gets frozen now.
+  # 3. Verify SHA-256 of the downloaded ARCHIVE: manifest pin first, then previously frozen pin;
+  #    a first-ever pin is frozen now (trust-on-first-use, plan §Task-3 step 1).
   file_sha="$(shasum -a 256 "$DL" | awk '{print $1}')"
   file_sha="$(echo "$file_sha" | tr 'A-Z' 'a-z')"
   prev_sha="$(bun "$TOOLCTL" resolved-get --file "$RESOLVED_FILE" "$name" 2>/dev/null)"
@@ -182,15 +184,15 @@ while IFS=$'\t' read -r name repo artifact versionFlag manifest_sha; do
 
   installed_sha="$(shasum -a 256 "$BIN_DIR/$name" | awk '{print $1}')"
   installed_sha="$(echo "$installed_sha" | tr 'A-Z' 'a-z')"
-  if [ "$installed_sha" != "$file_sha" ]; then
-    fail "$name" "sha256 changed between download and install ($file_sha → $installed_sha)"
-    cleanup
-    continue
-  fi
+  # Digest semantics: file_sha is the ARCHIVE digest (already verified against the pin above);
+  # installed_sha is the EXTRACTED EXECUTABLE's digest — a different file by construction, so the
+  # two are recorded separately, never compared. (Regression history: v2 compared them and failed
+  # every archive-asset install with "sha256 changed between download and install".)
 
-  # 6. Freeze the resolved pin (never mutates tools/manifest.json) and mark state installed.
+  # 6. Freeze the resolved pin (never mutates tools/manifest.json): archive sha256 + binary_sha256
+  #    (the latter feeds the ledgered re-hash-on-later-runs defense-in-depth).
   NOW="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-  if ! bun "$TOOLCTL" freeze --file "$RESOLVED_FILE" "$name" "$repo" "$tag" "$asset_url" "$installed_sha" "$NOW" 2>"$TMP_DIR/freeze.err"; then
+  if ! bun "$TOOLCTL" freeze --file "$RESOLVED_FILE" "$name" "$repo" "$tag" "$asset_url" "$file_sha" "$NOW" --binary "$installed_sha" 2>"$TMP_DIR/freeze.err"; then
     fail "$name" "could not freeze resolved pin: $(tr '\n' ' ' <"$TMP_DIR/freeze.err" | sed 's/ *$//')"
     cleanup
     continue
@@ -202,7 +204,7 @@ while IFS=$'\t' read -r name repo artifact versionFlag manifest_sha; do
   fi
 
   SUCCEEDED=$((SUCCEEDED + 1))
-  echo "install: ok $name tag=$tag sha=$installed_sha → $BIN_DIR/$name"
+  echo "install: ok $name tag=$tag archive_sha=$file_sha binary_sha=$installed_sha → $BIN_DIR/$name"
   cleanup
 done < <(printf '%s\n' "$LIST")
 

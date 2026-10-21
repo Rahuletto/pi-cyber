@@ -29,7 +29,9 @@ export interface Resolution {
   assetUrl: string;
 }
 
-/** Frozen-per-tool record. Exactly the six ruled keys, nothing more. */
+/** Frozen-per-tool record. The six ruled keys plus the additive `binary_sha256` (digest of the
+ *  installed executable; distinct from the archive `sha256`) that feeds the ledgered re-hash on
+ *  later runs. Absent on records predating the field. */
 export interface ResolvedRecord {
   name: string;
   repo: string;
@@ -37,6 +39,7 @@ export interface ResolvedRecord {
   assetUrl: string;
   sha256: string;
   resolvedAt: string;
+  binary_sha256?: string;
 }
 
 /** Human-readable matching rule printed by install.sh --dry-run and referenced in failures. */
@@ -66,19 +69,73 @@ export function pickDarwinArm64Asset(assets: ReleaseAsset[]): ReleaseAsset | nul
   return candidates[0] ?? null;
 }
 
-/** Resolve the latest GitHub release of `repo` down to one installable darwin/arm64 artifact. */
-export async function resolveLatest(repo: string): Promise<Resolution> {
+/** Resolve the latest GitHub release of `repo` down to one installable darwin/arm64 artifact.
+ *  Well-behaved toward api.github.com: 403/429/5xx are retried up to 3 times with 2s/5s/15s
+ *  backoff (unauthenticated rate limits are common); 404 fails immediately with its own message.
+ *  GITHUB_TOKEN or GH_TOKEN (whichever is set) is sent as `Authorization: Bearer <token>` — the
+ *  token is never logged, persisted, or echoed in error messages. */
+const RELEASE_RETRY_DELAYS_MS = [2000, 5000, 15000];
+
+function isRetriableStatus(status: number): boolean {
+  return status === 403 || status === 429 || status >= 500;
+}
+
+export async function resolveLatest(
+  repo: string,
+  deps: { fetchImpl?: typeof fetch; delayMs?: (ms: number) => Promise<void> } = {},
+): Promise<Resolution> {
+  const fetchImpl = deps.fetchImpl ?? fetch;
+  const delayMs = deps.delayMs ?? ((ms: number) => new Promise<void>((done) => setTimeout(done, ms)));
   if (!REPO_RE.test(repo)) throw new Error(`invalid repo slug "${repo}"`);
   const url = `https://api.github.com/repos/${repo}/releases/latest`;
-  const response = await fetch(url, {
-    headers: { accept: "application/vnd.github+json", "user-agent": "pi-cyber-installer" },
-    redirect: "follow",
-  });
-  if (!response.ok) {
-    const hint = response.status === 404 ? " (no published release — repo may not use GitHub Releases)" : "";
-    throw new Error(`GitHub API GET ${url} → HTTP ${response.status}${hint}`);
+  const headers: Record<string, string> = { accept: "application/vnd.github+json", "user-agent": "pi-cyber-installer" };
+  const token = process.env.GITHUB_TOKEN ?? process.env.GH_TOKEN;
+  if (typeof token === "string" && token.length > 0) headers.authorization = `Bearer ${token}`;
+
+  const sleep = async (attemptIndex: number): Promise<void> => {
+    const ms = RELEASE_RETRY_DELAYS_MS[attemptIndex];
+    if (typeof ms === "number" && ms > 0) await delayMs(ms);
+  };
+
+  let lastError: Error | null = null;
+  for (let attempt = 0; attempt <= RELEASE_RETRY_DELAYS_MS.length; attempt++) {
+    if (attempt > 0) await sleep(attempt - 1);
+    let response: Response;
+    try {
+      response = await fetchImpl(url, { headers, redirect: "follow" });
+    } catch (error) {
+      // Network hiccup — retriable.
+      lastError = new Error(`GitHub API GET ${url} → network error: ${error instanceof Error ? error.message : String(error)}`);
+      continue;
+    }
+    if (response.ok) {
+      let body: unknown;
+      try {
+        body = await response.json();
+      } catch (error) {
+        throw new Error(`GitHub API response for ${repo} is not JSON: ${error instanceof Error ? error.message : String(error)}`);
+      }
+      return parseReleaseResponse(repo, body);
+    }
+    if (isRetriableStatus(response.status)) {
+      const hint = response.status === 403
+        ? " (rate limited — retriable with backoff; set GITHUB_TOKEN for higher limits)"
+        : " (transient server error — retriable)";
+      lastError = new Error(`GitHub API GET ${url} → HTTP ${response.status}${hint}`);
+      continue;
+    }
+    if (response.status === 404) {
+      throw new Error(`GitHub API GET ${url} → HTTP 404 (no published release — repo may not use GitHub Releases)`);
+    }
+    if (response.status === 401) {
+      throw new Error(`GitHub API GET ${url} → HTTP 401 (authorization rejected — check GITHUB_TOKEN validity)`);
+    }
+    throw new Error(`GitHub API GET ${url} → HTTP ${response.status}`);
   }
-  const body: unknown = await response.json();
+  throw lastError ?? new Error(`GitHub API GET ${url} → retries exhausted`);
+}
+
+async function parseReleaseResponse(repo: string, body: unknown): Promise<Resolution> {
   if (typeof body !== "object" || body === null) throw new Error(`GitHub API response for ${repo} is not an object`);
   const record = body as Record<string, unknown>;
   const tag = record.tag_name;
@@ -118,7 +175,7 @@ function strictRecord(name: string, value: unknown): ResolvedRecord {
   if (Number.isNaN(Date.parse(row.resolvedAt as string))) {
     throw new TypeError(`installer: resolved record for "${name}" resolvedAt is not a parseable timestamp`);
   }
-  return {
+  const record: ResolvedRecord = {
     name: row.name as string,
     repo: row.repo as string,
     tag: row.tag as string,
@@ -126,6 +183,14 @@ function strictRecord(name: string, value: unknown): ResolvedRecord {
     sha256: (row.sha256 as string).toLowerCase(),
     resolvedAt: row.resolvedAt as string,
   };
+  // Additive field: archive sha256 (verified pin), binary_sha256 = installed executable digest.
+  if (row.binary_sha256 !== undefined) {
+    if (typeof row.binary_sha256 !== "string" || !SHA256_RE.test(row.binary_sha256)) {
+      throw new TypeError(`installer: resolved record for "${name}" binary_sha256 must be a 64-hex digest when present`);
+    }
+    record.binary_sha256 = row.binary_sha256.toLowerCase();
+  }
+  return record;
 }
 
 /** Load the frozen ledger. A missing file is the documented fresh-start state; a corrupt file throws. */
@@ -164,7 +229,7 @@ function assertFreezeInput(record: ResolvedRecord): void {
 export async function freezeResolved(path: string, record: ResolvedRecord): Promise<void> {
   assertFreezeInput(record);
   const existing = await loadResolved(path);
-  const merged = { ...existing, [record.name]: { ...record, sha256: record.sha256.toLowerCase() } };
+  const merged = { ...existing, [record.name]: { ...record, sha256: record.sha256.toLowerCase(), ...(record.binary_sha256 ? { binary_sha256: record.binary_sha256.toLowerCase() } : {}) } };
   await mkdir(dirname(path), { recursive: true });
   const temp = `${path}.${process.pid}.tmp`;
   await writeFile(temp, `${JSON.stringify(merged, null, 2)}\n`, "utf8");
