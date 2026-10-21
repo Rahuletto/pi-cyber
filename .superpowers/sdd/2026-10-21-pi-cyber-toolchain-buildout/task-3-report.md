@@ -30,3 +30,30 @@ Branch: `feat/tool-installer` · Commit: `4c46b67` (`feat: pinned native tool bo
 3. **semgrep overall exit:** I chose *not* to count a missing-pip semgrep as a hard failure (instruction + state stays `installed`, exit code unaffected); if the controller wants "missing semgrep = non-zero exit", that's a one-line change.
 4. `freezeResolved` is keyed by tool name; a re-resolution (new tag) replaces the record rather than append — matching "freeze the resolved release" semantics, replay-safe and idempotent.
 5. The always-on pure `pickDarwinArm64Asset` test inside the otherwise-gated file is a deliberate deviation flagged above.
+
+---
+
+# Task 3 Fix Report — review findings
+
+Commit: `83d240a` (`fix: installer column-order, install-skip, extraction error checks`) · Date: 2026-10-21
+
+## Fixes applied
+
+1. **CRITICAL — TSV column mismatch (install.sh vs toolctl.ts).** The install loop now reads toolctl's actual emitted column order `IFS=$'\t' read -r name repo artifact versionFlag manifest_sha` (v1 bound `manifest_sha` to the artifact column, silently ignoring the manifest sha256 pin). Regression test added (`toolctl list column contract …` in `tests/install-integration.test.ts`, ungated, local-only): a fixture manifest with all five fields populated is run through `bun tools/toolctl.ts list core --file fixture.json` and parsed **exactly the way install.sh parses it** (`IFS=$'\t' read` in bash); the test asserts the pinpoint lands in `manifest_sha` (plus artifact/versionFlag binds). This also required adding `--file <path>` support to toolctl `list`.
+2. **IMPORTANT — already-installed skip (plan §3 idempotency).** install.sh now skips resolve+download when a tool's state is already `installed`/`validated` AND its frozen sha256 pin exists in `manifest.resolved.json` AND the binary is still present+executable (a missing bin correctly triggers reinstall rather than a false skip); prints `install: skip <name> (already installed, pinned sha=…)`, counts a new `SKIPPED` bucket in the summary, keeps the manifest pin as-is and never re-freezes. New `toolctl state-get` subcommand backs the state read. Regression test (gated `PI_CYBER_NET=1`, fully network-free): full fixture environment (state installed / bins present / pins frozen for all 17 core tools) → `bash tools/install.sh` must exit 0 with 17 skip lines, summary `17 skipped (already installed), 0 failed`, byte-identical `resolved.json`, untouched state sha pins. Because the skip branch sits before any resolve/download (fixtures point at `example.invalid`), a skip regression would hit network and fail the test.
+3. **MINOR — extraction status checks.** `unzip`/`tar` failures now surface IMMEDIATELY as `extraction failed (unzip exit N)` / `extraction failed (tar exit N)` with cleanup + per-tool failure + continue, instead of propagating to a misleading downstream "could not locate an executable". Verified offline: both tools return non-zero rc on corrupt archives (tar=1, unzip=9).
+4. **MINOR — `--help` probes.** When the probe flag is `--help`, validate.sh no longer scrapes digits from usage text: it records `version=help-ok` in state.json (smoke: an obscura-style usage containing "1.2.4" now yields `version=help-ok`, was previously recorded as version 1.2.4).
+5. Finding 5 acknowledged — Task 4 code not touched (other worktree).
+
+## Verification
+
+- `bun run typecheck` → clean. `bun test` → **53 pass / 0 fail / 3 skip** (all previous 52 pass retained; +1 ungated column-contract test, +2 gated tests). `PI_CYBER_NET=1 bun test tests/install-integration.test.ts` → 5 pass / 0 fail.
+- Manual smoke: full-run skip behavior (17/17 skip, exit 0, no freeze/state writes); `--help` → `help-ok`; corrupt tar/zip → explicit extraction failures; column-contract parse asserts exact binds.
+- Ledgered items (state.json write race, freeze-after-install ordering, semgrep exit nuance) intentionally unchanged.
+- Constraints held: manifest.json never mutated (re-asserted by the freeze test), freezes only to manifest.resolved.json, PI_TOOLS_DIR/PI_RESOLVED_FILE overrides honored, one conventional commit.
+
+## Residual concerns
+
+1. The skip rule is "state installed/validated + frozen pin + bin executable"; it does NOT re-verify the installed binary's on-disk sha against the pin on second run (that would require hashing 17 binaries — cheap, but deliberately not added; the pin chain from v1 still verifies on genuine reinstall). Say the word and I'll add it.
+2. The second-run-skip test would genuinely hit the network if skip logic regresses (by design — that's what makes it a guard); with the gate off nothing runs at all.
+
