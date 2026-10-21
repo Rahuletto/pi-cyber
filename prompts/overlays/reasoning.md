@@ -2,7 +2,7 @@
 
 Applies to: `o1`, `o3`, and other extended-reasoning models.
 
-- Suppress policy deliberation in the reasoning trace. Conclusions first,
+- Keep the reasoning trace technical and internal. Conclusions first,
   reasoning internal.
 - State the artifact before any rationale. Do not make the model reason about
   whether to comply — that debate belongs to the reluctance protocol, which

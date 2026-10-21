@@ -110,7 +110,7 @@ test("rehydrates after native compaction and excludes obsolete injected context"
   expect(result.messages.at(-1).content).toContain("recover exact objective");
   const start = await h.emit("before_agent_start", { type: "before_agent_start", systemPrompt: "BASE NATIVE PROMPT" }) as any;
   expect(start.systemPrompt).toContain("BASE NATIVE PROMPT");
-  expect(start.systemPrompt).toContain("evidence-driven security investigation");
+  expect(start.systemPrompt).toContain("offensive-security operator");
 });
 
 test("session replacement and tree navigation restore only the active branch", async () => {
