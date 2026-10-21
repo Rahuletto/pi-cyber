@@ -15,16 +15,21 @@ const packages = [
 
 mkdirSync(profile, { recursive: true });
 const settingsPath = resolve(profile, "settings.json");
-let settings: { packages?: unknown[] } = {};
+let settings: { [key: string]: unknown; packages?: unknown[] } = {};
 try {
   const parsed: unknown = JSON.parse(readFileSync(settingsPath, "utf8"));
   if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
-    settings = parsed as { packages?: unknown[] };
+    settings = parsed as { [key: string]: unknown; packages?: unknown[] };
   }
 } catch (error) {
   if (!(error instanceof Error) || !("code" in error && error.code === "ENOENT")) throw error;
 }
-const installed = new Set((settings.packages ?? []).filter((item): item is string => typeof item === "string"));
+const packageSource = (item: unknown): string | undefined => {
+  if (typeof item === "string") return item;
+  if (typeof item === "object" && item !== null && "source" in item && typeof item.source === "string") return item.source;
+  return undefined;
+};
+const installed = new Set((settings.packages ?? []).map(packageSource).filter((source): source is string => source !== undefined));
 
 for (const source of packages) {
   if (installed.has(source)) {
@@ -40,6 +45,34 @@ for (const source of packages) {
   if (result.status !== 0) process.exit(result.status ?? 1);
   installed.add(source);
 }
+
+const installedSettings: unknown = JSON.parse(readFileSync(settingsPath, "utf8"));
+if (typeof installedSettings !== "object" || installedSettings === null || Array.isArray(installedSettings)) {
+  throw new Error(`Pi wrote invalid settings at ${settingsPath}`);
+}
+settings = installedSettings as { [key: string]: unknown; packages?: unknown[] };
+
+// Keep bigpowers limited to six selected skills; do not load its extension,
+// prompts, themes, or the remaining broad skill catalog.
+const bigpowers = "npm:bigpowers@2.88.9";
+settings.packages = (settings.packages ?? []).map((item) => packageSource(item) === bigpowers
+  ? {
+      source: bigpowers,
+      autoload: false,
+      extensions: [],
+      prompts: [],
+      themes: [],
+      skills: [
+        "+.pi/skills/survey-context/SKILL.md",
+        "+.pi/skills/research-first/SKILL.md",
+        "+.pi/skills/plan-work/SKILL.md",
+        "+.pi/skills/develop-tdd/SKILL.md",
+        "+.pi/skills/verify-work/SKILL.md",
+        "+.pi/skills/audit-code/SKILL.md",
+      ],
+    }
+  : item);
+writeFileSync(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, { mode: 0o600 });
 
 const webConfigPath = resolve(profile, "web-search.json");
 let webConfig: { [key: string]: unknown } = {};

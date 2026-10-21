@@ -12,8 +12,8 @@ This status applies to the merged `feat/toolchain-buildout` tree. It distinguish
 
 ## Verification boundaries
 
-- The extension, parsers, job and evidence paths, browser lease state transitions, knowledge indexing, prompts and Cyberbench loopback tests are exercised by the local test suite when it passes on the final tree.
-- `bun run doctor` reports PATH presence and recorded installer state. It does not execute a tool, verify its version, connect to a target or prove compatibility.
+- On 2026-10-21, `bun install --frozen-lockfile`, `bun run typecheck`, and `bun test` passed: 228 passed, 0 failed, 4 skipped across 18 files.
+- `bun run doctor -- --json` reports 15/17 core scanner binaries as validated on this machine. Zap and Semgrep remain cataloged. Doctor reports PATH presence and recorded installer state; it does not execute a tool or prove target behavior.
 - Knowledge search covers the local indexed skills/research/docs corpus after an explicit rebuild. It does not claim a complete or automatically refreshed OWASP, CWE, CVSS or ATT&CK mirror.
 - Browser lease behavior is a coordination contract. It does not provide process isolation, authenticated browser profiles, or proof that an external browser MCP is connected.
 - Specialist Markdown files and task/result validation do not establish that `pi-subagents` is installed, that workers inherit all intended context, or that concurrency/cancellation is enforced by the harness.
@@ -21,7 +21,7 @@ This status applies to the merged `feat/toolchain-buildout` tree. It distinguish
 
 ## Open operational checks
 
-1. Install and inspect the pinned packages in the dedicated cyber profile; verify exact loaded resources and explicit search-provider configuration.
+1. Run `bun run install:packages` when ready to install the pinned optional packages in the dedicated cyber profile; inspect exact loaded resources and explicit search-provider configuration. This installer has not been run for this profile.
 2. Confirm model sign-in in that profile and test one bounded child task with context and tool grants.
 3. Connect the selected browser MCP and validate a signed-out/member/admin flow against Cyberbench.
 4. Run the documented first engagement against `127.0.0.1` only, then inspect the recorded evidence and remediation handoff.
