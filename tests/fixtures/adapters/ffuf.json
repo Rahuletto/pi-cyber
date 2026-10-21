@@ -1,0 +1,1 @@
+{"ffuf_version":"2.1.0","results":[{"url":"https://api.example.com/admin","input":{"FUZZ":"admin"},"position":1,"status":200,"length":1834,"words":210,"lines":42,"duration":123456,"httpstatus":200}],"configdata":{"wordlist":"/operator/wordlists/common.txt","method":"GET","url":"https://api.example.com/FUZZ"}}

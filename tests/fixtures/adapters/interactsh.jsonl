@@ -1,0 +1,1 @@
+{"protocol":"dns","unique_id":"abc123","full_id":"abc123.oast.example","timestamp":"2026-10-21T09:00:00Z","remote-address":{"ip":"198.51.100.2","port":5353},"request":{"type":"A","raw_request":"api.example.com. IN A"},"response":{}}
