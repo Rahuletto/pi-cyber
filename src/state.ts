@@ -17,7 +17,7 @@ export interface StatePatch {
 }
 export const STATE_ENTRY = "cyber.state.v1";
 const modeBrief = (): ModeBrief => ({ coverage: [], evidenceRefs: [], nextSteps: [] });
-export const emptyState = (): CyberState => ({ version: 1, revision: 0, mode: "defense", scope: [], objective: "", modes: { offense: modeBrief(), defense: modeBrief() } });
+export const emptyState = (): CyberState => ({ version: 1, revision: 0, mode: "offense", scope: [], objective: "", modes: { offense: modeBrief(), defense: modeBrief() } });
 const knownSecrets = /(?:sk-(?:proj-)?[a-zA-Z0-9_-]{20,}|AKIA[A-Z0-9]{16}|-----BEGIN [A-Z ]*PRIVATE KEY-----|\bBearer\s+[a-zA-Z0-9._~+/-]{12,}|\b(?:password|api[_-]?key|access[_-]?token|secret)\s*[:=]\s*\S+|https?:\/\/[^\s/:]+:[^\s@]+@)/i;
 function text(value: unknown, empty = false): string {
   if (typeof value !== "string" || value.length > 2000 || (!empty && !value.trim())) throw new Error("Brief text must be nonempty with length at most 2000 characters.");

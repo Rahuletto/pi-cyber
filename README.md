@@ -1,6 +1,6 @@
 # Pi Cyber Harness
 
-A working, deliberately small Pi extension for offense and defense investigation. It adds `/cyber`, a structured `cyber_state` tool, mode instructions, durable session checkpoints and red/blue themes. Pi remains the agent runtime; its native read/bash/edit/write tools and automatic compaction remain available.
+A working, deliberately small Pi extension for offense and defense investigation. It adds `/cyber` plus the top-level `/offense` and `/defense` commands, a structured `cyber_state` tool, mode instructions, durable session checkpoints and a single blue cyber theme. Pi remains the agent runtime; its native read/bash/edit/write tools and automatic compaction remain available.
 
 This is the foundation described in [the design](PI-CYBER-HARNESS-DESIGN.md). Browser, scanner, REA, evidence database and specialist orchestration integrations remain planned. No assessment target is configured.
 
@@ -33,12 +33,13 @@ The package manifest also declares the extension and themes for Pi package loadi
 
 ```text
 /cyber status
-/cyber mode offense
-/cyber mode defense
 /cyber checkpoint
+/cyber mode offense|defense
+/offense
+/defense
 ```
 
-Defense is the initial mode. Mode switching requires an idle agent, no running native/nested tools, and no queued messages. A theme failure refuses the transition. Both text labels and accent colors identify the active mode. Terminal theme restoration failures block subsequent tool calls until corrected; headless sessions require no UI.
+Fresh sessions default to offense; `mode.json`-less starts are offense, while a session with recorded checkpoints keeps its saved mode. `/cyber mode offense|defense` remains for compatibility, and the top-level `/offense` and `/defense` run the exact same guarded switch. Both modes render the same blue theme; the OFFENSE badge is red and the DEFENSE badge is blue in the status and notice lines. Mode switching requires an idle agent, no running native/nested tools, and no queued messages. Terminal theme restoration failures block subsequent tool calls until corrected; headless sessions require no UI.
 
 Ask the coordinator to record the established scope and objective using `cyber_state`, then maintain investigation coverage, evidence references and next steps. Example tool input:
 
