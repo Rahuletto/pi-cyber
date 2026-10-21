@@ -1,0 +1,39 @@
+cff-version: 1.2.0
+message: "If you use this software in research, assessments, or publications, please cite it as below."
+title: "Pi Cyber"
+abstract: >-
+  Pi Cyber is a local-first security assessment harness for the Pi coding agent.
+  It provides an offense-only engagement workflow, durable engagement state and
+  evidence, a typed scanner toolset with a job runner, a local documentation
+  index, and twelve specialist profiles for authorized security assessments.
+type: software
+authors:
+  - family-names: "Marban"
+    given-names: "Rahul"
+    alias: "Rahuletto"
+    email: "rahulmarban@gmail.com"
+version: 0.1.0
+date-released: "2026-10-21"
+license: MIT
+repository-code: "https://github.com/Rahuletto/pi-cyber"
+url: "https://github.com/Rahuletto/pi-cyber"
+keywords:
+  - security assessment
+  - penetration testing
+  - vulnerability research
+  - coding agent
+  - pi extension
+  - reconnaissance
+  - threat hunting
+  - evidence management
+preferred-citation:
+  type: software
+  title: "Pi Cyber"
+  authors:
+    - family-names: "Marban"
+      given-names: "Rahul"
+      alias: "Rahuletto"
+  year: 2026
+  version: 0.1.0
+  license: MIT
+  repository-code: "https://github.com/Rahuletto/pi-cyber"

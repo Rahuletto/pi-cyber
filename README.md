@@ -163,6 +163,41 @@ AST=1 bun run pi             # opt in to the separate AST extension
 
 Tests use temporary sessions, fake scanner executables, parser fixtures, and local-only unit fixtures. They do not establish live provider behavior or validate an external target. The optional AST extension registers `ast_grep` and `ast_edit`; it is not loaded by the default launcher.
 
+## License, security, and citation
+
+The harness source in this repository is released under the [MIT License](LICENSE).
+Third-party packages and the scanner binaries installed by `tools/install.sh`
+keep their own licenses; `tools/manifest.json` lists the upstream project for
+each.
+
+| Document | Purpose |
+| --- | --- |
+| [SECURITY.md](SECURITY.md) | How to report a vulnerability in this repository privately, what is in scope, and the responsible-use rules. |
+| [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | The behavior expected of anyone taking part in this project's spaces. |
+| [CITATION.cff](CITATION.cff) | Citation metadata. The **Cite this repository** button on the repository page renders it. |
+
+Pi Cyber is for authorized assessment only. It does not sandbox the host, it
+does not grant authorization, and the harness cannot enforce target scope on
+shell commands or tools outside its adapters.
+
+### Citation
+
+The repository is citable with `CITATION.cff`. Rendered:
+
+```bibtex
+@misc{pi-cyber,
+  author = {Marban, Rahul},
+  title  = {Pi Cyber},
+  year   = {2026},
+  month  = {10},
+  url    = {https://github.com/Rahuletto/pi-cyber},
+  note   = {Version 0.1.0},
+}
+```
+
+APA: Marban, R. (2026). *Pi Cyber* (version 0.1.0).
+https://github.com/Rahuletto/pi-cyber
+
 ## Project map
 
 - `src/` — Pi extension, typed tools, adapters, job runner, state, evidence, and knowledge index.
