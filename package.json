@@ -8,6 +8,7 @@
     "test": "bun test",
     "typecheck": "tsc --noEmit",
     "doctor": "bun src/doctor.ts",
+    "install:packages": "bun scripts/install-packages.ts",
     "pi": "bash ./scripts/pi.sh",
     "pi:ast": "bash ./scripts/pi.sh --ast"
   },

@@ -21,6 +21,6 @@
     { "name": "rea", "category": "reverse", "repo": "morluto/rea", "version": "pin-at-install", "disposition": "on-demand" },
     { "name": "ghidra", "category": "reverse", "repo": "NationalSecurityAgency/ghidra", "version": "pin-at-install", "disposition": "deferred", "note": "deferred per operator decision 2026-10-21" },
     { "name": "jdk21", "category": "misc", "repo": "Adoptium/temurin21-binaries", "version": "pin-at-install", "disposition": "deferred", "note": "deferred per operator decision 2026-10-21" },
-    { "name": "understand-anything", "category": "misc", "version": "pin-at-install", "disposition": "reference", "note": "comprehension lane reference" }
+    { "name": "understand-anything", "category": "misc", "version": "pin-at-install", "disposition": "on-demand", "note": "optional repository-comprehension lane; not part of core scanner execution" }
   ]
 }
