@@ -40,3 +40,46 @@ cd <worktree>
 bun install --frozen-lockfile
 bun run typecheck   # clean
 bun test            # 145 pass, 3 skip, 0 fail (18 tests are from tests/jobs.test.ts)
+
+---
+
+# Task 6 Fix Report — round 1 (findings 1–3 IMPORTANT, finding 4 MINOR)
+
+Branch: `feat/job-runner` · Commit: `c1faf5a` (`fix: job ledger guarantees and argv-tail secret check`) · Date: 2026-10-21
+
+## Finding 1 (IMPORTANT) — mid-flush secret refusal leaves no ledger trace → fixed
+
+- `persistRows` replaced by **`persistRowsGuarded`** (`src/jobs/runner.ts`): returns `{ids, evidencePersistence: "complete"|"partial"|"error", refusedCount, persistReason: "secret-refusal"|"persist-error", error}` — stops at the first refuted row, keeps everything already persisted, classifies the reason (canonical `SECRET_REFUSAL_MESSAGE` → `secret-refusal`; anything else → `persist-error`).
+- Success path: `updateJobState(succeeded)` is unchanged (row state stays `succeeded`, per the review's succeeded-with-partial-evidence semantics), but the guarded persist runs BEFORE the `summary` event and the summary payload now carries `{event:"summary", rows, parsedRows, evidencePersistence, refusedCount, persistReason, evidenceIds(bounded), parseFailed}` — counters only, so the store's own payload checks can never refuse it. The **verbatim persist error travels to the caller via `JobResult.persistError`/`persistReason`** (rendered by the tool as `evidence persistence: partial · refused rows: N · reason: secret-refusal` + `persist error (verbatim): …`), not through the event (the canonical refusal message itself matches the store's secret heuristic, so it must not enter event payloads — verified reasoning, asserted in the new test that payloads contain neither the raw secret nor the refusal text).
+- Belt-and-braces: if the summary append itself ever throws, a minimal counters-only fallback `annotated` event (note `summary-event-failed`) is attempted before reraising — the ledger record after the terminal state is never skippable.
+- Timeout/killed path: `persistRowsGuarded` + **`annotateOutcome`** (fallback-aware appender) guarantee the `outcome-unknown` annotation always lands, now including `{evidencePersistence, refusedCount, persistReason}` on top of `{reason, state, partialEvidenceRows}`. New test: `--taint --linger` timeout run → `interrupted` + annotation with secret-refusal counters.
+- 32 KiB event-cap guard: **`boundedEvidenceIds`** (exported, unit-tested) truncates the summary's evidenceIds list with a `<N more evidence ids not listed>` marker at a 28 000-char budget instead of failing the whole event; ids remain readable from the evidence table via refs.
+
+## Finding 2 (IMPORTANT) — abrupt external-signal exit mapped to `failed` → fixed
+
+- The abrupt-completion branch is now `timedOut || code === null || signalNo !== null` where `signalNo = code - 128` for POSIX signal-convention codes (128..191). Why the extension: a probe showed Bun 1.4.3 on darwin resolves a signal-terminated child's `exited` to **137 (128+9), not null** — so routing only `code === null` would have been dead code on this host; 128..191 is the POSIX "killed by signal" convention. A null/absent code (the literal finding case, e.g. OOM) routes to the same branch annotated `reason: "no-exit-code"`; signal exits annotate `reason: "exit-on-signal-9"` (etc.).
+- Partial stdout/stderr are now kept and parsed on that branch: state `interrupted` (rows exist) / `outcome-unknown` (no usable output), plus the guaranteed annotated event — previously output was discarded and state flattened to `failed`. New test: stub SIGKILLs itself after flushing fixture output → `exitCode 137`, `timedOut false`, state `interrupted`, evidence rows kept, annotation `{reason:"exit-on-signal-9", state:"interrupted"}`.
+- Plain completed non-zero exits (exit 1..127) still map to `failed` unchanged, with the old counters-only failed event.
+
+## Finding 3 (IMPORTANT) — secret bypass on the argv tail via the details path → fixed
+
+- **`assertArgvSecretFree(argv)`** (exported) runs the full argv — every entry, including the 250-entry recorded head's tail beyond the `addJob` 256-item cap which the store never secret-checks — against `containsSecretLike` and throws the canonical refusal **before exec** (nothing spawns, nothing persists). The runner calls it right after `buildArgs`; `tools/jobs.ts` repeats it on the returned `JobResult.argv` before the details spread (the review's literal target, structurally unreachable only because the pre-exec check fires first — kept as an enforced boundary, tested via the exported helper).
+- Bonus coverage for the same constraint on the other return paths carrying target-derived free text: `renderStderr`-style gate — `stderr` and `spawnError` are now rendered/spread-checked (`renderChecked` in text, `sanitizeDetails` for the details spread); a secret-like stderr from a scanner is replaced by `<withheld: matched a secret-like pattern; redact before dispatch>` instead of leaking into context. Our own store messages (canonical refusal / caps) still travel verbatim so the model can self-correct.
+- Tests: 256-target nuclei run with the taint at target index 255 (argv position 511, far past the checked head) → canonical refusal, zero rows persisted; helper-level refusal for a tail-tainted argv + clean-argv pass.
+
+## Finding 4 (MINOR) — addJob event label mismatch → fixed
+
+- `src/evidence/db.ts` `addJob` now writes the `job` event label from the actual validated insert state (`{jobId, state, event: state}`) instead of the hardcoded `"queued"` — a running insert logs `event:"running"`. Happy-path test expectation updated (`"queued"` → `"running"`); the state machine table and `JOB_STATES` are unchanged (`queued` remains a legal explicit state for future launch-queue use).
+
+## Verification
+
+- `bun run typecheck` → clean.
+- `bun test` → **151 pass, 3 skip, 0 fail** (all 145 from the initial Task-6 state stay green; +6 new: refused-row ledger event (success path), outcome-unknown annotation not skippable (killed path + taint), signal-exit outcome-unknown with partial evidence, tail-argv pre-exec refusal, tail-argv details-path gate, bounded evidenceIds).
+- One logical commit: `c1faf5a` — 6 files (`src/jobs/runner.ts`, `src/tools/jobs.ts`, `src/evidence/db.ts`, `tests/jobs.test.ts`, both fixture stubs). No other worktrees touched.
+
+## Concerns for the controller
+
+1. **Signal-convention classification (128–191) is a judgment call, disclosed:** the review assumed `exitCode === null` for OOM/external SIGKILL; on darwin/Bun 1.4.3 signal kills surface as exit codes ≥ 128 (probe verified), so the branch additionally treats those as abrupt. A tool that genuinely exits 128–191 on its own would land in `interrupted`/`outcome-unknown` instead of `failed` — for the PD kit's small-code exit habit this is the safer side (never a false "clean failed"), and the event annotation states exactly why (`exit-on-signal-N` vs `no-exit-code`).
+2. **`persistRowsGuarded` stops at the first refusal** (prioritized-ordered retain); rows after the refused one are counted as `refusedCount` but never attempted, to keep evidence prefix semantics and avoid partial-row puzzles. If a reviewer wants full-scan stubbornness (persist everything possible, count refusals), it is a loop-body change, not a contract change.
+3. **The canonical refusal message itself matches the store's secret heuristic** (`… raw secret: …`), so verbatim refusal text can never be written into event payloads by design; the return path (JobResult/tool output) carries it verbatim instead — documented in the code where the summary payload is built.
+4. The tool-level `assertArgvSecretFree(result.argv)` re-check is deliberately redundant (the runner refuses before exec) — it exists so the return path keeps its own enforced check if the runner's boundary is ever relaxed. Reveiwed as defense-in-depth, not dead code; if a reviewer prefers deletion, it is a two-line removal.
