@@ -57,3 +57,49 @@ Commit: `83d240a` (`fix: installer column-order, install-skip, extraction error 
 1. The skip rule is "state installed/validated + frozen pin + bin executable"; it does NOT re-verify the installed binary's on-disk sha against the pin on second run (that would require hashing 17 binaries — cheap, but deliberately not added; the pin chain from v1 still verifies on genuine reinstall). Say the word and I'll add it.
 2. The second-run-skip test would genuinely hit the network if skip logic regresses (by design — that's what makes it a guard); with the gate off nothing runs at all.
 
+---
+
+# Task 3 Fix Report Round 2 — digest semantics, 403 backoff, zap slug, LIVE verification
+
+Commit: `614e343` (`fix: digest verification semantics, 403 backoff, zap slug`) · Date: 2026-10-21 · Network tool downloads authorized by controller for this round.
+
+## 1. Digest re-check semantics (CRITICAL) — FIXED
+
+The v2 comparison (archive digest vs extracted-binary digest) was removed; installed binaries are no longer compared against the archive digest. New flow: download archive → `shasum -a 256` the archive → verify against manifest pin / frozen pin (trust-on-first-use) → extract (explicit rc checks) → assert the located binary exists and is executable (NO digest comparison) → record both digests separately: `sha256` = archive digest, additive field **`binary_sha256`** = digest of the installed executable. Bare-binary assets get the same value in both fields (verified live on osv-scanner: `d4926ef8…` appears as both archive_sha and binary_sha). `ResolvedRecord` gained optional `binary_sha256` (64-hex-validated, lowercase-normalized, accepted-missing for older records); `toolctl freeze` gained `--binary BINARY_SHA256`; install.sh ok-line prints `archive_sha=` and `binary_sha=`. `tools/manifest.resolved.json` now holds 15 live records, **all with binary_sha256**. Also fixed: `curl` now uses `--connect-timeout 30 --max-time 600` (indeterminate hang → explicit download failure; discovered when a slow-connection download outlived a probe timeout).
+
+## 2. HTTP 403 resilience (IMPORTANT) — FIXED in `resolveLatest` (src/tools/installer.ts; toolctl `resolve` consumes it)
+
+403/429/5xx retried up to **3 retries** with exponential backoff **2s/5s/15s** (network errors also retried); 404 fails permanently on the first attempt with its own message ("no published release — repo may not use GitHub Releases"); 401 gets a distinct "check GITHUB_TOKEN validity" message. `GITHUB_TOKEN` or `GH_TOKEN` (whichever set) is sent as `Authorization: Bearer <token>` — never logged, persisted, or echoed (verified: no code path places it in an error/echo; timeout/log directives added mid-hunt touch only curl). `resolveLatest` now takes injectable `{fetchImpl, delayMs}` and covered by three new ungated tests (403×2→200 success with delay sequence [2000,5000]; 404 single-attempt permanent message; Bearer header from GITHUB_TOKEN, never leaking).
+
+## 3. zap repo slug (IMPORTANT) — FIXED with API evidence
+
+Via the GitHub REST API (`gh api`): `repos/zaproxy/zap` → **HTTP 404 Not Found**; `repos/zaproxy/zaproxy` → **HTTP 200 `{"full_name":"zaproxy/zaproxy","id":36817565,"description":"The ZAP by Checkmarx Core project","default_branch":"main"}`**, whose `releases/latest` is `v2.17.0` with assets including `ZAP_2.17.0_aarch64.dmg`. `tools/manifest.json` repo → `zaproxy/zaproxy` (strict-key loader unaffected).
+
+## 4. Additional data fix: vulnx versionFlag
+
+Live validate proved the ruled default `-version` doesn't exist for vulnx (cobra error `unknown shorthand flag: 'e' in -ersion`; note `vulnx --help` exits 0 and itself prints `[INF] Current vulnx version 2.0.2`). Fixed via the ruled override mechanism: `versionFlag: "--help"` recorded on the manifest entry with an explanatory note (validate records `help-ok` per finding-4 semantics).
+
+## 5. LIVE results (verbatim, run with GITHUB_TOKEN fed from the local gh keyring; token never printed/persisted)
+
+**`bash tools/install.sh`** → `install: 8 installed, 7 skipped (already installed), 2 failed, of 17 core entries.` overall-exit 1:
+- ok: interactsh-client v1.4.1, naabu v2.6.1, ffuf v2.3.0, obscura v0.2.5, trivy v0.76.0, osv-scanner v2.7.0 (bare binary: archive_sha == binary_sha), gitleaks v8.30.1, syft v1.55.0
+- skipped: subfinder v2.17.0, dnsx v1.3.1, httpx v1.12.0, katana v1.8.0, nuclei v3.11.1, uncover v1.2.1, vulnx v2.0.2 (frozen pins from the earlier partial run)
+- FAIL zap: `no darwin/arm64 asset on tag v2.17.0` — asset picker saw only dmg-style artifacts: `bom.json, ZAP_2.17.0.dmg, ZAP_2.17.0_aarch64.dmg, ZAP_2.17.0_Core.zip, ZAP_2.17.0_Crossplatform.zip, ZAP_2.17.0_Linux.tar.gz, ZAP_2_17_0_unix.sh, ZAP_2_17_0_windows-x32.exe, ZAP_2_17_0_windows.exe` (macOS CLI shape is a .dmg; literate exclusion for dmg, not an arm64 archive)
+- FAIL semgrep: `no darwin/arm64 asset on tag v1.182.0` (semgrep ships no darwin binary asset at all; pip-distributed — validate.sh already prints the pip instruction path)
+
+**`bash tools/validate.sh`** → run 1: `validate: 14 validated, 1 failed, of 15 installed entries.` — FAIL vulnx: `-version` shorthand error (see §4) → after the manifest versionFlag fix, run 2: vulnx `version=help-ok → state validated`. **Final: 15/15 installed entries validated** (subfinder 2.17.0, dnsx 1.3.1, httpx 1.12.0, katana 1.8.0, nuclei 3.11.1, uncover 1.2.1, vulnx help-ok, interactsh-client 1.4.1, naabu 2.6.1, ffuf 2.3.0, obscura help-ok, trivy 0.76.0, osv-scanner 2.7.0, gitleaks 8.30.1, syft 1.55.0). zap/semgrep remain uninstalled by design (no probeable binary).
+
+## Verification
+
+- `bun run typecheck` clean; `bun test` → **56 pass / 0 fail / 4 skip** (60 tests, 9 files); `PI_CYBER_NET=1 bun test tests/install-integration.test.ts` → 9 pass / 0 fail.
+- New tests this round: binary_sha256 round-trip (uppercase→lowercase normalization, older-records compatibility), 403-retry backoff sequence, 404 permanence, Bearer-from-env. Second-run-skip/gated fixtures unaffected by the semantics change (skip gate predates binary_sha256 and stays optional).
+- Committed `tools/manifest.resolved.json` (frozen pin ledger: names, tags, asset URLs, archive+binary digests, timestamps — no secrets) so downstream tasks can re-hash in place without re-networking. `state.json` lives outside the repo and is not committed.
+
+## Concerns for the controller
+
+1. **zap/semgrep are structurally uninstallable via GitHub zip/tar releases** — zap macOS is a .dmg (mount-installer route needed, or reclassify as on-demand), semgrep is pip-only. Today they fail explicitly + overall non-zero; recommend an operator decision rather than a silent skip.
+2. vulnx `help-ok` validated state: `--help` proves presence + exits 0, so `validated` is earned, but it is not a version-string mark (finding-4 ruling applied) — flagging in case the controller wants vulnx re-authored as a `version` subcommand probe (`vulnx version` exists).
+3. The 403 backoff never fired under load this round (authenticated token kept us over quota limits), so the retry path is exercised by the injected-fetch tests, not yet by a live 403 storm; the now-completed hourly hit on our IP earlier round shows real 403s are reachable without a token.
+4. `state.json` remains the plain read-modify-write ledger (race still ledgered as before); its live content now holds 15 `validated` entries with per-tool sha256 + version + validatedAt.
+
+
