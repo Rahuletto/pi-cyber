@@ -16,6 +16,13 @@ bun run doctor
 bun run pi
 ```
 
+`bun run pi` adds the installer's bin directory to `PATH` because the job runner spawns
+binaries by name. If you launch Pi directly instead, add it yourself:
+
+```sh
+export PATH="$HOME/.pi/tools/bin:$PATH"
+```
+
 Check pinned package wiring and refresh the selected profile skills after installation:
 
 ```sh
@@ -26,6 +33,8 @@ bun run packages
 The exact package pins are installed by `bun install --frozen-lockfile` and loaded only through `config/cyber`; see [package setup and limits](docs/PACKAGES.md). The profile checker does not copy personal provider credentials.
 
 `bun run pi` uses the local pinned Pi CLI and defaults `PI_CODING_AGENT_DIR` to `config/cyber` in this directory. It explicitly loads this extension, preserving existing personal Pi configuration. Set `PI_CODING_AGENT_DIR` explicitly to choose another dedicated directory. Configure provider login there; this project does not copy personal credentials. Pi still uses its normal project trust and project instructions.
+
+`scripts/pi.sh` changes to the repository root, then runs `node_modules/.bin/pi -e src/index.ts`. It forwards no other CLI arguments; the AST extension is added with the `AST` environment variable, not with a flag.
 
 For use from another project directory, provide absolute paths:
 
@@ -71,6 +80,84 @@ Each update and mode change appends a complete versioned snapshot through Pi's s
 
 The extension preserves Pi's native summarizer, automatic compaction settings and overflow retry. It adds the selected mode instructions at the start of a turn, and an ephemeral current brief to every provider request, including a continuation after compaction. Rehydration is only as complete as the recorded fields. A damaged or unsupported latest checkpoint blocks tool interaction rather than silently restoring stale scope. Use Pi `/tree` to return before that checkpoint, or start a new session and establish scope again.
 
+## Tool surface (17 registered Pi tools)
+
+| Tool | Purpose |
+| --- | --- |
+| `cyber_state` | Read or replace the durable engagement brief (scope, objective, per-mode coverage, evidence references, next steps). |
+| `cyber_evidence` | Durable SQLite evidence store: `add` / `read` / `findings` / `summary`, with secret refusal and a mermaid lifecycle map on request. |
+| `cyber_jobs` | Typed job runner: `run` an adapter with schema-validated params, `status` a job, `list` the adapter registry. |
+| `cyber_browser` | Exclusive browser lease (Obscura): `acquire` / `release` / `status`. Books the slot; never downloads or launches a browser. |
+| `cyber_knowledge` | Local-corpus FTS over skills, research and docs: `search` / `stats` / `rebuild`. Never rebuilds implicitly. |
+| `github` | `gh` CLI lookups — `search`, `read`, `cve`, `issues`, `prs` — executed through an argv array, never a shell string. |
+| `subfinder` | Passive subdomain enumeration for one domain. |
+| `httpx` | HTTP probe / fingerprinting of target URLs. |
+| `dnsx` | DNS record resolution for given domains. |
+| `katana` | JS-aware crawl of targets up to a configured depth. |
+| `naabu` | TCP port scan of given hosts. |
+| `nuclei` | Template-driven vulnerability scan with severity and template filters. |
+| `ffuf` | Content enumeration against one URL target (requires an operator wordlist). |
+| `uncover` | Search-index queries (Shodan, Censys, …) for one query. |
+| `vulnx` | CVE advisory lookup and analysis. |
+| `interactsh` | OOB callback client — runs until the job timeout and records received events. |
+| `semgrep` | Static analysis of local paths with a pinned rule set. |
+
+The eleven adapter tools share one contract: typed parameters validated against the adapter's
+own schema, a serialized job with a durable ledger entry, parsed findings persisted as evidence
+rows, and a fast-fail readiness check (`bin not available: <bin> — run tools/install.sh (state:
+<state>)`). Adapter and validation errors surface verbatim so they can be corrected.
+
+## Native tool install and validation
+
+`tools/manifest.json` is the reviewed catalog (23 entries). `tools/install.sh` resolves pinned
+releases, verifies SHA-256, installs into `$PI_TOOLS_DIR/bin` (default `~/.pi/tools/bin`) and
+records `installed` in `$PI_TOOLS_DIR/state.json`; `tools/validate.sh` probes the installed
+binaries only (no network) and promotes them to `validated`. The reviewed manifest is never
+mutated — frozen pins live in `tools/manifest.resolved.json`.
+
+```sh
+bash tools/install.sh -n     # dry run: prints the plan, downloads nothing
+bash tools/install.sh        # install the 17 core entries
+bash tools/validate.sh       # probe installed binaries, promote to validated
+bun run doctor               # report PATH presence + recorded state per tool
+```
+
+The doctor reads PATH metadata and the operator state file. It never executes a tool and never
+proves target behavior; an executable named `httpx` may be unrelated. On this host 16 tools
+are `validated` and 8 catalog entries are `cataloged` — see [build status](docs/BUILD-STATUS.md)
+for the per-tool list, the `help-ok` marker probes and the install paths that remain open.
+
+## Local fixture
+
+`fixtures/cyberbench/` is a deliberately vulnerable local HTTP app used as a deterministic
+offline target. It binds `127.0.0.1` only (port `4747`, `CYBERBENCH_PORT` to override), keeps
+state in in-memory sqlite, and seeds two identities (`member/memberpw` — tenant `alpha`, and
+`admin/adminpw` — tenant `beta`).
+
+```sh
+bun fixtures/cyberbench/app.ts
+# → cyberbench: http://127.0.0.1:4747 (local fixture only — never deploy)
+
+bun test tests/fixtures/cyberbench.smoke.test.ts   # boots in-process on a free port, then closes
+```
+
+Its seeded faults are an IDOR on `/api/balance`, a missing role check on `/api/admin/users`, a
+tenant-boundary IDOR on `/api/orders`, an unvalidated upload filename on `/api/upload` and a
+secret disclosure on `/debug/session`. Every fault is tagged `// seeded-vuln:` in `app.ts`.
+The fixture must never be deployed and must never be pointed at another host.
+
+## Skills index
+
+Two skill sources are visible to the profile:
+
+- `config/cyber/skills` — six skills copied verbatim from the pinned `bigpowers` package
+  (`survey-context`, `research-first`, `plan-work`, `develop-tdd`, `verify-work`, `audit-code`).
+  `scripts/install-packages.ts` refreshes them; the copies are committed so the profile works
+  without re-running the installer. See [SKILLS-NOTICE](config/cyber/SKILLS-NOTICE.md).
+- `~/.agents/skills` — the host's skill collection (88 directories on this host), of which 49
+  match the `mukul975/anthropic-cybersecurity-skills` catalog. These are installed on the host,
+  not vendored into this repository; this project neither pins nor mirrors them.
+
 ## Investigation behavior
 
 Offense follows objective-driven discovery, deep enumeration, discriminating active validation, confirmed path chaining and relevant authorized post-access investigation. It separates prerequisites and hypotheses from demonstrated access and impact. It persists through routine failures while respecting the engagement's budget and stop conditions.
@@ -91,7 +178,7 @@ Mode prompts do not constrain the underlying account's filesystem or network per
 
 ## Optional structural search and staged edits
 
-`bun run pi:ast` explicitly loads [the separate AST extension](src/ast-extension.ts) alongside the cyber foundation. The default launcher and `pi.extensions` manifest omit it. The engine, `@ast-grep/napi` **0.51.0**, is an exact optional dependency; its native code is loaded only when an AST tool executes. `bun install --omit=optional` keeps it out of a foundation-only installation. No global install, shell search command, project ast-grep configuration, custom parser loading or LSP service is involved. From another project, add `-e /absolute/path/to/this/package/src/ast-extension.ts` to the Pi invocation above; that project's working directory becomes the workspace boundary.
+`AST=1 bun run pi` explicitly loads [the separate AST extension](src/ast-extension.ts) alongside the cyber foundation. The default launcher and `pi.extensions` manifest omit it. The engine, `@ast-grep/napi` **0.51.0**, is an exact optional dependency; its native code is loaded only when an AST tool executes. `bun install --omit=optional` keeps it out of a foundation-only installation. No global install, shell search command, project ast-grep configuration, custom parser loading or LSP service is involved. From another project, add `-e /absolute/path/to/this/package/src/ast-extension.ts` to the Pi invocation above; that project's working directory becomes the workspace boundary.
 
 The bundled supported languages are `javascript` (`.js`, `.jsx`, `.mjs`, `.cjs`), `typescript` (`.ts`, `.mts`, `.cts`), `tsx`, `css` and `html` (`.html`, `.htm`). An explicit `language` selects one of these parsers for another filename. Other languages are reported as unsupported; no parser is installed on demand. The implementation follows the official [ast-grep JavaScript API](https://ast-grep.github.io/guide/api-usage/js-api.html).
 
@@ -128,3 +215,5 @@ Tests run without a model, external target or external scanner. They exercise th
 Interactive terminal appearance, a native Node runtime, provider calls, live automatic token-threshold compaction, pi-subagents and external tools remain untested. Themes derive from Pi 1.3.0's complete dark theme, retaining its success/error/warning semantics; light-terminal visual QA remains open. Dependency lifecycle scripts are not required for these checks and were left blocked by Bun.
 
 Optional AST tests use the actual pinned Pi loader, the installed native ast-grep engine, and temporary files. They cover structural capture matching, unchanged previews, Unicode/comment-preserving substitutions, mode-preserving apply, parser and missing-token failures, overlap, stale/session/branch rejection, workspace containment and response/source limits. Native AST execution was verified on this host; other engine platform binaries remain untested.
+
+The recorded suite result on this host (2026-10-21) is **250 pass, 4 skip, 0 fail** across 19 files, with a clean `tsc --noEmit`. The loopback engagement was exercised against the local fixture only; no external target, no real browser and no provider call were involved. The verbatim command output is recorded in [docs/BUILD-STATUS.md](docs/BUILD-STATUS.md).
