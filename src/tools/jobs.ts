@@ -2,7 +2,8 @@ import type { AgentToolResult, ExtensionAPI, ExtensionToolContext, ToolDefinitio
 import { Type, type Static } from "typebox";
 import { adapters } from "../adapters/index.ts";
 import { openEvidence, type JobRow } from "../evidence/db.ts";
-import { runJob, type JobResult, type RunJobOpts } from "../jobs/runner.ts";
+import { containsSecretLike } from "../evidence/secrets.ts";
+import { assertArgvSecretFree, runJob, type JobResult, type RunJobOpts } from "../jobs/runner.ts";
 
 /**
  * `cyber_jobs` — the model-facing surface of the typed job runner.
@@ -24,6 +25,19 @@ const MAX_ROWS = 50;
 const DEFAULT_RECENT = 10;
 const TRUNCATED = "[truncated]";
 const ARGV_DISPLAY_CHARS = 400;
+const WITHHELD = "<withheld: matched a secret-like pattern; redact before dispatch>";
+
+/** Secret-check a target-derived free-text return path (stderr, spawn errors). */
+function renderChecked(label: string, text: string): string {
+  return containsSecretLike(text) ? `${label}: ${WITHHELD}` : `${label}: ${text}`;
+}
+
+/** Same check applied to the structured details spread. */
+function sanitizeDetails(result: JobResult): { action: string } & JobResult {
+  const stderr = typeof result.stderr === "string" && containsSecretLike(result.stderr) ? WITHHELD : result.stderr;
+  const spawnError = typeof result.spawnError === "string" && containsSecretLike(result.spawnError) ? WITHHELD : result.spawnError;
+  return { action: "run", ...result, stderr, spawnError };
+}
 
 /** Clip a result to the 16 KiB output budget, never splitting a surrogate pair. */
 export function clipOutput(text: string): string {
@@ -105,8 +119,16 @@ function renderJobResult(result: JobResult): string {
     `parsed rows: ${result.parsedRows}${Object.keys(result.byKind).length ? ` (${Object.entries(result.byKind).map(([kind, count]) => `${kind}:${count}`).join(", ")})` : ""}`,
     `evidence refs: [${result.evidenceIds.join(", ")}]`,
   ];
-  if (result.spawnError) lines.push(`spawn error: ${clipArgv([result.spawnError])}`);
-  if (result.stderr) lines.push(`stderr (clipped, not persisted): ${result.stderr}`);
+  // Why evidence may be partial: the job keeps its terminal state, but the
+  // caller always learns the refusal from the returned annotation.
+  if (result.evidencePersistence !== "complete") {
+    lines.push(
+      `evidence persistence: ${result.evidencePersistence} · refused rows: ${result.refusedCount ?? 0} · reason: ${result.persistReason ?? "persist-error"}`,
+    );
+    if (result.persistError) lines.push(`persist error (verbatim): ${result.persistError}`);
+  }
+  if (result.spawnError) lines.push(renderChecked("spawn error", result.spawnError));
+  if (result.stderr) lines.push(renderChecked("stderr (clipped, not persisted)", result.stderr));
   if (result.stdoutTruncated) lines.push("stdout capture truncated at the byte cap; parsed rows above are complete for captured data.");
   if (result.stderrTruncated) lines.push("stderr capture truncated at the byte cap.");
   return lines.join("\n");
@@ -149,9 +171,14 @@ const jobsTool: ToolDefinition<typeof parameters> = {
       const opts: RunJobOpts = {};
       if (params.timeoutMs !== undefined) opts.timeoutMs = params.timeoutMs;
       const result = await runJob({ tool: params.tool, params: params.params }, opts);
+      // Global constraint: secret check on every return path that can carry
+      // secrets — the details spread below carries the FULL argv (the store
+      // only records and checks a 250-entry head), so it is refused here with
+      // the canonical message instead of leaking through details.
+      assertArgvSecretFree(result.argv);
       return {
         content: [{ type: "text", text: clipOutput(renderJobResult(result)) }],
-        details: { action: "run", ...result },
+        details: sanitizeDetails(result) as unknown as AgentToolResult["details"],
       };
     }
 

@@ -21,11 +21,22 @@
  *   into evidence rows, those rows are kept and the job state is
  *   `interrupted`; with no usable output the state is `outcome-unknown`.
  *   Both paths additionally append an annotated `job` event so the audit
- *   trail records why the terminal state is not `succeeded`/`failed`.
+ *   trail records why the terminal state is not `succeeded`/`failed`. The
+ *   same branch also covers exits without a code and POSIX signal-convention
+ *   exits (Bun maps signal-terminated children to 128+n, verified by probe).
+ *   The outcome annotation (and the success summary) is written GUARANTEED
+ *   after the guarded row persistence: a mid-flush evidence refusal leaves a
+ *   `summary` event carrying {persist, refusedCount, reason} counters and
+ *   the verbatim refusal goes to the caller via the JobResult — the ledger
+ *   always explains why evidence is incomplete.
  * - Event discipline: every `appendEvent("job", ...)` payload carries
  *   references and counters only (ids, bytes, exit codes, row counts) — NO
  *   raw output text. Captured stderr is returned to the caller clipped and
  *   never persisted.
+ * - Secret checks: the FULL argv (including entries beyond the recorded
+ *   250-entry head, which the store never secret-checks) refuses with the
+ *   canonical message before exec; the tool repeats the check on its details
+ *   return path and gates stderr/spawnError exposures the same way.
  * - Concurrency: `runJob` serializes through one in-process promise chain
  *   (matching the tool's `executionMode: "sequential"`); parallel execution
  *   is deliberately not offered.
@@ -40,6 +51,7 @@ import { Check, Errors } from "typebox/value";
 import { adapters, byName } from "../adapters/index.ts";
 import type { AdapterDef } from "../adapters/types.ts";
 import { openEvidence, type EvidenceStore, type JobState } from "../evidence/db.ts";
+import { containsSecretLike, SECRET_REFUSAL_MESSAGE } from "../evidence/secrets.ts";
 
 /** Per-run timeout: default 120 s; any override clamps at 600 s. */
 export const DEFAULT_TIMEOUT_MS = 120_000;
@@ -90,6 +102,16 @@ export interface JobResult {
   parsedRows: number;
   byKind: Record<string, number>;
   evidenceIds: number[];
+  /**
+   * Evidence persistence status: "complete" by default; "partial"/"error"
+   * when a Normalized row could not be persisted (e.g. secret refusal).
+   * The job keeps its terminal state either way — the annotation fields
+   * below tell the caller WHY evidence is incomplete.
+   */
+  evidencePersistence: "complete" | "partial" | "error";
+  refusedCount?: number;
+  persistReason?: "secret-refusal" | "persist-error";
+  persistError?: string;
   /** Clipped stderr excerpt; failure paths only, never persisted. */
   stderr?: string;
   /** Populated when the child could not be spawned at all (e.g. bin absent). */
@@ -229,6 +251,11 @@ async function executeJob(input: RunJobInput, opts: RunJobOpts): Promise<JobResu
   // 2) buildArgs — its guard errors (flag-prefix, missing required param) surface verbatim.
   const buildResult = adapter.buildArgs(input.params as Record<string, unknown>, { ...(opts.buildOpts ?? {}) });
   const argv = [adapter.bin, ...buildResult];
+  // Global constraint: secret-pattern check on every exec/return path that can
+  // carry secrets — the FULL argv (including entries beyond the recorded 250
+  // entry head) refuses with the canonical message BEFORE exec, so a tainted
+  // command never runs and never reaches tool details either.
+  assertArgvSecretFree(argv);
   const jobId = newJobId(adapter.name);
 
   // 3) Evidence DB. When injected, the caller owns it; the default store is closed here.
@@ -257,7 +284,7 @@ async function executeJob(input: RunJobInput, opts: RunJobOpts): Promise<JobResu
         jobId, adapter: adapter.name, argv, state: "failed", exitCode: null,
         timedOut: false, stdoutBytes: 0, stderrBytes: 0,
         stdoutTruncated: false, stderrTruncated: false,
-        parsedRows: 0, byKind: {}, evidenceIds: [], spawnError,
+        parsedRows: 0, byKind: {}, evidenceIds: [], evidencePersistence: "complete", spawnError,
       };
     }
 
@@ -288,64 +315,105 @@ async function executeJob(input: RunJobInput, opts: RunJobOpts): Promise<JobResu
     };
 
     // 5) Terminal state mapping.
-    if (timedOut) {
+    const code = typeof exitCode === "number" ? exitCode : null;
+    // Abrupt-completion detection: a timeout kill, a null/absent exit code
+    // (OOM-kill style), or a POSIX signal-convention exit code. Note: on this
+    // host Bun 1.4.3 maps a signal-terminated child to 128+n instead of null
+    // (verified by probe), so 128..191 routes into the same branch — that is
+    // the "never reached a clean completion" class, not a completed failure.
+    const signalNo = !timedOut && code !== null && code >= 128 && code <= 191 ? code - 128 : null;
+    const abrupt = timedOut || code === null || signalNo !== null;
+    const abruptReason = timedOut
+      ? "killed at timeout"
+      : code === null
+        ? "no-exit-code"
+        : signalNo !== null
+          ? `exit-on-signal-${signalNo}`
+          : undefined;
+
+    if (abrupt) {
+      // Never reached a clean completion (timeout kill / OOM-kill style exit /
+      // signal-convention exit). Parse what arrived: usable partial rows stay
+      // as annotated evidence while the state is `interrupted`; otherwise
+      // `outcome-unknown`. The annotated ledger record is guaranteed after
+      // the guarded persist, whatever happens to the rows.
       const parsed = safeParse(adapter, capsOut.text, capsErr.text);
       const state = parsed.rows.length > 0 ? "interrupted" : "outcome-unknown";
       store.updateJobState(jobId, state);
-      const evidenceIds = persistRows(store, jobId, adapter, parsed.rows);
-      // Annotated event: killed mid-run, never reached a clean completion.
-      store.appendEvent("job", {
-        jobId,
-        event: "outcome-unknown",
-        reason: "killed at timeout",
+      const persist = persistRowsGuarded(store, jobId, adapter, parsed.rows);
+      annotateOutcome(store, jobId, "outcome-unknown", {
+        reason: abruptReason,
         state,
-        partialEvidenceRows: evidenceIds.length,
+        partialEvidenceRows: persist.ids.length,
+        evidencePersistence: persist.evidencePersistence,
+        refusedCount: persist.refusedCount,
+        persistReason: persist.persistReason,
         stdoutTruncated: capsOut.truncated,
         stderrTruncated: capsErr.truncated,
       });
       return {
-        ...base, state, exitCode: typeof exitCode === "number" ? exitCode : null,
-        parsedRows: evidenceIds.length, byKind: countByKind(parsed.rows), evidenceIds,
+        ...base, state, exitCode: code,
+        parsedRows: persist.ids.length, byKind: countByKind(parsed.rows), evidenceIds: persist.ids,
+        evidencePersistence: persist.evidencePersistence,
+        ...(persist.persistReason ? { refusedCount: persist.refusedCount, persistReason: persist.persistReason } : {}),
+        ...(persist.error ? { persistError: persist.error.message } : {}),
         stderr: clipStderr(capsErr.text),
       };
     }
 
-    const code = typeof exitCode === "number" ? exitCode : null;
     if (code !== 0) {
-      // Non-zero exit (or an abrupt signal exit without a code): failed, no parse.
-      const abrupt = code === null;
+      // A real, completed non-zero exit: failed, no parse.
       store.updateJobState(jobId, "failed");
       store.appendEvent("job", {
         jobId, event: "failed", exitCode: code,
-        note: abrupt ? "abrupt-exit-without-code" : undefined,
         stdoutBytes: capsOut.bytes, stderrBytes: capsErr.bytes,
         stdoutTruncated: capsOut.truncated, stderrTruncated: capsErr.truncated,
       });
       return {
         ...base, state: "failed", exitCode: code,
-        parsedRows: 0, byKind: {}, evidenceIds: [],
+        parsedRows: 0, byKind: {}, evidenceIds: [], evidencePersistence: "complete",
         stderr: clipStderr(capsErr.text),
       };
     }
 
-    // Non-zero-free success: parse first, persist each Normalized row.
+    // Clean completion: parse, persist each Normalized row (guarded), annotate.
     const parsed = safeParse(adapter, capsOut.text, capsErr.text);
     store.updateJobState(jobId, "succeeded");
-    const evidenceIds = persistRows(store, jobId, adapter, parsed.rows);
+    const persist = persistRowsGuarded(store, jobId, adapter, parsed.rows);
     const byKind = countByKind(parsed.rows);
-    store.appendEvent("job", {
-      jobId,
-      event: "summary",
-      rows: evidenceIds.length,
-      byKind,
-      evidenceIds,
-      stdoutTruncated: capsOut.truncated,
-      stderrTruncated: capsErr.truncated,
-      parseError: parsed.error,
-    });
+    // The summary event payload is counters/ids/enums ONLY (never a free-text
+    // message), so the store's own payload checks cannot refuse it — the
+    // verbatim persist error goes to the caller via the JobResult instead.
+    try {
+      store.appendEvent("job", {
+        jobId,
+        event: "summary",
+        rows: persist.ids.length,
+        parsedRows: parsed.rows.length,
+        byKind,
+        evidenceIds: boundedEvidenceIds(persist.ids),
+        evidencePersistence: persist.evidencePersistence,
+        refusedCount: persist.refusedCount,
+        persistReason: persist.persistReason,
+        stdoutTruncated: capsOut.truncated,
+        stderrTruncated: capsErr.truncated,
+        parseFailed: Boolean(parsed.error),
+      });
+    } catch (cause) {
+      // Belt-and-braces: a refused summary must never erase the ledger record —
+      // fall back to a minimal counters-only annotated event, then reraise so
+      // the failure stays loud (never a silent gap after a succeeded state).
+      try {
+        annotateOutcome(store, jobId, "annotated", { note: "summary-event-failed", evidencePersistence: persist.evidencePersistence });
+      } catch { /* the running/succeeded records remain; nothing further can be written */ }
+      throw cause instanceof Error ? cause : new Error(String(cause));
+    }
     return {
       ...base, state: "succeeded", exitCode: code,
-      parsedRows: evidenceIds.length, byKind, evidenceIds,
+      parsedRows: persist.ids.length, byKind, evidenceIds: persist.ids,
+      evidencePersistence: persist.evidencePersistence,
+      ...(persist.persistReason ? { refusedCount: persist.refusedCount, persistReason: persist.persistReason } : {}),
+      ...(persist.error ? { persistError: persist.error.message } : {}),
     };
   } finally {
     if (ownsStore) store.close();
@@ -354,23 +422,94 @@ async function executeJob(input: RunJobInput, opts: RunJobOpts): Promise<JobResu
 
 /**
  * Persist each Normalized finding as an evidence row
- * ({kind: artifactKind, refs: [jobId, key], text: raw, sensitivity: "internal"}).
- * On the canonical secret refusal mid-way, what has been persisted stays and
- * the refusal error propagates verbatim (the job keeps its already-updated
- * terminal state; the caller sees exactly why the run was cut short).
+ * ({kind: artifactKind, refs: [jobId, key], text: raw, sensitivity: "internal"}),
+ * GUARDED: a refusal (e.g. a finding quoting a leaked key) or any persist
+ * failure keeps what was already persisted, classifies the reason, and lets
+ * the caller annotate the ledger — the job's terminal state/event is written
+ * BEFORE this runs and is never left unexplained.
  */
-function persistRows(store: EvidenceStore, jobId: string, adapter: AdapterDef, rows: ReturnType<AdapterDef["parse"]>): number[] {
+export interface PersistOutcome {
+  ids: number[];
+  evidencePersistence: "complete" | "partial" | "error";
+  /** Rows that exist in `rows` but did not make it into evidence. */
+  refusedCount: number;
+  persistReason?: "secret-refusal" | "persist-error";
+  error?: Error;
+}
+
+function persistRowsGuarded(store: EvidenceStore, jobId: string, adapter: AdapterDef, rows: ReturnType<AdapterDef["parse"]>): PersistOutcome {
   const ids: number[] = [];
+  let error: Error | undefined;
   for (const row of rows) {
-    const { id } = store.addEvidence({
-      kind: adapter.artifactKind,
-      refs: [jobId, row.key],
-      text: row.raw,
-      sensitivity: "internal",
-    });
-    ids.push(id);
+    try {
+      const { id } = store.addEvidence({
+        kind: adapter.artifactKind,
+        refs: [jobId, row.key],
+        text: row.raw,
+        sensitivity: "internal",
+      });
+      ids.push(id);
+    } catch (cause) {
+      // Stop on the first refusal (ordering matters); what is persisted stays.
+      error = cause instanceof Error ? cause : new Error(String(cause));
+      break;
+    }
   }
-  return ids;
+  const refusedCount = rows.length - ids.length;
+  const evidencePersistence = !error
+    ? "complete"
+    : ids.length > 0
+      ? "partial"
+      : "error";
+  const persistReason = !error ? undefined : error.message === SECRET_REFUSAL_MESSAGE ? "secret-refusal" : "persist-error";
+  return { ids, evidencePersistence, refusedCount, persistReason, error };
+}
+
+/**
+ * Append the outcome annotation as a typed `job` event, counters only. If the
+ * store refuses the primary annotation, a minimal fallback annotation is
+ * attempted so the ledger record after a terminal state is never skippable.
+ */
+function annotateOutcome(store: EvidenceStore, jobId: string, event: string, payload: Record<string, unknown>): void {
+  try {
+    store.appendEvent("job", { jobId, event, ...payload });
+  } catch {
+    try { store.appendEvent("job", { jobId, event: "annotated", note: `${event}-event-failed` }); } catch { /* untouched ledger above still holds the transition */ }
+  }
+}
+
+/** Budget for the evidenceIds list inside the summary event payload (the store refuses event payloads over 32 KiB). */
+const EVENT_IDS_BUDGET = 28_000;
+
+/**
+ * Cap the summary event's evidenceIds list: beyond the budget the list is
+ * truncated with an attached marker string instead of failing the whole
+ * summary event. The ids themselves are all still readable from the evidence
+ * table via their refs — the event list is a convenience, never the source of
+ * truth.
+ */
+export function boundedEvidenceIds(ids: readonly number[]): Array<number | string> {
+  if (JSON.stringify(ids).length <= EVENT_IDS_BUDGET) return [...ids];
+  let count = Math.floor(EVENT_IDS_BUDGET / 6);
+  while (count > 0) {
+    const marker = `<${ids.length - count} more evidence ids not listed>`;
+    if (JSON.stringify([...ids.slice(0, count), marker]).length <= EVENT_IDS_BUDGET) return [...ids.slice(0, count), marker];
+    count = Math.floor(count / 2);
+  }
+  return [`<all ${ids.length} evidence ids not listed>`];
+}
+
+/**
+ * Global constraint (secret check on every exec/return path that can carry
+ * secrets): refuse the FULL argv — including entries beyond the recorded
+ * 250-entry head, which the evidence store never secret-checks — with the
+ * canonical refusal message. Used pre-exec by the runner and defensively on
+ * the tool's details return path.
+ */
+export function assertArgvSecretFree(argv: readonly string[]): void {
+  for (const entry of argv) {
+    if (containsSecretLike(entry)) throw new Error(SECRET_REFUSAL_MESSAGE);
+  }
 }
 
 /**

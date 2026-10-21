@@ -293,7 +293,7 @@ function createStore(db: Database, path: string): EvidenceStore {
       const artifactPath = row.artifactPath === undefined || row.artifactPath === null ? null : checkedId(row.artifactPath, "Job artifact path", 1000);
       const startedAt = normalizeStartedAt(row.startedAt, state);
       const inserted = insertJob.get(jobId, adapter, JSON.stringify(argv), state, startedAt, artifactPath) as { id: unknown };
-      saveEvent("job", { jobId, state, event: "queued" });
+      saveEvent("job", { jobId, state, event: state }); // event label matches the actual insert state, never "queued" on a running insert
       return Number(inserted.id);
     },
     updateJobState(jobId, state): void {

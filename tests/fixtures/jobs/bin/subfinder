@@ -1,9 +1,18 @@
 #!/usr/bin/env bun
 // Fixture stub for Task-6 job-runner tests: prints the subfinder fixture
-// exactly once and exits 0. Never touches the network. Shell-free executable
-// (bun script marked +x), placed onto PATH via the test's env.
+// exactly once (plus a secret-tainted line when invoked with --taint, to
+// exercise the guarded mid-flush evidence-persistence refusal) and exits 0.
+// Never touches the network. Shell-free executable (bun script marked +x),
+// placed onto PATH via the test's env.
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
+const argv = process.argv.slice(2);
 const fixture = readFileSync(join(import.meta.dir, "..", "..", "adapters", "subfinder.jsonl"), "utf8");
-await Bun.write(Bun.stdout, fixture.endsWith("\n") ? fixture : `${fixture}\n`);
+let output = fixture.endsWith("\n") ? fixture : `${fixture}\n`;
+if (argv.includes("--taint")) {
+  // A Normalized finding whose raw text and key both look secret-like: the
+  // evidence store must refuse it and the runner must annotate the ledger.
+  output += `{"host":"api_key=leakysecretvalue","source":"fixture"}\n`;
+}
+await Bun.write(Bun.stdout, output);

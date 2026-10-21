@@ -24,7 +24,7 @@ import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import type { ExtensionToolContext } from "@earendil-works/pi-coding-agent";
-import { DEFAULT_TIMEOUT_MS, MAX_TIMEOUT_MS, UnknownAdapterError, runJob } from "../src/jobs/runner.ts";
+import { DEFAULT_TIMEOUT_MS, MAX_TIMEOUT_MS, UnknownAdapterError, assertArgvSecretFree, boundedEvidenceIds, runJob } from "../src/jobs/runner.ts";
 import { openEvidence } from "../src/evidence/db.ts";
 import { SECRET_REFUSAL_MESSAGE } from "../src/evidence/secrets.ts";
 import { registerCyberJobsTool, renderAdapters } from "../src/tools/jobs.ts";
@@ -154,7 +154,8 @@ describe("job runner happy path (file-backed events)", () => {
 
       const events = jobEvents(store.path);
       expect(events.every((event) => event.kind === "job")).toBe(true);
-      expect(events.map((event) => JSON.parse(event.payload_json).event)).toEqual(["queued", undefined, "summary"]);
+      // The addJob event label matches the actual insert state (running), never "queued".
+      expect(events.map((event) => JSON.parse(event.payload_json).event)).toEqual(["running", undefined, "summary"]);
       expect(JSON.parse(events[1].payload_json).state).toBe("succeeded");
       // No raw output in events: the result host never leaks into the audit trail.
       expect(events.every((event) => !event.payload_json.includes("api.example.com"))).toBe(true);
@@ -283,6 +284,125 @@ describe("serialization (no parallel execution)", () => {
       const quickStart = new Date(quickRow.startedAt ?? "").getTime();
       expect(quickStart).toBeGreaterThanOrEqual(slowEnd - 5); // no overlap beyond clock granularity
     } finally { store.close(); }
+  });
+});
+
+describe("fix round 1 — ledger guarantees and return-path secret checks", () => {
+  test("finding 1 (success path): a refused finding keeps state succeeded AND leaves a partial-persist ledger trace + caller annotation", async () => {
+    const store = openEvidence(join(tempDir(), "partial", "cyber.sqlite"));
+    try {
+      const result = await runJob(
+        { tool: "subfinder", params: { domain: "fixture.local", extra: ["--taint"] } },
+        { evidenceDb: store },
+      );
+      expect(result.state).toBe("succeeded"); // row state stays succeeded (annotated-success semantics)
+      expect(result.evidencePersistence).toBe("partial");
+      expect(result.refusedCount).toBe(1);
+      expect(result.persistReason).toBe("secret-refusal");
+      expect(result.persistError).toBe(SECRET_REFUSAL_MESSAGE); // verbatim, so the model can self-correct
+      expect(result.parsedRows).toBe(1); // only the untainted row was persisted
+      expect(result.evidenceIds.length).toBe(1);
+
+      expect(store.listJobs()[0].state).toBe("succeeded");
+      const events = jobEvents(store.path).map((event) => JSON.parse(event.payload_json));
+      const summary = events[events.length - 1];
+      expect(summary).toMatchObject({
+        event: "summary",
+        rows: 1,
+        evidencePersistence: "partial",
+        refusedCount: 1,
+        persistReason: "secret-refusal",
+      });
+      // The ledger never carries the raw secret, and not even the verbatim
+      // refusal text (which itself matches the secret heuristic); the refusal
+      // travels to the caller through the JobResult only.
+      for (const payload of events) {
+        expect(JSON.stringify(payload)).not.toContain("leakysecretvalue");
+        expect(JSON.stringify(payload)).not.toContain("api_key");
+      }
+    } finally { store.close(); }
+  });
+
+  test("finding 1 (killed path): the outcome-unknown annotation is not skippable even when a persist refusal hits", async () => {
+    const store = openEvidence(join(tempDir(), "partial-killed", "cyber.sqlite"));
+    try {
+      const result = await runJob(
+        { tool: "nuclei", params: { targets: ["fixture.local"], extra: ["--taint", "--linger"] } },
+        { evidenceDb: store, timeoutMs: 600 },
+      );
+      expect(result.timedOut).toBe(true);
+      expect(result.state).toBe("interrupted");
+      expect(result.evidencePersistence).toBe("partial");
+      expect(result.persistReason).toBe("secret-refusal");
+      expect(result.refusedCount).toBe(1);
+      const annotated = jobEvents(store.path)
+        .map((event) => JSON.parse(event.payload_json) as Record<string, unknown>)
+        .find((payload) => payload.event === "outcome-unknown");
+      expect(annotated).toMatchObject({
+        reason: "killed at timeout",
+        state: "interrupted",
+        evidencePersistence: "partial",
+        persistReason: "secret-refusal",
+        refusedCount: 1,
+      });
+      expect(store.listJobs()[0].state).toBe("interrupted");
+    } finally { store.close(); }
+  });
+
+  test("finding 2: an abrupt signal exit (Bun maps SIGKILL to 137) routes to the outcome-unknown branch with partial evidence kept", async () => {
+    const store = openEvidence(join(tempDir(), "signal", "cyber.sqlite"));
+    try {
+      const before = store.recordCount();
+      const result = await runJob(
+        { tool: "nuclei", params: { targets: ["fixture.local"], extra: ["--signal-self"] } },
+        { evidenceDb: store, timeoutMs: 15_000 },
+      );
+      expect(result.timedOut).toBe(false);
+      expect(result.exitCode).toBe(137); // 128 + 9 (SIGKILL), streamed then self-killed
+      expect(result.state).toBe("interrupted"); // NOT failed — never a clean completion
+      expect(result.parsedRows).toBeGreaterThanOrEqual(1); // usable partial output kept
+      expect(result.evidenceIds.length).toBe(result.parsedRows);
+      expect(store.recordCount()).toBe(before + result.parsedRows + 4); // 3 job events + 1 job row + evidence
+      const annotated = jobEvents(store.path)
+        .map((event) => JSON.parse(event.payload_json) as Record<string, unknown>)
+        .find((payload) => payload.event === "outcome-unknown");
+      expect(annotated).toMatchObject({ reason: "exit-on-signal-9", state: "interrupted" });
+    } finally { store.close(); }
+  });
+
+  test("finding 3: argv entries beyond the recorded head are secret-checked before exec (canonical refusal, nothing spawned or stored)", async () => {
+    const store = openEvidence(":memory:");
+    try {
+      // Schema cap is 256 targets: even so the argv reaches 514 elements while
+      // the store records/checks only a 250-entry head — the tainted entry at
+      // target index 255 lands at argv position 511, past the checked head.
+      const targets = Array.from({ length: 256 }, (_, index) =>
+        index === 255 ? "api_key=leakysecretvalue" : `fixture-${index}.local`);
+      await expect(runJob({ tool: "nuclei", params: { targets } }, { evidenceDb: store }))
+        .rejects.toThrow(SECRET_REFUSAL_MESSAGE);
+      expect(store.listJobs()).toEqual([]);
+      expect(store.recordCount()).toBe(0);
+    } finally { store.close(); }
+  });
+
+  test("finding 3 (details return path): the tool's argv secret gate refuses a tail-tainted argv with the canonical message", () => {
+    const tail = Array.from({ length: 300 }, (_, index) =>
+      index === 299 ? `ghp_${"a".repeat(36)}` : `fixture-${index}.local`);
+    expect(() => assertArgvSecretFree(["nuclei", "-u", ...tail]))
+      .toThrow(SECRET_REFUSAL_MESSAGE);
+    expect(() => assertArgvSecretFree(["nuclei", "-json", "-d", "fixture.example"])).not.toThrow();
+  });
+
+  test("finding 1 (event budget): summary evidenceIds lists truncate with a marker instead of failing the whole event", () => {
+    const small = [1, 2, 3];
+    expect(boundedEvidenceIds(small)).toEqual([1, 2, 3]);
+    const huge = Array.from({ length: 20_000 }, (_, index) => index + 1);
+    const bounded = boundedEvidenceIds(huge);
+    const text = JSON.stringify(bounded);
+    expect(text.length).toBeLessThanOrEqual(28_000);
+    const marker = bounded.at(-1);
+    expect(typeof marker).toBe("string");
+    expect(String(marker)).toContain("more evidence ids not listed");
   });
 });
 
