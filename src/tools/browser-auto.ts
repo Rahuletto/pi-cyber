@@ -532,12 +532,12 @@ export async function runBrowser(params: BrowserParams, signal: AbortSignal | un
         else resolve(line!);
       };
       const abort = () => {
-        child.kill();
-        finish(new Error("browser driver aborted"));
+ // left alive on purpose: the browser must survive an abort so the
+ // next call can reattach and see a tab solved by hand
+ finish(new Error("browser driver aborted; the browser is still open, so re-run with action snapshot to read the tab that was solved"));
       };
       const timer = setTimeout(() => {
-        child.kill();
-        finish(new Error("browser driver timed out"));
+ finish(new Error("browser driver timed out; the browser is still open, so re-run with action snapshot to read the current tab"));
       }, timeoutSec * 1_000 + EXEC_BUFFER_MS);
       signal?.addEventListener("abort", abort, { once: true });
       child.stdout!.setEncoding("utf8");

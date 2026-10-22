@@ -496,9 +496,19 @@ async function performAction(action, spec, page, context, recorder, consoleMsgs,
       const message = clampStr(error?.message ?? String(error), 160).replace(/\s+/g, " ");
       throw new DriverFailure(`goto failed at ${target}: ${message}`, await turnstileDiag(page, timeoutMs, false));
     }
-    const deadline = Date.now() + timeoutMs;
-    while (Date.now() < deadline) {
-      const snap = await harvestSnapshot(page);
+ const deadline = Date.now() + timeoutMs;
+ // Re-scan EVERY open tab each pass, not just the one this call opened:
+ // the operator closes a suspected tab and reopens a fresh one, and the
+ // token lands in that new tab.
+ while (Date.now() < deadline) {
+ const open = context.pages().filter((p) => { try { return !p.isClosed(); } catch { return false; } });
+ let snap = { token: "", globalLoaded: false, source: "" };
+ for (const candidate of open) {
+ const probe = await harvestSnapshot(candidate).catch(() => null);
+ if (!probe) continue;
+ if (probe.globalLoaded) snap.globalLoaded = true;
+ if (probe.token && probe.token.length > 20) { snap = probe; page = candidate; break; }
+ }
       everLoaded = everLoaded || snap.globalLoaded;
       if (snap.token && snap.token.length > 20) {
         let siteKey = null;
@@ -520,7 +530,7 @@ async function performAction(action, spec, page, context, recorder, consoleMsgs,
           ...(base ?? {}),
         };
       }
-      await sleep(750);
+      await sleep(5_000);
     }
     throw new DriverFailure(`no turnstile token resolved within ${timeoutMs}ms at ${target}`, await turnstileDiag(page, timeoutMs, everLoaded));
   }
