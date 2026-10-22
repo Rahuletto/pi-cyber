@@ -16,7 +16,8 @@ test("loadManifest reads the real catalog with required fields and no duplicates
   const manifest = await loadManifest();
   const names = manifest.tools.map((tool) => tool.name);
   expect(names).toContain("subfinder");
-  expect(names).toContain("obscura");
+  expect(names).toContain("cloakbrowser");
+  expect(names).toContain("jwt-hack");
   expect(names).toContain("nmap");
   expect(names).toContain("understand-anything");
   for (const tool of manifest.tools) {
@@ -124,7 +125,7 @@ test("toolStates reads installed/validated marks from the state file; validated 
   expect(states["subfinder"]).toBe("available"); // state file installed, binary on PATH → available
   expect(states["httpx"]).toBe("validated"); // state file pass mark wins even off PATH
   expect(states["gitleaks"]).toBe("validated");
-  expect(states["obscura"]).toBe("cataloged");
+  expect(states["nmap"]).toBe("cataloged");
 });
 
 test("toolStates throws on a malformed state file instead of silently ignoring it", async () => {

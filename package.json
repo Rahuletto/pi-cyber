@@ -39,5 +39,8 @@
     "pi-btw": "0.8.0",
     "pi-subagents": "0.79.2",
     "pi-web-access": "0.43.0"
+  },
+  "patchedDependencies": {
+    "pi-subagents@0.79.2": "patches/pi-subagents@0.79.2.patch"
   }
 }

@@ -2,7 +2,7 @@ import { afterAll, describe, expect, test } from "bun:test";
 import { chmodSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { parseNewJson, runMailgen } from "../src/tools/mailgen.ts";
+import { formatWaitResult, mailgenTool, parseBodyJson, parseNewJson, parseWaitOutput, runMailgen, type MailBody } from "../src/tools/mailgen.ts";
 
 /**
  * Modelless: the cowbird CLI is a fake executable placed on disk and pointed
@@ -12,7 +12,7 @@ import { parseNewJson, runMailgen } from "../src/tools/mailgen.ts";
  * `state` blob stays out of the result and the evidence store.
  */
 
-const savedEnv = { CYBER_COWBIRD_BIN: process.env.CYBER_COWBIRD_BIN, CYBER_MAILGEN_FILE: process.env.CYBER_MAILGEN_FILE, CYBER_EVIDENCE_DIR: process.env.CYBER_EVIDENCE_DIR };
+const savedEnv = { CYBER_COWBIRD_BIN: process.env.CYBER_COWBIRD_BIN, CYBER_MAILGEN_FILE: process.env.CYBER_MAILGEN_FILE, CYBER_EVIDENCE_DIR: process.env.CYBER_EVIDENCE_DIR, CYBER_COWBIRD_PYTHON: process.env.CYBER_COWBIRD_PYTHON };
 
 let work = "";
 
@@ -52,6 +52,16 @@ function activate(canned: string, stdouts: (string | null)[] = [], exit = 0): vo
   fakeCowbird(canned, exit);
   void stdouts;
 }
+
+describe("mailgen doctrine in the tool text", () => {
+  test("tool description carries read-now and never hand-call; provider field bans hand-polling", () => {
+    const description = mailgenTool.description.toLowerCase();
+    expect(description).toContain("read-now");
+    expect(description).toContain("never hand-call");
+    const providerDescription = (mailgenTool.parameters as unknown as { properties: { provider: { description: string } } }).properties.provider.description;
+    expect(providerDescription.toLowerCase()).toContain("never hand-call");
+  });
+});
 
 describe("mailgen parseNewJson", () => {
   test("parses the new --json envelope, tolerating prefix noise", () => {
@@ -145,12 +155,236 @@ describe("mailgen runMailgen argv and state discipline", () => {
     const { text } = await runMailgen({ action: "wait", address: "probe@subhosttest.org", provider: "mail.tm" }, undefined);
     expect(text).toContain("error: provider mail.tm requires the --state value");
   });
+
+  test("a python traceback crashes into a one-line surfaced error, with no retry", async () => {
+    uniqueDir();
+    const runs = join(work, "runs.txt");
+    const bin = join(work, "cowbird-fake");
+    writeFileSync(bin, [
+      "#!/bin/sh",
+      `echo run >> ${JSON.stringify(runs)}`,
+      "echo 'Traceback (most recent call last):' >&2",
+      'echo \'  File "/site-packages/cowbird_cli/__init__.py", line 168, in run\' >&2',
+      'echo \'  File "/site-packages/cowbird_mailtm/__init__.py", line 117, in list\' >&2',
+      'echo \'payload = await self.http.json("GET", f"{self.api}/messages")\' >&2',
+      'echo \'json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)\' >&2',
+      "exit 1",
+    ].join("\n"));
+    chmodSync(bin, 0o755);
+    process.env.CYBER_MAILGEN_FILE = join(work, "registry.json");
+    process.env.CYBER_EVIDENCE_DIR = join(work, "evidence");
+    process.env.CYBER_COWBIRD_BIN = bin;
+    let failure: Error | undefined;
+    try {
+      await runMailgen({ action: "wait", address: "probe@subhosttest.org", provider: "duckmail", timeoutSec: 5 }, undefined);
+    } catch (error) {
+      failure = error as Error;
+    }
+    expect(failure).toBeInstanceOf(Error);
+    expect(failure?.message).toContain("JSONDecodeError");
+    expect(failure?.message).toContain("crashed");
+    expect(failure?.message).toContain("cowbird_cli/__init__.py:168");
+    expect(failure?.message).not.toContain("Traceback (most recent call last)");
+    expect(failure?.message.split("\n").length).toBe(1);
+    // Crash surfaces the error; no automatic retry of the failing subprocess.
+    expect(readFileSync(runs, "utf8").split("\n").filter(Boolean).length).toBe(1);
+  });
+});
+
+describe("mailgen wait normalization", () => {
+  test("sender/subject parsed from TSV and labeled shapes; links deduped", () => {
+    const tsv = parseWaitOutput('noreply@target.test\tVerify your signup\n\nConfirm: https://ok.test/faq https://go.test/verify?token=a');
+    expect(tsv.sender).toBe("noreply@target.test");
+    expect(tsv.subject).toBe("Verify your signup");
+    expect(tsv.links).toEqual(["https://go.test/verify?token=a", "https://ok.test/faq"]);
+
+    const labeled = parseWaitOutput("from: noreply@x.test\nsubject: Welcome\nno urls here");
+    expect(labeled.sender).toBe("noreply@x.test");
+    expect(labeled.subject).toBe("Welcome");
+  });
+
+  test("links are verification-first and capped at 8, with the overflow counted", () => {
+    const urls = Array.from({ length: 10 }, (_, i) => `https://t.test/p?i=${i}`);
+    urls.push("https://t.test/verify?token=z");
+    expect(urls.length).toBe(11);
+    const raw = "noreply@t.test\tSubject\n" + urls.join(" ");
+    const normalized = formatWaitResult(raw, { action: "wait", address: "a@b.test", provider: "mailtm" }, 0);
+    expect(normalized).toContain("links (8 of 11):");
+    const linkLines = normalized.split("\n").filter((line) => line.startsWith("  https://"));
+    expect(linkLines.length).toBe(8);
+    expect(linkLines[0]).toContain("/verify?token=z");
+  });
+
+  test("a body without URLs says so explicitly", () => {
+    expect(formatWaitResult("noreply@t.test\tYour verification code\nplain body", { action: "wait", address: "a@b.test", provider: "mailtm" }, 0)).toContain(
+      "no links found in body"
+    );
+  });
+
+  test("otp single-line output is labeled as a code", () => {
+    expect(formatWaitResult("  4 8 2 913 ", { action: "wait", address: "a@b.test", provider: "mailtm", otp: true }, 0)).toMatch(/^code: 4 8 2 913$/);
+  });
+
+  test("a timed-out wait become an explicit notice, not the raw timeout fragment", () => {
+    const notice = formatWaitResult("timeout: no message within 45s (mailbox empty)", { action: "wait", address: "a@b.test", provider: "mailtm", timeoutSec: 45 }, 2);
+    expect(notice).toContain("wait: no message within 45s");
+    expect(notice).toContain("disposable domains");
+    expect(notice).toContain("timeoutSec (e.g. 90s)");
+    expect(notice).not.toMatch(/timeout: no message/);
+  });
+});
+
+describe("mailgen wait via fake cowbird", () => {
+  test("exit 2 with a 53-byte stderr fragment surfaces an explicit no-message notice", async () => {
+    uniqueDir();
+    // A >=53-byte + newline stderr fragment, exactly the incident's raw wait payload shape.
+    const line = "timeout: no message within 45s (mailbox had no unread mails) ";
+    expect(line.length + 1).toBeGreaterThanOrEqual(53);
+    const bin = join(work, "cowbird-fake");
+    writeFileSync(bin, [
+      "#!/bin/sh",
+      `echo ${JSON.stringify(line)} >&2`,
+      "exit 2",
+    ].join("\n"));
+    chmodSync(bin, 0o755);
+    process.env.CYBER_MAILGEN_FILE = join(work, "registry.json");
+    process.env.CYBER_EVIDENCE_DIR = join(work, "evidence");
+    process.env.CYBER_COWBIRD_BIN = bin;
+    const { text } = await runMailgen({ action: "wait", address: "probe@subhosttest.org", provider: "mailtm", timeoutSec: 45 }, undefined);
+    expect(text).toContain("wait: no message within 45s");
+    expect(text).toContain("mainstream-domain provider");
+    expect(text).not.toContain("timeout: no message within 45s (mailbox)");
+  });
+
+  test("a found mail keeps sender, subject, and links in the result", async () => {
+    uniqueDir();
+    activate("noreply@speko.test\tVerify your SpekoAI email\n\nhttps://speko.test/verify?token=abc123");
+    const { text } = await runMailgen({ action: "wait", address: "probe@subhosttest.org", provider: "mailtm" }, undefined);
+    expect(text).toContain("sender: noreply@speko.test");
+    expect(text).toContain("subject: Verify your SpekoAI email");
+    expect(text).toContain("https://speko.test/verify?token=abc123");
+  });
+});
+
+describe("mailgen body fetch (full message body)", () => {
+  test("parseBodyJson accepts the snippet envelope and rejects junk", () => {
+    expect(parseBodyJson('{"messages":1,"sender":"noreply@t.test","subject":"Verify","text":"click token=abc","text_truncated":false,"links":["https://t.test/verify?token=abc"],"html_chars":900}')).toEqual({
+      messages: 1,
+      sender: "noreply@t.test",
+      subject: "Verify",
+      text: "click token=abc",
+      textTruncated: false,
+      links: ["https://t.test/verify?token=abc"],
+      htmlChars: 900,
+    });
+    expect(parseBodyJson('{"messages":0}')).toBeNull();
+    expect(parseBodyJson("no json")).toBeNull();
+    expect(parseBodyJson('{"messages":1,"text":7,"links":"nope"}')).toEqual({
+      messages: 1,
+      sender: "",
+      subject: "",
+      text: "",
+      textTruncated: false,
+      links: [],
+      htmlChars: 0,
+    });
+  });
+
+  test("formatWaitResult with a fetched body renders text + provider links and drops the raw block", () => {
+    const body: MailBody = {
+      messages: 2,
+      sender: "noreply@t.test",
+      subject: "Verify",
+      text: "Please confirm: https://go.test/verify?token=abc — or browse https://t.test/pricing.",
+      textTruncated: false,
+      links: ["https://t.test/verify?token=abc", "https://t.test/unsubscribe"],
+      htmlChars: 5400,
+    };
+    const out = formatWaitResult("noreply@t.test\tVerify", { action: "wait", address: "a@b.test", provider: "mailtm" }, 0, body);
+    expect(out).toContain("sender: noreply@t.test");
+    expect(out).toContain("body (text):");
+    expect(out).toContain("Please confirm");
+    expect(out).toContain("html: 5400 chars (not shown)");
+    // provider anchor list wins; bare text URLs merged in; verification first
+    expect(out).toContain("https://t.test/verify?token=abc");
+    expect(out).toContain("https://go.test/verify?token=abc");
+    expect(out).not.toContain("--- cowbird output ---");
+    // unsub link not duplicated by the bare-text merge
+    expect(out.match(/https:\/\/t\.test\/unsubscribe/g)?.length).toBe(1);
+  });
+
+  test("a body-fetch note surfaces honestly without failing the wait", () => {
+    const out = formatWaitResult("noreply@t.test\tVerify", { action: "wait", address: "a@b.test", provider: "mailtm" }, 0, null, "cowbird body fetch returned no content");
+    expect(out).toContain("body: unavailable (cowbird body fetch returned no content)");
+    expect(out).toContain("--- cowbird output ---");
+  });
+
+  test("integration: wait + body fetch through fake cowbird and fake python, state in argv only", async () => {
+    uniqueDir();
+    fakeCowbird('{"address":"probe@subhosttest.org","provider":"mailtm","address_ttl":"5m","state":"PROVIDER-STATE-199"}');
+    await runMailgen({ action: "new" }, undefined);
+    activate("noreply@speko.test\tVerify your SpekoAI email");
+    // Fake python: dumps argv to its own file, emits a canned body envelope.
+    const bodyBin = join(work, "python-fake");
+    const bodyDump = join(work, "python-argv.txt");
+    writeFileSync(join(work, "body.json"), JSON.stringify({
+      messages: 1,
+      sender: "noreply@speko.test",
+      subject: "Verify your SpekoAI email",
+      text: "Verify your email: https://speko.test/verify?token=cafe12 click within 24h.",
+      text_truncated: false,
+      links: ["https://speko.test/verify?token=cafe12"],
+      html_chars: 1234,
+    }));
+    writeFileSync(bodyBin, [
+      "#!/bin/sh",
+      `for arg in "$@"; do printf '%s\\n' "$arg" >> "${bodyDump}"; printf '%s\\n' "---ARG---" >> "${bodyDump}"; done`,
+      `cat ${JSON.stringify(join(work, "body.json"))}`,
+    ].join("\n"));
+    chmodSync(bodyBin, 0o755);
+    process.env.CYBER_COWBIRD_PYTHON = bodyBin;
+    const { text } = await runMailgen({ action: "wait", address: "probe@subhosttest.org", provider: "mailtm" }, undefined);
+    expect(text).toContain("sender: noreply@speko.test");
+    expect(text).toContain("body (text):");
+    expect(text).toContain("https://speko.test/verify?token=cafe12");
+    expect(text).toContain("html: 1234 chars (not shown)");
+    expect(text).not.toContain("PROVIDER-STATE-199");
+    // The state blob reached its argv slot, never stdout of either process.
+    const pySlots = readFileSync(bodyDump, "utf8").split("\n---ARG---\n").slice(0, -1);
+    expect(pySlots[0]).toBe("-c");
+    expect(pySlots[1]).toContain("import asyncio");
+    expect(pySlots.slice(2, 5)).toEqual(["mailtm", "probe@subhosttest.org", "PROVIDER-STATE-199"]);
+  });
+
+  test("integration: otp waits skip the body stage entirely", async () => {
+    uniqueDir();
+    fakeCowbird("4 8 2 913");
+    const bodyBin = join(work, "python-fake");
+    writeFileSync(bodyBin, "#!/bin/sh\necho '{\"messages\":99}' >&1\n");
+    chmodSync(bodyBin, 0o755);
+    process.env.CYBER_COWBIRD_PYTHON = bodyBin;
+    const { text } = await runMailgen({ action: "wait", address: "probe@subhosttest.org", provider: "mailtm", otp: true }, undefined);
+    expect(text).toMatch(/^code: 4 8 2 913$/);
+  });
+
+  test("integration: a failing body fetch degrades to a note, wait result intact", async () => {
+    uniqueDir();
+    fakeCowbird("noreply@t.test\tVerify");
+    const bodyBin = join(work, "python-fake");
+    writeFileSync(bodyBin, "#!/bin/sh\necho 'error: provider crashed' >&2\nexit 1\n");
+    chmodSync(bodyBin, 0o755);
+    process.env.CYBER_COWBIRD_PYTHON = bodyBin;
+    const { text } = await runMailgen({ action: "wait", address: "probe@subhosttest.org", provider: "mailtm" }, undefined);
+    expect(text).toContain("sender: noreply@t.test");
+    expect(text).toContain("body: unavailable (error: provider crashed)");
+  });
 });
 
 afterAll(() => {
   if (savedEnv.CYBER_COWBIRD_BIN === undefined) delete process.env.CYBER_COWBIRD_BIN;
   if (savedEnv.CYBER_MAILGEN_FILE === undefined) delete process.env.CYBER_MAILGEN_FILE;
   if (savedEnv.CYBER_EVIDENCE_DIR === undefined) delete process.env.CYBER_EVIDENCE_DIR;
+  if (savedEnv.CYBER_COWBIRD_PYTHON === undefined) delete process.env.CYBER_COWBIRD_PYTHON;
 });
 
 void existsSync;

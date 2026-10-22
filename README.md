@@ -141,7 +141,7 @@ The profile also loads:
 | `pi-btw` | Optional side conversations. It is not the specialist engine. |
 | `bigpowers` | Pinned as a package, but its extension is disabled. Six selected skills are copied into `config/cyber/skills`. |
 
-Feynman is not installed; only selected research workflow ideas informed the project. Obscura's binary is in the tool manifest, but `cyber_browser` only manages a lease and does not install or drive an Obscura browser session. Configure a compatible browser integration separately if you need browser control.
+Feynman is not installed; only selected research workflow ideas informed the project. Browser control runs through the typed `browser` tool on the CloakBrowser engine (`~/.pi/scanners/cloakbrowser`, installed by `tools/install-cloakbrowser.sh`), with head-offscreen harvest actions for Turnstile/Cloudflare challenges and persistent named profiles; there is no Obscura or Patchright lane anymore.
 
 The six project skills are `survey-context`, `research-first`, `plan-work`, `develop-tdd`, `verify-work`, and `audit-code`. They are available in the dedicated Pi profile. Some upstream workflow steps refer to project scripts or capsule files not included here; follow only steps supported by this repository.
 

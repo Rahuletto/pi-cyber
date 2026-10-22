@@ -734,7 +734,7 @@ PHASE 7 REPORT — exec summary, findings with severity and evidence, full
 USE ANYTHING ALREADY AVAILABLE, FREELY:
   - Use the registered adapters for recon, scanning, and enumeration:
     subfinder, dnsx, httpx, katana, naabu, nuclei, ffuf, uncover, vulnx,
-    interactsh, semgrep, plus cyber_jobs. They are faster, more complete, and
+    interactsh, semgrep, jwt-hack, plus cyber_jobs. They are faster, more complete, and
     machine-parseable. Never reimplement a scanner that already exists as an
     adapter.
   - Use bash for what the adapters do not cover: ad-hoc HTTP probes, database

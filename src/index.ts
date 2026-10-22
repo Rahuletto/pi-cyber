@@ -11,8 +11,8 @@ import { registerAdapterTools } from "./tools/adapter-tools.ts";
 import { registerBrowserTool } from "./tools/browser.ts";
 import { registerMailgenTool } from "./tools/mailgen.ts";
 import { registerBypassFetchTool } from "./tools/bypass-fetch.ts";
-import { registerChallengeTool } from "./tools/challenge.ts";
 import { registerCyberToolsTool } from "./tools/cyber-tools.ts";
+import { registerBrowserAutoTool } from "./tools/browser-auto.ts";
 import { registerKnowledgeTool } from "./tools/knowledge.ts";
 import { contextLine } from "./evidence/db.ts";
 import { isPersistedSession, writeExitCard } from "./exit-card.ts";
@@ -90,7 +90,7 @@ export default function cyber(pi: ExtensionAPI): void {
   registerBrowserTool(pi);
   registerMailgenTool(pi);
   registerBypassFetchTool(pi);
-  registerChallengeTool(pi);
+  registerBrowserAutoTool(pi);
   registerCyberToolsTool(pi);
   registerKnowledgeTool(pi);
   let visualReady = false;

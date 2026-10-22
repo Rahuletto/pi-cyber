@@ -1,0 +1,18 @@
+{
+  "success": true,
+  "token_type": "jwt",
+  "algorithm": "HS256",
+  "typ": "JWT",
+  "header": {
+    "typ": "JWT",
+    "alg": "HS256"
+  },
+  "payload": {
+    "sub": "1007",
+    "role": "user",
+    "name": "probe",
+    "exp": 9999999999,
+    "exp_time": "2286-11-20 17:46:39 UTC",
+    "exp_status": "VALID"
+  }
+}

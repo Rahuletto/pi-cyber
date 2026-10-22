@@ -31,7 +31,7 @@ test("doctor report emits { name, category, disposition, state } for every manif
   const rows = await report({ envPath: dir, statePath: resolve(dir, "state.json") }).then((r) => r.tools);
   expect(rows.find((row) => row.name === "subfinder")).toEqual({ name: "subfinder", category: "recon", disposition: "core", state: "available" });
   expect(rows.find((row) => row.name === "httpx")).toEqual({ name: "httpx", category: "web", disposition: "core", state: "validated" });
-  expect(rows.find((row) => row.name === "obscura")?.state).toBe("cataloged");
+  expect(rows.find((row) => row.name === "jwt-hack")?.state).toBe("cataloged");
   expect(rows.find((row) => row.name === "nmap")?.disposition).toBe("on-demand");
   await expect(stat(resolve(dir, "executed"))).rejects.toThrow(); // doctor never executes tools
 });

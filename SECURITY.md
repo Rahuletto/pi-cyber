@@ -118,7 +118,7 @@ Representative classes:
 
 - **Third-party binaries.** Vulnerabilities in the scanner tools installed by
   `tools/install.sh` (ProjectDiscovery tools, `ffuf`, `semgrep`, `trivy`,
-  `osv-scanner`, `gitleaks`, `syft`, `zaproxy`, `obscura`, `rea`, `ghidra`, …).
+  `osv-scanner`, `gitleaks`, `syft`, `zaproxy`, `cloakbrowser`, `jwt-hack`, `rea`, `ghidra`, …).
   Report these to their own maintainers; `tools/manifest.json` lists the
   upstream repository for each.
 - **Third-party packages.** Vulnerabilities in `bigpowers`, `pi-btw`,

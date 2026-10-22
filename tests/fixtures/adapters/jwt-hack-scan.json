@@ -1,0 +1,114 @@
+{
+  "success": true,
+  "token_type": "jwt",
+  "algorithm": "HS256",
+  "typ": "JWT",
+  "strict_decode_ok": true,
+  "strict_decode_error": null,
+  "results": [
+    {
+      "name": "None Algorithm",
+      "vulnerable": false,
+      "details": "Token does not use 'none' algorithm",
+      "severity": "INFO"
+    },
+    {
+      "name": "Algorithm Confusion",
+      "vulnerable": false,
+      "details": "Symmetric algorithm",
+      "severity": "INFO"
+    },
+    {
+      "name": "Kid Header",
+      "vulnerable": false,
+      "details": "No 'kid' header",
+      "severity": "INFO"
+    },
+    {
+      "name": "JKU/X5U Header",
+      "vulnerable": false,
+      "details": "No JKU/X5U headers",
+      "severity": "INFO"
+    },
+    {
+      "name": "Embedded JWK",
+      "vulnerable": false,
+      "details": "No embedded 'jwk' header",
+      "severity": "INFO"
+    },
+    {
+      "name": "crit Header",
+      "vulnerable": false,
+      "details": "No 'crit' header",
+      "severity": "INFO"
+    },
+    {
+      "name": "b64 Header (RFC 7797)",
+      "vulnerable": false,
+      "details": "No 'b64' header",
+      "severity": "INFO"
+    },
+    {
+      "name": "Signature Segment",
+      "vulnerable": false,
+      "details": "Signature segment present",
+      "severity": "INFO"
+    },
+    {
+      "name": "typ Confusion",
+      "vulnerable": false,
+      "details": "'typ' is JWT",
+      "severity": "INFO"
+    },
+    {
+      "name": "alg Edge Value",
+      "vulnerable": false,
+      "details": "'alg' is a plain string",
+      "severity": "INFO"
+    },
+    {
+      "name": "Psychic Signature",
+      "vulnerable": false,
+      "details": "Not applicable for HS256",
+      "severity": "INFO"
+    },
+    {
+      "name": "zip Header",
+      "vulnerable": false,
+      "details": "No 'zip' header",
+      "severity": "INFO"
+    },
+    {
+      "name": "Weak Secret",
+      "vulnerable": false,
+      "details": "No common secret found (tested 20 secrets)",
+      "severity": "INFO"
+    },
+    {
+      "name": "Token Expiration",
+      "vulnerable": true,
+      "details": "Missing 'nbf', 'iat'",
+      "severity": "MEDIUM"
+    },
+    {
+      "name": "Missing Claims",
+      "vulnerable": true,
+      "details": "Missing recommended claims: aud, iss, jti",
+      "severity": "LOW"
+    },
+    {
+      "name": "Sensitive Claims",
+      "vulnerable": false,
+      "details": "No obvious PII patterns in claims",
+      "severity": "INFO"
+    }
+  ],
+  "summary": {
+    "vulnerabilities": 2,
+    "critical": 0,
+    "high": 0,
+    "medium": 1,
+    "low": 1
+  },
+  "attack_payloads": []
+}

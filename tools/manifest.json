@@ -10,7 +10,6 @@
     { "name": "interactsh-client", "category": "recon", "repo": "projectdiscovery/interactsh", "version": "pin-at-install", "disposition": "core" },
     { "name": "naabu", "category": "discovery", "repo": "projectdiscovery/naabu", "version": "pin-at-install", "disposition": "core" },
     { "name": "ffuf", "category": "web", "repo": "ffuf/ffuf", "version": "pin-at-install", "disposition": "core" },
-    { "name": "obscura", "category": "browser", "repo": "h4ckf0r0day/obscura", "version": "pin-at-install", "disposition": "core" },
     { "name": "zap", "category": "browser", "repo": "zaproxy/zaproxy", "version": "pin-at-install", "disposition": "core" },
     { "name": "semgrep", "category": "defense", "repo": "semgrep/semgrep", "version": "pin-at-install", "disposition": "core" },
     { "name": "trivy", "category": "defense", "repo": "aquasecurity/trivy", "version": "pin-at-install", "disposition": "core" },
@@ -25,7 +24,8 @@
     { "name": "piebald-claude-code-system-prompts", "category": "misc", "repo": "Piebald-AI/claude-code-system-prompts", "version": "pin-at-install", "disposition": "reference", "note": "catalog-only design source for the prompt corpus (security review methodology, coordinator/worker instructions, security monitor); never installed, no code imported" },
     { "name": "awesome-claude-code", "category": "misc", "version": "pin-at-install", "disposition": "reference", "note": "catalog-only design source index for prompt/agent patterns; never installed, no code imported" },
     { "name": "curl-impersonate", "category": "web", "repo": "lexiforest/curl-impersonate", "version": "pin-at-install", "disposition": "on-demand", "note": "bypass_fetch engine; BUNDLE install via tools/install-curl-impersonate.sh (wrapper + engine tree must stay together), not the single-binary flow; pin SHA-256 2dfb4b5733e01ec88f9cc7363696c848d0a2b810584d4c0fac7719f82b985f8f for v2.3.0 arm64-macos" },
-    { "name": "patchright", "category": "browser", "repo": "Kaliiiiiiiiii-Vinyzu/patchright", "version": "pin-at-install", "disposition": "on-demand", "note": "challenge driver; operator-managed npm root via tools/install-patchright.sh (node >= 20 required, harness package.json stays Bun-only)" },
+    { "name": "cloakbrowser", "category": "browser", "repo": "CloakHQ/cloakbrowser", "version": "pin-at-install", "disposition": "core", "note": "ONE browser tool engine (real Chromium, C++ fingerprint patches; Turnstile/clearance resolve headed-offscreen; headless never starts the challenge — proven); install script pins cloakbrowser@0.6.3 + playwright-core@1.56.1; operator-managed npm root via tools/install-cloakbrowser.sh (wrapper MIT, Chromium binary under its own BINARY-LICENSE; free v145 macOS build keyless, newer builds via CLOAKBROWSER_LICENSE_KEY); harness package.json stays Bun-only" },
+    { "name": "jwt-hack", "category": "web", "repo": "hahwul/jwt-hack", "version": "pin-at-install", "disposition": "on-demand", "note": "JWT toolkit for the token lane: decode/verify/payload (alg confusion, jku/x5u/kid injection, claims tampering, signature malleability) + scan/brute cracker; MIT, Rust; single typed binary via `brew install jwt-hack` (homebrew core, arm64)" },
     { "name": "cowbird", "category": "web", "repo": "Pranjal-SB/cowbird", "version": "pin-at-install", "disposition": "on-demand", "note": "mailgen engine; Python/uv CLI installed by the operator, invoked over argv (AGPL-3.0 — never vendored into this MIT repo); runs with 'uv run --no-project cowbird' or CYBER_COWBIRD_BIN" }
   ]
 }

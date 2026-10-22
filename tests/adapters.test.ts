@@ -19,13 +19,13 @@ function fixtureDocument(name: string): string {
 const MALFORMED_DOCUMENT = "prosemessages from a progress bar"; // no parseable document at all
 
 describe("adapter registry", () => {
-  test("registers exactly the 11 planned adapters with unique names", () => {
+  test("registers exactly the 12 planned adapters with unique names", () => {
     const names = adapters.map((a) => a.name);
-    expect(names.length).toBe(11);
-    expect(new Set(names).size).toBe(11);
+    expect(names.length).toBe(12);
+    expect(new Set(names).size).toBe(12);
     expect(names).toEqual([
       "subfinder", "httpx", "dnsx", "katana", "ffuf", "naabu",
-      "nuclei", "uncover", "vulnx", "interactsh", "semgrep",
+      "nuclei", "uncover", "vulnx", "interactsh", "semgrep", "jwt-hack",
     ]);
   });
 
@@ -33,6 +33,7 @@ describe("adapter registry", () => {
     expect(byName("nuclei")?.bin).toBe("nuclei");
     expect(byName("interactsh")?.bin).toBe("interactsh-client"); // binary name differs
     expect(byName("ffuf")).toBeDefined();
+    expect(byName("jwt-hack")).toBeDefined();
     expect(byName("evil-tool")).toBeUndefined();
   });
 
@@ -50,6 +51,7 @@ describe("adapter registry", () => {
     for (const adapter of adapters) {
       if (adapter.name === "ffuf") expect(adapter.versionFlag).toBe("-V");
       else if (adapter.name === "semgrep") expect(adapter.versionFlag).toBe("--version");
+      else if (adapter.name === "jwt-hack") expect(adapter.versionFlag).toBe("-V"); // Rust clap: `-V, --version`
       else expect(adapter.versionFlag).toBe("-version"); // PD kit
     }
   });
@@ -314,6 +316,72 @@ describe("semgrep", () => {
       'field-param "paths" must not start with "-"',
     );
     expect(() => adapter.buildArgs({ ruleSet: "auto" }, {})).toThrow('semgrep: missing required param "paths"');
+  });
+});
+
+describe("jwt-hack", () => {
+  const adapter: AdapterDef = byName("jwt-hack")!;
+
+  test("parse keys decode by algorithm and carries the exp verdict", () => {
+    const findings = adapter.parse(fixtureDocument("jwt-hack-decode.json"), "");
+    expect(findings.length).toBe(1);
+    expect(findings[0].kind).toBe("jwt-hack-decode");
+    expect(findings[0].key).toBe("HS256");
+    expect(findings[0].meta?.expStatus).toBe("VALID");
+    expect(adapter.parse(MALFORMED_DOCUMENT, "")).toEqual([]);
+  });
+
+  test("parse turns scan findings into one row each (verdict flagged in the key)", () => {
+    const findings = adapter.parse(fixtureDocument("jwt-hack-scan.json"), "");
+    expect(findings.length).toBeGreaterThan(0);
+    const flagged = findings.filter((row) => row.key.includes("[VULNERABLE]"));
+    expect(flagged.length).toBe(2);
+    expect(findings.every((row) => row.kind === "jwt-hack-scan")).toBe(true);
+  });
+
+  test("parse emits one payload row per carrier token", () => {
+    const findings = adapter.parse(fixtureDocument("jwt-hack-payload.json"), "");
+    expect(findings.length).toBe(3);
+    expect(findings[0].kind).toBe("jwt-hack-payload");
+    expect(findings[0].raw).toMatch(/^eyJ/); // a real carrier token
+  });
+
+  test("parse carries the recovered secret as the crack finding", () => {
+    const findings = adapter.parse(fixtureDocument("jwt-hack-crack.json"), "");
+    expect(findings.length).toBe(1);
+    expect(findings[0].kind).toBe("jwt-hack-crack");
+    expect(findings[0].key).toBe("secret recovered");
+    expect(findings[0].raw).toContain("s3cret-w0rd");
+    expect(adapter.parse(MALFORMED_DOCUMENT, "")).toEqual([]);
+  });
+
+  test("parse drops a failed document instead of inventing rows", () => {
+    expect(adapter.parse('{"success": false, "error": "bad token"}', "")).toEqual([]);
+  });
+
+  test("buildArgs maps each mode to canonical argv (--json first, token as the positional)", () => {
+    const token = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.sig";
+    expect(adapter.buildArgs({ mode: "decode", token }, {})).toEqual([
+      "--json", "decode", token,
+    ]);
+    expect(adapter.buildArgs({ mode: "payload", token, target: ["none", "jku"], jwkAttack: "attacker.example.com" }, {})).toEqual([
+      "--json", "payload", "--target", "none,jku", "--jwk-attack", "attacker.example.com", token,
+    ]);
+    expect(adapter.buildArgs({ mode: "verify", token, secret: "op-secret", validateExp: true }, {})).toEqual([
+      "--json", "verify", token, "--secret", "op-secret", "--validate-exp",
+    ]);
+    expect(adapter.buildArgs({ mode: "crack", token, crackMode: "dict", wordlist: "/tmp/w.txt" }, {})).toEqual([
+      "--json", "crack", token, "-m", "dict", "-w", "/tmp/w.txt",
+    ]);
+    expect(adapter.buildArgs({ mode: "crack", token, crackMode: "brute", crackPreset: "az", crackMax: 3 }, {})).toEqual([
+      "--json", "crack", token, "-m", "brute", "--preset", "az", "--max", "3",
+    ]);
+  });
+
+  test("wordlist cannot smuggle flags and target entries stay bare words", () => {
+    expect(() => adapter.buildArgs({ mode: "crack", token: "x".repeat(16), wordlist: "-w /etc/passwd" }, {})).toThrow(/"wordlist" must not start with "-"/);
+    expect(() => adapter.buildArgs({ mode: "payload", token: "x".repeat(16), target: ["none", "--toggle"] }, {})).toThrow(/target entry rejected/);
+    expect(() => adapter.buildArgs({ mode: "verify", token: "x".repeat(16), secret: "-next-flag" }, {})).toThrow(/"secret" must not start with "-"/);
   });
 });
 

@@ -1,13 +1,4 @@
 {
-  "subfinder": {
-    "name": "subfinder",
-    "repo": "projectdiscovery/subfinder",
-    "tag": "v2.17.0",
-    "assetUrl": "https://github.com/projectdiscovery/subfinder/releases/download/v2.17.0/subfinder_2.17.0_macOS_arm64.zip",
-    "sha256": "012d6ff91ef932ac6d1a321fb5735cf1412168d163e6adbc6cbe5fc42fe03c3b",
-    "resolvedAt": "2026-10-21T10:26:00Z",
-    "binary_sha256": "ddef1d9d1eb6659987d3685b49fdf4a8680be4b4dbf14545d5c25a8aba436f92"
-  },
   "dnsx": {
     "name": "dnsx",
     "repo": "projectdiscovery/dnsx",
@@ -16,6 +7,24 @@
     "sha256": "6b1681e4168cf6175facea723e16fca4ca2f99c3f9f83dea8c2b79ed20a3f417",
     "resolvedAt": "2026-10-21T10:27:21Z",
     "binary_sha256": "b4144a903cca006ce888bbc6973af9dedded2231bfde953dc1f6d2bec422a3f0"
+  },
+  "ffuf": {
+    "name": "ffuf",
+    "repo": "ffuf/ffuf",
+    "tag": "v2.3.0",
+    "assetUrl": "https://github.com/ffuf/ffuf/releases/download/v2.3.0/ffuf_2.3.0_macOS_arm64.tar.gz",
+    "sha256": "891e6358f7c72c951ce6fcef82a3736e91b34034e95edbd305505c9d31cfff13",
+    "resolvedAt": "2026-10-21T10:37:59Z",
+    "binary_sha256": "e550d4c517867e584188cf1706de909302fb5ef017bf67caca26b426b45d79af"
+  },
+  "gitleaks": {
+    "name": "gitleaks",
+    "repo": "gitleaks/gitleaks",
+    "tag": "v8.30.1",
+    "assetUrl": "https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_darwin_arm64.tar.gz",
+    "sha256": "b40ab0ae55c505963e365f271a8d3846efbc170aa17f2607f13df610a9aeb6a5",
+    "resolvedAt": "2026-10-21T10:39:50Z",
+    "binary_sha256": "ba52fb1bfabbcde42f032afad3d6e0b19dff8ed105229a16e7caa338bbc0e84f"
   },
   "httpx": {
     "name": "httpx",
@@ -26,6 +35,15 @@
     "resolvedAt": "2026-10-21T10:28:43Z",
     "binary_sha256": "34c76faace5657d2deb7e9ae4060e6a15c95c0b8311fcfb268d68f37dab0f67e"
   },
+  "interactsh-client": {
+    "name": "interactsh-client",
+    "repo": "projectdiscovery/interactsh",
+    "tag": "v1.4.1",
+    "assetUrl": "https://github.com/projectdiscovery/interactsh/releases/download/v1.4.1/interactsh-client_1.4.1_macOS_arm64.zip",
+    "sha256": "e5087016fc7401e21d8fa32e87a2946b290bee5793c6ccb33dbe06d2f93bbd29",
+    "resolvedAt": "2026-10-21T10:37:20Z",
+    "binary_sha256": "32ad7f4ec46a086d4ba804581d1eb2f4965918bcbab79bba81ec2ee8bccaaae9"
+  },
   "katana": {
     "name": "katana",
     "repo": "projectdiscovery/katana",
@@ -35,6 +53,15 @@
     "resolvedAt": "2026-10-21T10:30:08Z",
     "binary_sha256": "380ee5fe18551a68d84f040ac0bd24f56817166df2a1c0d11216ede49b6337e7"
   },
+  "naabu": {
+    "name": "naabu",
+    "repo": "projectdiscovery/naabu",
+    "tag": "v2.6.1",
+    "assetUrl": "https://github.com/projectdiscovery/naabu/releases/download/v2.6.1/naabu_2.6.1_macOS_arm64.zip",
+    "sha256": "2f3a100210ddd42d8cf49ae30210c9823488b4687e2b7a869ab0ffc64b26cfba",
+    "resolvedAt": "2026-10-21T10:37:41Z",
+    "binary_sha256": "b76f173c3a3787513bfb3a95827e262b7e2a3fd6864e8a4346410acd1e889a3a"
+  },
   "nuclei": {
     "name": "nuclei",
     "repo": "projectdiscovery/nuclei",
@@ -43,6 +70,42 @@
     "sha256": "7d7e291addd1fc29a9bf8d089afe878a9799b20229cbea2fb1693fc40fd4c5f0",
     "resolvedAt": "2026-10-21T10:31:43Z",
     "binary_sha256": "f427ae885dcd60be25cf27c34a416ef18a803b29e153d5568057d7b6012a454d"
+  },
+  "osv-scanner": {
+    "name": "osv-scanner",
+    "repo": "google/osv-scanner",
+    "tag": "v2.7.0",
+    "assetUrl": "https://github.com/google/osv-scanner/releases/download/v2.7.0/osv-scanner_darwin_arm64",
+    "sha256": "d4926ef8da134332543be276dff157e4c170f99ad91fc48e89448a8816bdf70b",
+    "resolvedAt": "2026-10-21T10:39:31Z",
+    "binary_sha256": "d4926ef8da134332543be276dff157e4c170f99ad91fc48e89448a8816bdf70b"
+  },
+  "subfinder": {
+    "name": "subfinder",
+    "repo": "projectdiscovery/subfinder",
+    "tag": "v2.17.0",
+    "assetUrl": "https://github.com/projectdiscovery/subfinder/releases/download/v2.17.0/subfinder_2.17.0_macOS_arm64.zip",
+    "sha256": "012d6ff91ef932ac6d1a321fb5735cf1412168d163e6adbc6cbe5fc42fe03c3b",
+    "resolvedAt": "2026-10-21T10:26:00Z",
+    "binary_sha256": "ddef1d9d1eb6659987d3685b49fdf4a8680be4b4dbf14545d5c25a8aba436f92"
+  },
+  "syft": {
+    "name": "syft",
+    "repo": "anchore/syft",
+    "tag": "v1.55.0",
+    "assetUrl": "https://github.com/anchore/syft/releases/download/v1.55.0/syft_1.55.0_darwin_arm64.tar.gz",
+    "sha256": "1217c258bd5eb91ef3189cf22a82e02f9cac07e4ce934350f428e93aff674625",
+    "resolvedAt": "2026-10-21T10:40:20Z",
+    "binary_sha256": "55a63db797b2a060aa56c7a03991bb11084e01ed4e3863df12370d74e84b4821"
+  },
+  "trivy": {
+    "name": "trivy",
+    "repo": "aquasecurity/trivy",
+    "tag": "v0.76.0",
+    "assetUrl": "https://github.com/aquasecurity/trivy/releases/download/v0.76.0/trivy_0.76.0_macOS-ARM64.tar.gz",
+    "sha256": "e7ec0d21fe842553f59af99aba2efbcc822369fbaed27019c575408b6d135fce",
+    "resolvedAt": "2026-10-21T10:38:58Z",
+    "binary_sha256": "6b2f54b179c68f329370836a1e116aab7b7effa1bcfa3cd1e57fb28af550ecc2"
   },
   "uncover": {
     "name": "uncover",
@@ -62,76 +125,13 @@
     "resolvedAt": "2026-10-21T10:34:22Z",
     "binary_sha256": "882ecd845a42423a6852c25e6b331c0a828e7d6c97c56b14293efe4be1bf0b70"
   },
-  "interactsh-client": {
-    "name": "interactsh-client",
-    "repo": "projectdiscovery/interactsh",
-    "tag": "v1.4.1",
-    "assetUrl": "https://github.com/projectdiscovery/interactsh/releases/download/v1.4.1/interactsh-client_1.4.1_macOS_arm64.zip",
-    "sha256": "e5087016fc7401e21d8fa32e87a2946b290bee5793c6ccb33dbe06d2f93bbd29",
-    "resolvedAt": "2026-10-21T10:37:20Z",
-    "binary_sha256": "32ad7f4ec46a086d4ba804581d1eb2f4965918bcbab79bba81ec2ee8bccaaae9"
-  },
-  "naabu": {
-    "name": "naabu",
-    "repo": "projectdiscovery/naabu",
-    "tag": "v2.6.1",
-    "assetUrl": "https://github.com/projectdiscovery/naabu/releases/download/v2.6.1/naabu_2.6.1_macOS_arm64.zip",
-    "sha256": "2f3a100210ddd42d8cf49ae30210c9823488b4687e2b7a869ab0ffc64b26cfba",
-    "resolvedAt": "2026-10-21T10:37:41Z",
-    "binary_sha256": "b76f173c3a3787513bfb3a95827e262b7e2a3fd6864e8a4346410acd1e889a3a"
-  },
-  "ffuf": {
-    "name": "ffuf",
-    "repo": "ffuf/ffuf",
-    "tag": "v2.3.0",
-    "assetUrl": "https://github.com/ffuf/ffuf/releases/download/v2.3.0/ffuf_2.3.0_macOS_arm64.tar.gz",
-    "sha256": "891e6358f7c72c951ce6fcef82a3736e91b34034e95edbd305505c9d31cfff13",
-    "resolvedAt": "2026-10-21T10:37:59Z",
-    "binary_sha256": "e550d4c517867e584188cf1706de909302fb5ef017bf67caca26b426b45d79af"
-  },
-  "obscura": {
-    "name": "obscura",
-    "repo": "h4ckf0r0day/obscura",
-    "tag": "v0.2.5",
-    "assetUrl": "https://github.com/h4ckf0r0day/obscura/releases/download/v0.2.5/obscura-aarch64-macos-no-render-stealth.tar.gz",
-    "sha256": "bb08de161d0b8254cc7ff6c92cc4e16b15852e17b4901336934de16a079ad2f7",
-    "resolvedAt": "2026-10-21T10:38:26Z",
-    "binary_sha256": "fbcb4f5bc48b6b9b1dc1f9cecca65af32209d861331216b8b84f14759f54d39b"
-  },
-  "trivy": {
-    "name": "trivy",
-    "repo": "aquasecurity/trivy",
-    "tag": "v0.76.0",
-    "assetUrl": "https://github.com/aquasecurity/trivy/releases/download/v0.76.0/trivy_0.76.0_macOS-ARM64.tar.gz",
-    "sha256": "e7ec0d21fe842553f59af99aba2efbcc822369fbaed27019c575408b6d135fce",
-    "resolvedAt": "2026-10-21T10:38:58Z",
-    "binary_sha256": "6b2f54b179c68f329370836a1e116aab7b7effa1bcfa3cd1e57fb28af550ecc2"
-  },
-  "osv-scanner": {
-    "name": "osv-scanner",
-    "repo": "google/osv-scanner",
-    "tag": "v2.7.0",
-    "assetUrl": "https://github.com/google/osv-scanner/releases/download/v2.7.0/osv-scanner_darwin_arm64",
-    "sha256": "d4926ef8da134332543be276dff157e4c170f99ad91fc48e89448a8816bdf70b",
-    "resolvedAt": "2026-10-21T10:39:31Z",
-    "binary_sha256": "d4926ef8da134332543be276dff157e4c170f99ad91fc48e89448a8816bdf70b"
-  },
-  "gitleaks": {
-    "name": "gitleaks",
-    "repo": "gitleaks/gitleaks",
-    "tag": "v8.30.1",
-    "assetUrl": "https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_darwin_arm64.tar.gz",
-    "sha256": "b40ab0ae55c505963e365f271a8d3846efbc170aa17f2607f13df610a9aeb6a5",
-    "resolvedAt": "2026-10-21T10:39:50Z",
-    "binary_sha256": "ba52fb1bfabbcde42f032afad3d6e0b19dff8ed105229a16e7caa338bbc0e84f"
-  },
-  "syft": {
-    "name": "syft",
-    "repo": "anchore/syft",
-    "tag": "v1.55.0",
-    "assetUrl": "https://github.com/anchore/syft/releases/download/v1.55.0/syft_1.55.0_darwin_arm64.tar.gz",
-    "sha256": "1217c258bd5eb91ef3189cf22a82e02f9cac07e4ce934350f428e93aff674625",
-    "resolvedAt": "2026-10-21T10:40:20Z",
-    "binary_sha256": "55a63db797b2a060aa56c7a03991bb11084e01ed4e3863df12370d74e84b4821"
+  "jwt-hack": {
+    "name": "jwt-hack",
+    "repo": "hahwul/jwt-hack",
+    "tag": "v2.6.0",
+    "assetUrl": "https://github.com/hahwul/jwt-hack/releases/download/v2.6.0/jwt-hack-v2.6.0-macos-aarch64.tar.gz",
+    "sha256": "2ad4510716d56fba29496a1e2566fcd84118c1af996e6a5cd2bd84bfd2f7a397",
+    "resolvedAt": "2026-10-22T00:00:00Z",
+    "binary_sha256": "ff48b5a547bf6a5456c12972d2bf9d56824e0b8753679bb3a8f085048222fc14"
   }
 }

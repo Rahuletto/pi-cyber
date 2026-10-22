@@ -14,6 +14,7 @@ import { uncover } from "./uncover.ts";
 import { vulnx } from "./vulnx.ts";
 import { interactsh } from "./interactsh.ts";
 import { semgrep } from "./semgrep.ts";
+import { jwtHack } from "./jwt-hack.ts";
 import type { AdapterDef } from "./types.ts";
 
 export const adapters: AdapterDef[] = [
@@ -28,6 +29,7 @@ export const adapters: AdapterDef[] = [
   vulnx,
   interactsh,
   semgrep,
+  jwtHack,
 ];
 
 export function byName(name: string): AdapterDef | undefined {

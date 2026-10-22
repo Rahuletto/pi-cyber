@@ -143,7 +143,7 @@ export function buildCurlArgs(
     argv.push("--data-raw", params.body);
   }
 
-  argv.push("--method", params.method, params.url, "--write-out", "\t%{http_code}\t%{time_total}\t%{size_download}\t%{content_type}\t%{url_effective}\n");
+  argv.push("--request", params.method, params.url, "--write-out", "\t%{http_code}\t%{time_total}\t%{size_download}\t%{content_type}\t%{url_effective}\n");
   return { argv, warnings };
 }
 

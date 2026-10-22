@@ -71,7 +71,7 @@ describe("job runner essentials", () => {
       await expect(runJob({ tool: "evil-tool", params: {} }, { evidenceDb: store }))
         .rejects.toThrowError(UnknownAdapterError);
       await expect(runJob({ tool: "evil-tool", params: {} }, { evidenceDb: store }))
-        .rejects.toThrow("unknown job tool \"evil-tool\". Available adapters: subfinder, httpx, dnsx, katana, ffuf, naabu, nuclei, uncover, vulnx, interactsh, semgrep.");
+        .rejects.toThrow("unknown job tool \"evil-tool\". Available adapters: subfinder, httpx, dnsx, katana, ffuf, naabu, nuclei, uncover, vulnx, interactsh, semgrep, jwt-hack.");
       expect(store.listJobs()).toEqual([]); // nothing stored for bogus runs
     } finally { store.close(); }
   });

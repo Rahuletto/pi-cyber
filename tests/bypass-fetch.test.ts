@@ -113,7 +113,7 @@ describe("bypass_fetch execute", () => {
     // session named → cookie jar flags present; POST implies explicit method
     expect(slots).toContain("--cookie");
     expect(slots).toContain("--cookie-jar");
-    expect(slots).toContain("--method");
+    expect(slots).toContain("--request");
     expect(slots).toContain("POST");
     const text = result.content[0].type === "text" ? result.content[0].text : "";
     expect(text).toContain("status: 200");

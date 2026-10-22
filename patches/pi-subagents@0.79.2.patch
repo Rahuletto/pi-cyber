@@ -1,0 +1,26 @@
+diff --git a/src/shared/parent-wake.js b/src/shared/parent-wake.js
+index e7a3e7320b450a5c18aa66832296f1dc114df0e1..f5c778e8cf9e12886d19026c7b65a01f237860d7 100644
+--- a/src/shared/parent-wake.js
++++ b/src/shared/parent-wake.js
+@@ -37,7 +37,11 @@ export function createParentWake(pi, now = Date.now) {
+                 pi.sendMessage(message, { triggerTurn: false });
+                 return true;
+             }
+-            if (!ctx.isIdle()) {
++            // UNBOUND GUARD: control records travel through the event bus and can
++            // fire BEFORE the first session_start binds the wake (recovery/replay
++            // at extension load, or a shutdown that never rebinding). An unbound
++            // — or capability-less — wake reserves nothing: plain forward.
++            if (ctx?.isIdle?.() !== true) {
+                 pi.sendMessage(message, options);
+                 return false;
+             }
+@@ -49,7 +53,7 @@ export function createParentWake(pi, now = Date.now) {
+             }
+             return true;
+         },
+-        isPending: () => reservation().sentAt !== undefined && (reserved() || !ctx.isIdle()),
++        isPending: () => reservation().sentAt !== undefined && (reserved() || ctx?.isIdle?.() === false),
+         bindSession(context) {
+             ctx = context;
+             session = { manager: context.sessionManager, id: context.sessionManager.getSessionId() };

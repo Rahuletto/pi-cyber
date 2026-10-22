@@ -1,0 +1,13 @@
+{
+  "success": true,
+  "mode": "dict",
+  "token_type": "jwt",
+  "found": true,
+  "value_label": "secret",
+  "value": "s3cret-w0rd",
+  "target_field": null,
+  "field_location": null,
+  "elapsed_ms": 0,
+  "attempts": 3,
+  "rate": 6984.866123399302
+}

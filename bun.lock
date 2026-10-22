@@ -21,6 +21,9 @@
       },
     },
   },
+  "patchedDependencies": {
+    "pi-subagents@0.79.2": "patches/pi-subagents@0.79.2.patch",
+  },
   "packages": {
     "@acemir/cssom": ["@acemir/cssom@0.9.32", "", {}, "sha512-OijrAUu7rrJhSIoHNg6LMPS5e344nwUHA+1EFYYjrh64D+GmytUsfBQjci45TjT+rd5Spsp8B5xsZDT+TgyXXQ=="],
 
