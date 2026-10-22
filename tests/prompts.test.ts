@@ -32,7 +32,7 @@ const LINE_CAPS: Record<string, number> = { base: 40, offense: 25, remediation: 
 const CHAR_CAPS: Record<string, number> = { base: 12_000, offense: 16_000, remediation: 12_000 };
 
 /** Tools the overlays are allowed to name. Anything else is a phantom. */
-const REGISTERED_CYBER_TOOLS = ["cyber_state", "cyber_evidence", "cyber_jobs", "cyber_spec", "cyber_knowledge"];
+const REGISTERED_CYBER_TOOLS = ["cyber_state", "cyber_evidence", "cyber_jobs", "cyber_spec", "cyber_knowledge", "cyber_tools"];
 
 describe("prompt overlays", () => {
   test("each overlay stays inside its line cap", () => {
