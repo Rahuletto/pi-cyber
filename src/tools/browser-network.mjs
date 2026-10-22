@@ -90,4 +90,3 @@ export async function attachRecorder(context, page) {
   page.once("close", () => { void recorder.detach(); });
   return recorder;
 }
-
