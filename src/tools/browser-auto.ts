@@ -7,6 +7,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { containsSecretLike } from "../evidence/secrets.ts";
 import { openEvidence } from "../evidence/db.ts";
+import { storeArtifact, type ArtifactRef } from "../artifacts/store.ts";
 // cloak.ts is the shared engine plumbing: the cloak root resolver and the
 // named persistent-profile dirs for the one-and-only engine.
 import { browserProfileDir, resolveCloakDir, resolveNodeBin } from "./cloak.ts";
@@ -27,7 +28,7 @@ import { browserProfileDir, resolveCloakDir, resolveNodeBin } from "./cloak.ts";
  *
  * Actions:
  *   navigate   — open url, run ≤15 steps (click/fill/press/waitSel/
- *                setCookie/eval on MAIN-frame selectors), always a snapshot.
+ *                setCookie/eval on the selected frame), always a snapshot.
  *   eval       — console break-in on the current page.
  *   snapshot   — snapshot the current page without navigating.
  *   close      — close the driver's page (profile persists by design).
@@ -75,14 +76,17 @@ export function validateUrl(url: string): void {
   }
 }
 
-const STEPS = ["click", "fill", "press", "waitSel", "setCookie", "eval"] as const;
+const STEPS = ["click", "fill", "press", "waitSel", "setCookie", "eval", "hover", "check", "uncheck", "select", "waitURL", "waitLoad"] as const;
 /** Ops that resolve `sel` (server-validated so the model gets field-named errors). */
-const SEL_OPS = ["click", "fill", "waitSel"] as const;
+const SEL_OPS = ["click", "fill", "waitSel", "hover", "check", "uncheck", "select"] as const;
 
 export interface BrowserStep {
   op: string;
   sel?: string;
+  ref?: string;
   value?: string;
+  frame?: number;
+  state?: "attached" | "detached" | "visible" | "hidden";
 }
 
 export interface BrowserArgs {
@@ -99,37 +103,61 @@ export interface BrowserArgs {
   profile?: string;
   includeScreenshot?: boolean;
   fullPage?: boolean;
+  downloadIndex?: number;
+  dialogAction?: "accept" | "dismiss";
+  dialogPrompt?: string;
+  captureId?: string;
+  maxBytes?: number;
+  tab?: number;
+  tabId?: string;
+  tabUrl?: string;
+  frame?: number;
+  stopOnError?: boolean;
+  networkFilter?: string;
 }
 
 const browserStepSchema = Type.Object({
   op: Type.Union(STEPS.map((op) => Type.Literal(op)), {
     description: "click: click sel. fill: put value into sel. press: click sel (optional) then send keyboard key value (e.g. 'Enter'). waitSel: wait until sel is attached. setCookie: value = JSON {name,value[,domain,path]} — requires a navigated page first. eval: value = JS statements (≤8000 chars; use an explicit return).",
   }),
-  sel: Type.Optional(Type.String({ maxLength: 256, description: "Playwright selector; MAIN frame only." })),
+  sel: Type.Optional(Type.String({ maxLength: 256, description: "Strict Playwright selector, including role/text selectors. Resolved in the selected frame; ambiguous matches fail." })),
+  ref: Type.Optional(Type.String({ maxLength: 32, pattern: "^r[a-f0-9]{16}-[1-9][0-9]*$", description: "Snapshot-unique element reference returned by domSnapshot; bound to its page, frame, and current document." })),
   value: Type.Optional(Type.String({ maxLength: 8000, description: "Fill text, keyboard key, setCookie JSON, or eval JS (≤8000 chars)." })),
+  frame: Type.Optional(Type.Number({minimum: 0, maximum: 100, description: "Frame index from action frames; overrides the call frame."})),
+  state: Type.Optional(Type.Union(["attached", "detached", "visible", "hidden"].map((state) => Type.Literal(state)), {description: "waitSel condition; defaults visible."})),
 }, { additionalProperties: false });
 
 const HARVEST_ACTIONS = ["turnstile", "clearance"] as const;
 const FINGERPRINT_ACTION = "fingerprint";
-const ACTIONS = ["navigate", "eval", "snapshot", "close", "turnstile", "clearance", "fingerprint"] as const;
+const ACTIONS = ["navigate", "eval", "snapshot", "domSnapshot", "downloads", "download", "networkArtifact", "close", "turnstile", "clearance", "fingerprint", "tabs", "newTab", "switchTab", "frames", "act", "network", "reload", "back", "forward"] as const;
 
 const parameters = Type.Object({
   action: Type.Union(ACTIONS.map((action) => Type.Literal(action)), {
-    description: "navigate: open url, optionally run ≤15 interaction steps, ALWAYS return a snapshot (url/title/text/inputs + network/console, cookies on request). eval: console break-in on the current page: JS code, explicit return required, result clamped. snapshot: snapshot the CURRENT page without navigating (respects the include* flags). close: close the driver's page (the persistent profile itself is kept). Every result lists the open tabs (`index*=url`, star = the tab acted on); pass `tab` to pin one — a close-and-reopen that finally passes a challenge lands as the LAST tab, which is the default. turnstile: HARVEST a Cloudflare Turnstile token — runs HEAD-OFFSCREEN (invisible; headless never starts a challenge) inside the profile and returns the resolved token (single-use, ~300s: present via bypass_fetch from the same host immediately). clearance: HARVEST a cf_clearance cookie jar — runs the full managed challenge HEAD-OFFSCREEN and returns the origin jar + engine UA for a coherent same-host bypass_fetch handoff; the jar persists in the profile. fingerprint: the engine's own UA + JA3/JA4/HTTP-2 as any target sees it.",
+    description: "tabs: list stable tab IDs. newTab: open an optional url. switchTab: select tabId/tabUrl/tab. frames: list frame indices. act: run steps on the current page without navigation, stopping at the first failure by default. network: inspect recent requests (networkFilter narrows URLs). reload/back/forward: navigate history. frame scopes snapshot/eval/steps; a step frame overrides it. Turnstile follows same-origin replacement tabs by events, with a 10-second token fallback. navigate: open url, optionally run ≤15 interaction steps, ALWAYS return a snapshot (url/title/text/inputs + network/console, cookies on request). eval: console break-in on the current page: JS code, explicit return required, result clamped. snapshot: snapshot the CURRENT page without navigating (respects the include* flags). close: close the driver's page (the persistent profile itself is kept). Every result lists the open tabs (`index*=url`, star = the tab acted on); pass `tab` to pin one — a close-and-reopen that finally passes a challenge lands as the LAST tab, which is the default. turnstile: HARVEST a Cloudflare Turnstile token — runs HEAD-OFFSCREEN (invisible; headless never starts a challenge) inside the profile and returns the resolved token (single-use, ~300s: present via bypass_fetch from the same host immediately). clearance: HARVEST a cf_clearance cookie jar — runs the full managed challenge HEAD-OFFSCREEN and returns the origin jar + engine UA for a coherent same-host bypass_fetch handoff; the jar persists in the profile. fingerprint: the engine's own UA + JA3/JA4/HTTP-2 as any target sees it.",
   }),
   url: Type.Optional(Type.String({ maxLength: 2000, description: "Absolute http(s) URL (navigate, turnstile, clearance; optional default tls.peet.ws for fingerprint)." })),
-  steps: Type.Optional(Type.Array(browserStepSchema, { maxItems: 15, description: "navigate only, ≤15 sequential steps. Step failures are reported per-step and the sequence continues." })),
+  steps: Type.Optional(Type.Array(browserStepSchema, { maxItems: 15, description: "navigate/act/turnstile, ≤15 sequential steps. act stops on failure by default. click/fill/hover/check/uncheck/select auto-wait; waitSel uses state; waitURL uses a URL glob in value; waitLoad value is domcontentloaded/load/networkidle." })),
   code: Type.Optional(Type.String({ maxLength: 16_000, description: "eval only: JS statements executed as one function body; the result must be JSON-serializable and needs an explicit return." })),
-  includeNetwork: Type.Optional(Type.Boolean({ description: "Include the script-ish resource list (defaults true for navigate, false otherwise)." })),
+  includeNetwork: Type.Optional(Type.Boolean({ description: "Include the bounded request history (defaults true for navigate, false otherwise)." })),
   includeConsole: Type.Optional(Type.Boolean({ description: "Include the last 40 console/pageerror messages (defaults true for navigate, false otherwise)." })),
   includeCookies: Type.Optional(Type.Boolean({ description: "Include this page origin's cookies in the snapshot (never default). Values appear only via the short name=value lines and details." })),
   timeoutSec: Type.Optional(Type.Number({ minimum: 5, maximum: 180, default: 60, description: "Whole-action budget (default 60, max 180). Turnstile/clearance typically need 45-90." })),
   shutdown: Type.Optional(Type.Boolean({ description: "close only: close the context now and saves the profile for the next call." })),
   showUi: Type.Optional(Type.Boolean({ default: false, description: "open a real visible browser window and keep working in it (default: headless, invisible). Harvest actions (turnstile/clearance) force a REAL window anyway, offscreen at -32000,-32000, so nothing appears on the operator's screen." })),
-  tab: Type.Optional(Type.Number({ minimum: 0, maximum: 50, description: "0-based index of the open tab to act on (see the tabs list every result returns). Omit it and the LAST open tab is used — the freshly reopened one after a close-and-reopen." })),
+  tabId: Type.Optional(Type.String({maxLength: 32, description: "Stable ID from tabs (preferred over shifting indices)."})),
+  tabUrl: Type.Optional(Type.String({maxLength: 2000, description: "Exact URL of one open tab; ambiguous matches fail."})),
+  frame: Type.Optional(Type.Number({minimum: 0, maximum: 100, description: "Frame index from action frames for snapshot/eval/steps."})),
+  stopOnError: Type.Optional(Type.Boolean({description: "Stop step sequence on first failure (default true for act, false for navigate)."})),
+  networkFilter: Type.Optional(Type.String({maxLength: 256, description: "Only show requests whose URL includes this substring."})),
+  tab: Type.Optional(Type.Number({ minimum: 0, maximum: 50, description: "0-based index of the open tab to act on (indices shift when tabs close; prefer tabId) (see the tabs list every result returns). Omit it and the LAST open tab is used — the freshly reopened one after a close-and-reopen." })),
  profile: Type.Optional(Type.String({ maxLength: 32, description: "named persistent profile: cookies + localStorage survive across calls and close (default profile name: 'default'); per-target profiles keep sites isolated" })),
   includeScreenshot: Type.Optional(Type.Boolean({ description: "save a PNG of the page and return its file path (agent can open it with the read tool)" })),
   fullPage: Type.Optional(Type.Boolean({ description: "only with includeScreenshot: capture the full scroll height instead of the viewport (viewport fallback past Chromium's ~16384px page cap)" })),
+  downloadIndex: Type.Optional(Type.Number({minimum: 0, maximum: 19, description: "downloads action index to export as a bounded artifact reference (max 4 MiB)."})),
+  dialogAction: Type.Optional(Type.Union([Type.Literal("accept"), Type.Literal("dismiss")], {description: "How JavaScript dialogs triggered during this call are handled; defaults to dismiss."})),
+  dialogPrompt: Type.Optional(Type.String({maxLength: 500, description: "Prompt response used when dialogAction is accept."})),
+  captureId: Type.Optional(Type.String({pattern: "^n[a-f0-9]{32}$", maxLength: 33, description: "Opaque captureId from action network; bound to its originating page recorder."})),
+  maxBytes: Type.Optional(Type.Number({minimum: 1, maximum: 524288, description: "Maximum captured network response size (default 524288 bytes)."})),
 }, { additionalProperties: false });
 
 type BrowserParams = Static<typeof parameters>;
@@ -143,6 +171,14 @@ export function validateParams(params: BrowserParams): void {
   if (action === "navigate") {
     if (!params.url) throw new Error("url required for the navigate action.");
     validateUrl(params.url);
+  }
+  if (action === "newTab" && params.url) validateUrl(params.url);
+  if (action === "download" && params.downloadIndex === undefined) throw new Error("downloadIndex required for download; use downloads first");
+  if (action === "networkArtifact" && !params.captureId) throw new Error("captureId required for networkArtifact; use network first");
+  if (params.captureId !== undefined && !/^n[a-f0-9]{32}$/.test(params.captureId)) throw new Error("captureId must be an opaque ID returned by action network");
+  if (params.maxBytes !== undefined && (!Number.isInteger(params.maxBytes) || params.maxBytes < 1 || params.maxBytes > 524288)) throw new Error("maxBytes must be an integer from 1 to 524288");
+  if (params.downloadIndex !== undefined && (!Number.isInteger(params.downloadIndex) || params.downloadIndex < 0 || params.downloadIndex > 19)) throw new Error("downloadIndex must be an integer from 0 to 19");
+  if (["navigate", "act", "turnstile"].includes(action)) {
     if (params.steps !== undefined) {
       if (!Array.isArray(params.steps) || params.steps.length > 15) {
         throw new Error(`steps accepts at most 15 entries (got ${Array.isArray(params.steps) ? params.steps.length : "non-array"}).`);
@@ -152,14 +188,27 @@ export function validateParams(params: BrowserParams): void {
         if (!(STEPS as readonly string[]).includes(op)) {
           throw new Error(`steps[${index}].op must be one of: ${STEPS.join(", ")} (got ${JSON.stringify(op.slice(0, 24))}).`);
         }
-        if ((SEL_OPS as readonly string[]).includes(op) && !step.sel) {
+        if ((SEL_OPS as readonly string[]).includes(op) && !step.sel && !step.ref) {
           throw new Error(`steps[${index}].sel required for op ${op}.`);
         }
+        if (step.sel && step.ref) throw new Error(`steps[${index}] must use either sel or ref, not both`);
+        if (step.ref !== undefined && !/^r[a-f0-9]{16}-[1-9][0-9]*$/.test(step.ref)) throw new Error(`steps[${index}].ref must be an element ref from domSnapshot`);
         if (typeof step.value === "string" && step.value.length > 8000) {
           throw new Error(`steps[${index}].value exceeds the 8000-character step budget.`);
         }
       });
     }
+  }
+  if ([params.tab, params.tabId, params.tabUrl].filter((value) => value !== undefined).length > 1) throw new Error("use only one tab selector: tab, tabId, or tabUrl");
+  if (params.tab !== undefined && (!Number.isInteger(params.tab) || params.tab < 0)) throw new Error("tab must be a non-negative integer");
+  if (params.frame !== undefined && (!Number.isInteger(params.frame) || params.frame < 0)) throw new Error("frame must be a non-negative integer");
+  if (action === "act" && !params.steps?.length) throw new Error("steps required for act");
+  if (action === "switchTab" && params.tab === undefined && params.tabId === undefined && params.tabUrl === undefined) throw new Error("switchTab requires a tab selector");
+  for (const [index, step] of (params.steps ?? []).entries()) {
+    if (step.frame !== undefined && (!Number.isInteger(step.frame) || step.frame < 0)) throw new Error(`steps[${index}].frame must be a non-negative integer`);
+    if (step.state !== undefined && !["attached", "detached", "visible", "hidden"].includes(step.state)) throw new Error(`steps[${index}].state invalid`);
+    if (["waitURL", "select"].includes(step.op) && !step.value) throw new Error(`steps[${index}].value required`);
+    if (step.op === "waitLoad" && step.value && !["load", "domcontentloaded", "networkidle"].includes(step.value)) throw new Error(`steps[${index}].value invalid load state`);
   }
   if ((HARVEST_ACTIONS as readonly string[]).includes(action) && !params.url) {
     throw new Error(`url required for the ${action} action.`);
@@ -184,6 +233,8 @@ export function validateParams(params: BrowserParams): void {
   if (action === FINGERPRINT_ACTION && params.steps !== undefined) {
     throw new Error("steps do not apply to fingerprint.");
   }
+  if (params.steps !== undefined && !["navigate", "act", "turnstile"].includes(action)) throw new Error(`steps do not apply to ${action}.`);
+  if (params.tabId !== undefined && !/^t[1-9][0-9]*$/.test(params.tabId)) throw new Error("tabId must be a stable ID from action tabs");
   // Named profile: reuse cloak.ts's pattern validation verbatim; rethrow as
   // a typed error naming the field.
   if (params.profile !== undefined) {
@@ -213,6 +264,9 @@ export function screenshotDirPath(env: NodeJS.ProcessEnv = process.env): string 
 /* ---------------------------------------------------------------------- */
 
 export interface BrowserOutcome {
+  network?: unknown[];
+  dom?: unknown[];
+  artifacts?: ArtifactRef[];
   text: string;
   meta: Record<string, string | number | boolean | null>;
   /** Set when the driver reported ok:false WITH diag (surfaced as isError). */
@@ -280,7 +334,7 @@ function networkLines(entries: unknown, total: number): string[] {
     return `${method} ${status} ${type} ${size}b ${url}`;
   });
   if (typeof total === "number" && total > entries.length) {
-    return [`---NETWORK---`, ...lines, `(${total - (entries.length as number)} more tracked, script-ish shown)`];
+    return [`---NETWORK---`, ...lines, `(${total - (entries.length as number)} more tracked, recent requests shown)`];
   }
   return [`---NETWORK---`, ...lines];
 }
@@ -318,7 +372,7 @@ function tabLines(result: Record<string, unknown>): string[] {
  const tabs = Array.isArray(result.tabs) ? (result.tabs as Array<Record<string, unknown>>) : [];
  if (tabs.length === 0) return [];
  const active = Number(result.tab ?? -1);
- return ["tabs: " + tabs.map((t) => `${t.index}${Number(t.index) === active ? "*" : ""}=${String(t.url ?? "").slice(0, 120)}`).join(" | ")];
+ return ["tabs: " + tabs.map((t) => `${t.index}${t.id ? `(${t.id})` : ""}${Number(t.index) === active ? "*" : ""}=${String(t.url ?? "").slice(0, 120)}`).join(" | ")];
 }
 
 function renderResult(action: string, result: Record<string, unknown>): BrowserOutcome {
@@ -328,7 +382,12 @@ function renderResult(action: string, result: Record<string, unknown>): BrowserO
     const token = String(result.token ?? "");
     const meta = {
       action: "turnstile",
-      url: String(result.url ?? ""),
+      url: String(result.finalUrl ?? result.url ?? ""),
+      tabId: typeof result.tabId === "string" ? result.tabId : null,
+      tab: typeof result.tab === "number" ? result.tab : null,
+      screenshotPath: typeof result.screenshotPath === "string" ? result.screenshotPath : null,
+      ...(typeof result.screenshotBytes === "number" ? { screenshotBytes: result.screenshotBytes } : {}),
+      ...(typeof result.screenshotNote === "string" ? { screenshotNote: result.screenshotNote } : {}),
       tokenLength: token.length,
       source: String(result.source ?? ""),
       siteKey: result.siteKey == null ? null : String(result.siteKey),
@@ -337,12 +396,13 @@ function renderResult(action: string, result: Record<string, unknown>): BrowserO
     };
     const head = [
       `browser turnstile resolved (${token.length} chars)`,
-      `page: ${result.url ?? ""}`,
+      `page: ${result.finalUrl ?? result.url ?? ""}`,
       `source: ${result.source ?? "unknown"}`,
       `siteKey: ${result.siteKey ?? "null"}`,
       `engine ua: ${result.ua ?? "unknown"}`,
       "token: below — present it to the same target from the same egress via bypass_fetch immediately (single-use, ~300s)",
  ...tabLines(result),
+      ...(result.screenshotPath ? [`screenshot: ${String(result.screenshotPath)}${typeof result.screenshotBytes === "number" ? ` (${result.screenshotBytes} bytes)` : ""}${result.screenshotNote ? ` — ${String(result.screenshotNote)}` : ""}`] : []),
       "---",
     ].join("\n");
     return { text: `${head}\n${clip(token)}`, meta, cookies: [] };
@@ -396,6 +456,7 @@ function renderResult(action: string, result: Record<string, unknown>): BrowserO
   const title = String(result.title ?? "");
   const pageUrl = String(result.url ?? "");
   const head: string[] = [`browser ${action} ok`];
+  if (Array.isArray(result.frames)) head.push("frames: " + JSON.stringify(result.frames));
   if (pageUrl || title) head.push(`page: ${pageUrl}${title ? ` — ${title}` : ""}`);
  head.push(...tabLines(result));
   const inputs = Array.isArray(result.inputs) ? (result.inputs as Array<Record<string, unknown>>) : [];
@@ -424,9 +485,16 @@ function renderResult(action: string, result: Record<string, unknown>): BrowserO
 
   const parts: string[] = [clip(head.join("\n"))];
   if (typeof result.text === "string" && result.text) parts.push(clip(`---\n${result.text}`));
+  if (Array.isArray(result.downloads)) parts.push(`downloads: ${JSON.stringify(result.downloads)}`);
+  if (result.download && typeof result.download === "object") parts.push(`download exported: ${JSON.stringify(result.download)}`);
+  if (result.networkArtifact && typeof result.networkArtifact === "object") parts.push(`network response exported: ${JSON.stringify(result.networkArtifact)}`);
+  if (Array.isArray(result.dialogs) && result.dialogs.length) parts.push(`dialogs handled: ${JSON.stringify(result.dialogs)}`);
+  if (Array.isArray(result.artifacts)) parts.push(`artifacts: ${JSON.stringify(result.artifacts)}`);
   if (Array.isArray(result.xhrScripts)) {
     parts.push(...networkLines(result.xhrScripts, Number(result.networkTotal ?? 0)));
   }
+  const dom = Array.isArray(result.dom) ? result.dom : undefined;
+  if (dom) parts.push(clip(`---DOM (${Number(result.domCount ?? dom.length)} elements${result.domTruncated ? ", truncated" : ""})---\n${JSON.stringify(dom)}`));
   if (Array.isArray(result.console)) {
     parts.push(...consoleLines(result.console));
   } else if (Array.isArray(result.consoleDuringEval)) {
@@ -437,6 +505,7 @@ function renderResult(action: string, result: Record<string, unknown>): BrowserO
   const assembled = clip(parts.filter((part) => part !== "").join("\n"));
   const meta = {
     action,
+    tabId: typeof result.tabId === "string" ? result.tabId : null,
     url: pageUrl,
     title,
     inputCount: inputs.length,
@@ -452,7 +521,7 @@ function renderResult(action: string, result: Record<string, unknown>): BrowserO
         }
       : {}),
   };
-  return { text: assembled, meta, cookies };
+  return { text: assembled, meta, cookies, network: Array.isArray(result.xhrScripts) ? result.xhrScripts : undefined, dom };
 }
 
 /* ---------------------------------------------------------------------- */
@@ -482,7 +551,15 @@ export async function runBrowser(params: BrowserParams, signal: AbortSignal | un
     profileDir: profile.dir,
     showUi: params.showUi === true,
   };
- if (params.tab !== undefined) spec.tab = params.tab;
+  for (const key of ["tab", "tabId", "tabUrl", "frame", "stopOnError", "networkFilter", "downloadIndex", "dialogAction", "dialogPrompt", "captureId", "maxBytes"] as const) {
+    if (params[key] !== undefined) spec[key] = params[key];
+  }
+  if (action === "act" || action === "newTab") {
+    if (params.url) spec.url = params.url.trim();
+    spec.steps = params.steps ?? [];
+  }
+  spec.includeNetwork = params.includeNetwork ?? ["navigate", "act", "network"].includes(action);
+  spec.includeConsole = params.includeConsole ?? ["navigate", "act"].includes(action);
   if (action === "navigate") {
     spec.url = params.url!.trim();
     spec.steps = (params.steps ?? []).slice(0, 15);
@@ -497,7 +574,7 @@ export async function runBrowser(params: BrowserParams, signal: AbortSignal | un
     if (action === "turnstile" && params.steps?.length) spec.steps = params.steps.slice(0, 15);
   }
   if (action === "eval") spec.code = params.code!;
-  if (action === "snapshot") {
+  if (action === "snapshot" || action === "domSnapshot") {
     spec.includeNetwork = params.includeNetwork ?? false;
     spec.includeConsole = params.includeConsole ?? false;
   }
@@ -572,6 +649,21 @@ export async function runBrowser(params: BrowserParams, signal: AbortSignal | un
     throw new Error(`browser driver produced unparseable output: ${line.slice(0, 200)}`);
   }
   const result = parsed as Record<string, unknown>;
+  let artifacts: ArtifactRef[] = [];
+  if (["download", "networkArtifact"].includes(action) && result.ok === true && (result.download || result.networkArtifact) && typeof (result.download ?? result.networkArtifact) === "object") {
+    const key = action === "download" ? "download" : "networkArtifact";
+    const exported = (result[key] as Record<string, unknown>);
+    const encoded = String(exported.dataBase64 ?? "");
+    const byteLimit = action === "download" ? 4 * 1024 * 1024 : 512 * 1024;
+    if (encoded.length > Math.ceil(byteLimit / 3) * 4 || !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(encoded)) throw new Error("browser export exceeded its bounded encoding limit");
+    const bytes = Buffer.from(encoded, "base64");
+    if (bytes.byteLength > byteLimit) throw new Error(`browser export exceeded ${byteLimit} bytes`);
+    artifacts = [storeArtifact(bytes, {kind: action === "download" ? "browser-download" : "browser-network-response", contentType: String(exported.contentType ?? "application/octet-stream").slice(0, 160)})];
+    result[key] = action === "download"
+      ? {filename: String(exported.filename ?? "download").slice(0, 160), contentType: String(exported.contentType ?? "application/octet-stream").slice(0, 160), bytes: bytes.byteLength}
+      : {captureId: String(exported.captureId ?? ""), contentType: String(exported.contentType ?? "application/octet-stream").slice(0, 160), bytes: bytes.byteLength};
+    result.artifacts = artifacts;
+  }
 
   // Evidence: one row per call, metadata only, secret-gated. Harvest
   // summaries never include a token or cookie values.
@@ -611,7 +703,14 @@ export async function runBrowser(params: BrowserParams, signal: AbortSignal | un
     };
   }
 
-  return renderResult(action, result);
+  const outcome = renderResult(action, result);
+  if (artifacts.length) {
+    outcome.artifacts = artifacts;
+    const exported = (result[action === "download" ? "download" : "networkArtifact"] ?? {}) as Record<string, unknown>;
+    outcome.meta.artifactContentType = String(exported.contentType ?? "application/octet-stream");
+    if (action === "download") outcome.meta.downloadFilename = String(exported.filename ?? "download");
+  }
+  return outcome;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -623,11 +722,12 @@ const browserTool: ToolDefinition<typeof parameters> = {
   label: "browser",
   description:
     "The ONE browser tool — CloakBrowser engine (a real Chromium with C++-level fingerprint patches: WebGL present, browser-grade TLS/JA3/JA4), node subprocess with a NAMED PERSISTENT PROFILE: cookies + localStorage survive across calls and close, and a solved challenge's cf_clearance carries forward. " +
-    "Session actions: navigate (url + ≤15 click/fill/press/waitSel/setCookie/eval steps on main-frame selectors, always returns a url/title/text/inputs/network/console snapshot; includeCookies on request), eval (console break-in with explicit return), snapshot (current page), close (profile kept). " +
+    "Controls: tabs lists stable IDs, including popup pages; newTab opens a tab; switchTab selects tabId/tabUrl/tab; frames lists frame indices; domSnapshot returns bounded structured controls with document-bound refs; act can use sel or ref. network inspects captured requests; networkArtifact explicitly exports one response body (≤512 KiB) to an artifact ref. downloads lists recent downloads; download exports a selected item (≤4 MiB) to an artifact ref. JavaScript dialogs are accepted/dismissed during the triggering call (default dismiss). reload/back/forward navigate history. frame scopes eval/snapshot/steps. Locator steps auto-wait. " +
+    "Session actions: navigate (url + ≤15 click/fill/press/waitSel/setCookie/eval steps on the selected frame, always returns a url/title/text/inputs/network/console snapshot; includeCookies on request), eval (console break-in with explicit return), snapshot (current page), close (profile kept). " +
     "Harvest actions (run HEAD-OFFSCREEN — a real invisible window; headless never starts a Cloudflare challenge): turnstile resolves a Turnstile token end-to-end (single-use, ~300s — present via bypass_fetch same-host immediately), clearance runs a full managed-challenge interstitial and returns the origin cookie jar + engine UA for a coherent bypass_fetch handoff, fingerprint reports the engine's own UA/JA3/JA4/HTTP-2 as any target sees it. " +
     "Headless and invisible by default; showUi:true opens a real visible browser window the work continues in. includeScreenshot(+fullPage) returns a PNG path you can open with read. Use per-target profiles. Authorized engagements only.",
   promptSnippet:
-    "Use browser for ALL browser work on the CloakBrowser engine (named persistent profiles keep cookies/localStorage across calls and close): navigate/eval/snapshot/close for interactive sessions; browser turnstile <url> harvests a Turnstile token head-offscreen (single-use ~300s — present via bypass_fetch same-host IMMEDIATELY); browser clearance <url> runs a full Cloudflare challenge and hands back cf_clearance + UA — replay via bypass_fetch with the matching User-Agent header and same egress right away (the jar also persists in the profile); browser fingerprint reports the engine's UA/JA3/JA4/HTTP-2. showUi opens a visible window; includeScreenshot(+fullPage) returns a PNG path to open with read.",
+    "Use tabs and stable tabId to track pages; tabUrl selects an exact unique URL. Use frames then frame:N for iframes. domSnapshot provides bounded element refs; refresh after navigation. act runs auto-waiting steps on the current page; check/uncheck/select/hover/waitURL/waitLoad are available. network + networkFilter inspects request metadata; networkArtifact explicitly saves one bounded response body. downloads lists download refs and downloadIndex exports one as a shared artifact. Dialogs default to dismiss and can be explicitly accepted/dismissed on the triggering call. Turnstile follows replacement tabs by events, with a 10-second token fallback. Use browser for ALL browser work on the CloakBrowser engine (named persistent profiles keep cookies/localStorage across calls and close): navigate/eval/snapshot/close for interactive sessions; browser turnstile <url> harvests a Turnstile token head-offscreen (single-use ~300s — present via bypass_fetch same-host IMMEDIATELY); browser clearance <url> runs a full Cloudflare challenge and hands back cf_clearance + UA — replay via bypass_fetch with the matching User-Agent header and same egress right away (the jar also persists in the profile); browser fingerprint reports the engine's UA/JA3/JA4/HTTP-2. showUi opens a visible window; includeScreenshot(+fullPage) returns a PNG path to open with read.",
   parameters,
   executionMode: "sequential",
   annotations: { readOnlyHint: false, openWorldHint: true, idempotentHint: false },
@@ -639,7 +739,7 @@ const browserTool: ToolDefinition<typeof parameters> = {
     _ctx: ExtensionToolContext
   ): Promise<AgentToolResult> {
     validateParams(params);
-    const { text, meta, isError, diag, cookies } = await runBrowser(params, signal);
+    const { text, meta, isError, diag, cookies, network, dom, artifacts } = await runBrowser(params, signal);
 
     // close with shutdown:true: the profile dir IS the engine state and it
     // deliberately persists — only the driver's page/context is released.
@@ -651,6 +751,9 @@ const browserTool: ToolDefinition<typeof parameters> = {
 
     const details = {
       ...meta,
+      ...(network ? { network } : {}),
+      ...(dom ? { dom } : {}),
+      ...(artifacts ? { artifacts } : {}),
       ...(diag ? { diag } : {}),
       ...(cookies && cookies.length > 0 ? { cookies } : {}),
       ...(params.action === "close" && params.shutdown === true ? { shutdown: shutdownNote || "suppressed (call failed)" } : {}),

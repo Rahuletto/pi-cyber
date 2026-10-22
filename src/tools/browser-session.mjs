@@ -71,7 +71,23 @@ export function serve(profileDir, context, handle) {
   const closed = new Promise((resolve) => { resolveClosed = resolve; });
   return new Promise((resolve, reject) => {
     // Calls share one context; serialize them so actions cannot interleave.
+    const IDLE_MS = 3 * 60 * 1000;
+    let idle;
     let queue = Promise.resolve();
+    let stopping = false;
+    const shutdown = async () => {
+      if (stopping) return;
+      stopping = true;
+      clearTimeout(idle);
+      server.close();
+      try { rmSync(endpointPath(profileDir), { force: true }); } catch { /* already gone */ }
+      await context.close().catch(() => {});
+      resolveClosed();
+    };
+    const arm = () => {
+      clearTimeout(idle);
+      if (!stopping) idle = setTimeout(() => { void shutdown(); }, IDLE_MS);
+    };
     const server = createServer((socket) => {
       let buffer = "";
       let received = false;
@@ -83,7 +99,9 @@ export function serve(profileDir, context, handle) {
         const nl = buffer.indexOf("\n");
         if (nl < 0) return;
         received = true;
+        clearTimeout(idle);
         queue = queue.then(async () => {
+          clearTimeout(idle);
           let result;
           try {
             const spec = JSON.parse(buffer.slice(0, nl));
@@ -93,12 +111,8 @@ export function serve(profileDir, context, handle) {
             result = { ok: false, error: String(error?.message ?? error).slice(0, 300) };
           }
           socket.end(JSON.stringify(result) + "\n");
-          if (result?.shutdown) {
-            server.close();
-            try { rmSync(endpointPath(profileDir), { force: true }); } catch { /* already gone */ }
-            await context.close().catch(() => {});
-            resolveClosed();
-          }
+          if (result?.shutdown) await shutdown();
+          else arm();
         });
       });
     });
@@ -107,6 +121,7 @@ export function serve(profileDir, context, handle) {
       try {
         const port = server.address().port;
         writeFileSync(endpointPath(profileDir), JSON.stringify({ port, token }), { mode: 0o600 });
+        arm();
         resolve({ closed });
       } catch (error) { server.close(); reject(error); }
     });

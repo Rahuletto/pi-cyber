@@ -4,16 +4,16 @@ import { adapters } from "../adapters/index.ts";
 import { openEvidence, type JobRow } from "../evidence/db.ts";
 import { containsSecretLike } from "../evidence/secrets.ts";
 import { assertArgvSecretFree, runJob, type JobResult, type RunJobOpts } from "../jobs/runner.ts";
+import { cancelManagedJob, getManagedJob, readManagedJobResult, startManagedJob } from "../jobs/controller.ts";
 
 /**
  * `cyber_jobs` — the model-facing surface of the typed job runner.
  *
- * Actions: run (start a registry adapter with schema-validated params; the
- * runner validates BEFORE exec and surfaces adapter/builder/secret errors
- * verbatim), status (one job by id or the most recent N), list (adapters
- * with their shortened param summaries). Results are clipped at 16 KiB and
- * carry evidence references — never raw output dumps; metadata lives in the
- * evidence store.
+ * Actions: run (blocking) and start (nonblocking); status reports state and
+ * progress, cancel kills queued/running children, and result reads a bounded
+ * cursor from the normalized result artifact. Existing list/status behavior
+ * remains available. Runtime handles do not survive process restart; durable
+ * job state remains in the evidence store.
  *
  * Concurrency: the runner serializes jobs through a single in-process chain;
  * this tool additionally declares executionMode "sequential". Parallel
@@ -51,17 +51,27 @@ export function clipOutput(text: string): string {
 const parameters = Type.Object({
   action: Type.Union([
     Type.Literal("run"),
+    Type.Literal("start"),
+    Type.Literal("cancel"),
     Type.Literal("status"),
+    Type.Literal("result"),
     Type.Literal("list"),
-  ], { description: "Job interaction to perform: run, status, list." }),
+  ], { description: "Job interaction to perform: run, start, cancel, status, result, list." }),
   tool: Type.Optional(Type.String({ maxLength: 64, description: "Adapter registry name (run), e.g. subfinder or nuclei." })),
   params: Type.Optional(Type.Record(Type.String(), Type.Unknown(), { description: "Model params forwarded to the adapter schema (run). Validated before exec — errors name the offending field verbatim." })),
-  jobId: Type.Optional(Type.String({ maxLength: 200, description: "Job id (status). Omit for the most recent jobs." })),
+  jobId: Type.Optional(Type.String({ maxLength: 200, description: "Job id for cancel, status, or result. Omit for recent status." })),
   limit: Type.Optional(Type.Number({ minimum: 1, maximum: 50, default: DEFAULT_RECENT, description: "Recent jobs to return (status without jobId); default 10, hard cap 50." })),
   timeoutMs: Type.Optional(Type.Number({ minimum: 1, maximum: 600000, description: "Kill timeout for the run (≤ 600 s); default 120 s." })),
+  offset: Type.Optional(Type.Number({ minimum: 0, description: "Byte cursor for a bounded result artifact read." })),
+  readLimit: Type.Optional(Type.Number({ minimum: 1, maximum: 262144, description: "Result bytes to read (max 256 KiB)." })),
+  encoding: Type.Optional(Type.Union([Type.Literal("utf8"), Type.Literal("base64")], { description: "Result window encoding; base64 preserves binary bytes." })),
 }, { additionalProperties: false });
 
 type JobParams = Static<typeof parameters>;
+
+function asDetails(value: object): AgentToolResult["details"] {
+  return value as unknown as AgentToolResult["details"];
+}
 
 /** Shortened param summary derived from the adapter schema itself. */
 export function paramSummary(schema: unknown): string {
@@ -143,13 +153,14 @@ const jobsTool: ToolDefinition<typeof parameters> = {
   label: "Cyber jobs",
   description:
     "Run pinned security tools through typed adapters with durable job tracking. " +
-    "Actions: run (adapter + params; validated against the adapter schema before exec — " +
-    "validation and guard errors are returned verbatim so they can be corrected), " +
-    "status (one job by id or the most recent jobs), list (adapters and their param summaries). " +
-    "Jobs run serialized; results are evidence references, never raw output dumps.",
+    "Actions: run (blocking), start (nonblocking), cancel (kill queued/running), " +
+    "status (state/progress), result (bounded result cursor), and list (adapter param summaries). " +
+    "Adapter params are schema-validated before exec; validation and guard errors are returned verbatim. " +
+    "Jobs run serialized. Normalized results are private artifacts; raw output is never returned.",
   promptSnippet:
-    "Use cyber_jobs to launch subfinder/nuclei and the other registry adapters; " +
-    "evidence rows are written to the store and returned as references; a run's stderr is truncated and shown once.",
+    "Use cyber_jobs to launch subfinder/nuclei and the other registry adapters. Use start for nonblocking work, " +
+    "status for progress, cancel to kill the child, and result for bounded normalized-result reads. " +
+    "Runtime handles are process-local; durable job states and result artifacts are stored per engagement.",
   parameters,
   executionMode: "sequential",
   annotations: { readOnlyHint: false, openWorldHint: false },
@@ -165,11 +176,19 @@ const jobsTool: ToolDefinition<typeof parameters> = {
       return { content: [{ type: "text", text }], details: { action: "list", adapters: adapters.map((adapter) => adapter.name) } };
     }
 
-    if (params.action === "run") {
+    if (params.action === "run" || params.action === "start") {
       if (params.tool === undefined) throw new Error("tool required for the run action (see the list action for names).");
       if (params.params === undefined) throw new Error(`params required for the run action (tool ${params.tool}).`);
       const opts: RunJobOpts = {};
       if (params.timeoutMs !== undefined) opts.timeoutMs = params.timeoutMs;
+      if (params.action === "start") {
+        const job = startManagedJob({ tool: params.tool, params: params.params }, opts);
+        const snapshot = job.get();
+        return {
+          content: [{ type: "text", text: `job ${job.jobId} · ${params.tool} · state=queued · accepted for serialized execution` }],
+          details: asDetails({ action: "start", ...snapshot }),
+        };
+      }
       const result = await runJob({ tool: params.tool, params: params.params }, opts);
       // Global constraint: secret check on every return path that can carry
       // secrets — the details spread below carries the FULL argv (the store
@@ -182,9 +201,36 @@ const jobsTool: ToolDefinition<typeof parameters> = {
       };
     }
 
+    if (params.action === "cancel") {
+      if (!params.jobId) throw new Error("jobId required for the cancel action.");
+      const accepted = cancelManagedJob(params.jobId);
+      const snapshot = getManagedJob(params.jobId);
+      return {
+        content: [{ type: "text", text: `job ${params.jobId} · cancellation ${accepted ? "requested" : "already terminal"} · state=${snapshot.state}` }],
+        details: asDetails({ action: "cancel", accepted, ...snapshot }),
+      };
+    }
+
+    if (params.action === "result") {
+      if (!params.jobId) throw new Error("jobId required for the result action.");
+      const result = readManagedJobResult(params.jobId, {
+        ...(params.offset !== undefined ? { offset: params.offset } : {}),
+        ...(params.readLimit !== undefined ? { limit: params.readLimit } : {}),
+        ...(params.encoding !== undefined ? { encoding: params.encoding } : {}),
+      });
+      return {
+        content: [{ type: "text", text: result.data }],
+        details: asDetails({ action: "result", artifact: result.artifact, offset: result.offset, nextOffset: result.nextOffset }),
+      };
+    }
+
     const store = openEvidence();
     try {
       if (params.jobId !== undefined) {
+        try {
+          const runtime = getManagedJob(params.jobId);
+          return { content: [{ type: "text", text: `job ${runtime.jobId} · ${runtime.adapter} · state=${runtime.state} · phase=${runtime.phase} · stdout=${runtime.stdoutBytes} bytes · stderr=${runtime.stderrBytes} bytes${runtime.resultArtifact ? ` · result=${runtime.resultArtifact.id}` : ""}` }], details: asDetails({ action: "status", ...runtime }) };
+        } catch { /* fall back to the durable job ledger for completed/older runs */ }
         const row = store.listJobs({ limit: MAX_ROWS }).find((job) => job.jobId === params.jobId);
         if (!row) unknownJob(params.jobId);
         return { content: [{ type: "text", text: renderJobRow(row) }], details: { action: "status", ...row } };

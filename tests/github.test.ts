@@ -100,7 +100,7 @@ describe("github tool", () => {
     await writeFakeGh(dir);
     await rm(dump, { force: true });
     const repo = "own.er/re-po";
-    const path = "docs/a b\nc\nd.md";
+    const path = "docs/a b.md";
     process.env.PATH = dir;
     process.env.GH_ARGV_DUMP = dump;
     process.env.GH_CANNED_OUTPUT = "";
@@ -108,7 +108,7 @@ describe("github tool", () => {
     const argv = await readArgv(dump);
     expect(argv).toEqual([
       "api",
-      `repos/${repo}/contents/${path}`,
+      `repos/${repo}/contents/docs/a%20b.md`,
       "-H",
       "Accept: application/vnd.github.raw",
     ]);
@@ -142,14 +142,14 @@ describe("github tool", () => {
     process.env.PATH = dir;
     process.env.GH_ARGV_DUMP = dump;
     process.env.GH_CANNED_OUTPUT = canned;
-    const result = await invoke({ action: "issues", repo: "own er/repo", limit: 10 });
+    const result = await invoke({ action: "issues", repo: "owner/repo", limit: 10 });
     expect(result.content).toEqual([{ type: "text", text: canned }]);
     expect(await readArgv(dump)).toEqual([
-      "issue", "list", "--repo", "own er/repo", "--limit", "10", "--json", "number,title,state,url,labels",
+      "issue", "list", "--repo", "owner/repo", "--limit", "10", "--json", "number,title,state,url,labels",
     ]);
     expect(result.details).toEqual({
       action: "issues",
-      argv: [join(dir, "gh"), "issue", "list", "--repo", "own er/repo", "--limit", "10", "--json", "number,title,state,url,labels"],
+      argv: [join(dir, "gh"), "issue", "list", "--repo", "owner/repo", "--limit", "10", "--json", "number,title,state,url,labels"],
     });
   });
 
@@ -194,7 +194,8 @@ describe("github tool", () => {
     const result = await invoke({ action: "search", query: "upload traversal" });
     expect(result.content[0]).toEqual({ type: "text", text: '{"search":[]}' });
     expect(await readArgv(process.env.GH_ARGV_DUMP!)).toEqual([
-      "search", "issues", "upload traversal", "--limit", "10", "--json", "title,url,repository",
+      "api", "-X", "GET", "search/repositories", "-f", "q=upload traversal", "-F", "per_page=10", "-F", "page=1", "--jq",
+      "[.items[] | {fullName: .full_name, description: .description, url: .html_url, stargazersCount: .stargazers_count}]",
     ]);
     expect(existsSync(process.env.GH_ARGV_DUMP!)).toBe(true);
   });
@@ -202,6 +203,38 @@ describe("github tool", () => {
   test("fails with a clear error when gh is not available", async () => {
     process.env.PATH = await emptyDir();
     await expect(invoke({ action: "issues", repo: "owner/repo" })).rejects.toThrow("gh CLI not available");
+  });
+
+  test("uses explicit search kind and supports bounded result counts", async () => {
+    const dir = await tempDir();
+    const dump = join(dir, "argv.dump");
+    await writeFakeGh(dir);
+    process.env.PATH = dir;
+    process.env.GH_ARGV_DUMP = dump;
+    process.env.GH_CANNED_OUTPUT = "[]";
+    await invoke({ action: "search", searchKind: "code", query: "buffer overflow", limit: 23, page: 3 });
+    expect(await readArgv(dump)).toEqual(["api", "-X", "GET", "search/code", "-f", "q=buffer overflow", "-F", "per_page=23", "-F", "page=3", "--jq", "[.items[] | {path: .path, repository: .repository.full_name, sha: .sha, url: .html_url}]"]);
+    await writeFile(dump, "", "utf8");
+    await invoke({ action: "search", searchKind: "issues", query: "buffer overflow", page: 2 });
+    expect(await readArgv(dump)).toEqual(["api", "-X", "GET", "search/issues", "-f", "q=buffer overflow", "-F", "per_page=10", "-F", "page=2", "--jq", "[.items[] | select(.pull_request == null) | {title: .title, url: .html_url, repository: .repository.full_name}]"]);
+    await expect(invoke({ action: "search", searchKind: "issues", query: "x", limit: 51 })).rejects.toThrow(/limit/);
+    await expect(invoke({ action: "search", searchKind: "repos", query: "x", page: 21 })).rejects.toThrow(/page/);
+  });
+
+  test("read accepts a ref and diff requires a validated repo and PR number", async () => {
+    const dir = await tempDir();
+    const dump = join(dir, "argv.dump");
+    await writeFakeGh(dir);
+    process.env.PATH = dir;
+    process.env.GH_ARGV_DUMP = dump;
+    process.env.GH_CANNED_OUTPUT = "diff";
+    await invoke({ action: "read", repo: "owner/repo", path: "src/a.ts", ref: "feature/name" });
+    expect(await readArgv(dump)).toEqual(["api", "repos/owner/repo/contents/src/a.ts?ref=feature%2Fname", "-H", "Accept: application/vnd.github.raw"]);
+    await writeFile(dump, "", "utf8");
+    await invoke({ action: "diff", repo: "owner/repo", pullRequest: 42 });
+    expect(await readArgv(dump)).toEqual(["pr", "diff", "42", "--repo", "owner/repo"]);
+    await expect(invoke({ action: "diff", repo: "owner/../repo", pullRequest: 42 })).rejects.toThrow(/repo/);
+    await expect(invoke({ action: "diff", repo: "owner/repo" })).rejects.toThrow(/pullRequest/);
   });
 
   test("rejects malformed parameters before any process starts", async () => {

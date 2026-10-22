@@ -178,6 +178,18 @@ test("search finds the right document and marks the matched term", async () => {
     expect(skillHit!.ref).toBe(fixture.skillPath);
     expect(skillHit!.snippet).toContain("«validation»");
     expect(skillHit!.snippet.length).toBeLessThanOrEqual(MAX_SNIPPET_CHARS + 8);
+    expect(skillHit!.id).toMatch(/^[a-f0-9]{64}$/);
+    const fetched = store.fetch(skillHit!.id, { offset: 4, length: 12 });
+    expect(fetched).toMatchObject({ source: "skill", title: "fixture-skill", ref: fixture.skillPath, offset: 4, totalChars: expect.any(Number) });
+    expect(fetched!.text.length).toBeLessThanOrEqual(12);
+    expect(fetched!.indexedAt).toBeTruthy();
+    const lookupPlan = new Database(store.path, { readonly: true });
+    try {
+      const plan = lookupPlan.prepare("EXPLAIN QUERY PLAN SELECT source, ref, title, body, indexed_at, content_id FROM documents WHERE content_id = ?").all(skillHit!.id) as Array<{ detail: string }>;
+      expect(plan.some((row) => row.detail.includes("documents_content_id_idx"))).toBe(true);
+    } finally {
+      lookupPlan.close();
+    }
 
     const researchHit = store.search("corpus")[0];
     expect(researchHit.source).toBe("research");
@@ -265,6 +277,22 @@ test("rebuild is idempotent: a second run updates instead of duplicating", async
     expect(second.indexed).toBe(0);
     expect(second.updated).toBe(3);
     expect(store.stats().total).toBe(3);
+  } finally {
+    store.close();
+  }
+});
+
+test("knowledge IDs survive unchanged rebuilds and stale IDs never resolve to changed content", async () => {
+  const fixture = await makeFixture();
+  const store = openStore(fixture);
+  try {
+    store.rebuild();
+    const id = store.search("validation", { source: "skill" })[0].id;
+    store.rebuild();
+    expect(store.search("validation", { source: "skill" })[0].id).toBe(id);
+    await writeFile(fixture.skillPath, "# Changed document\n\nvalidation content changed\n", "utf8");
+    store.rebuild("skill");
+    expect(store.fetch(id)).toBeNull();
   } finally {
     store.close();
   }
@@ -377,10 +405,17 @@ test("cyber_knowledge tool registers and exposes search, stats and rebuild", asy
     expect(rebuild.content[0].text).toContain(fixture.taintedSkillPath);
     expect(rebuild.content[0].text).toContain("refused");
 
-    const search = await tool.execute("fixture", { action: "search", query: "validation" }, undefined, undefined, {});
+    const search = await tool.execute("fixture", { action: "search", query: "validation", source: "skill" }, undefined, undefined, {});
     expect(search.content[0].text).toContain("«validation»");
     expect(search.content[0].text).toContain("[skill] fixture-skill");
+    expect(search.content[0].text).toContain("id: ");
     expect((search.details as { hits: number }).hits).toBeGreaterThan(0);
+    const hitId = /id: ([a-f0-9]{64})/.exec(search.content[0].text)![1];
+    const fetched = await tool.execute("fixture", { action: "fetch", id: hitId, offset: 0, length: 64 }, undefined, undefined, {});
+    expect(fetched.content[0].text).toContain(`ref: ${fixture.skillPath}`);
+    expect(fetched.content[0].text).toContain("indexed:");
+    expect((fetched.details as { returnedChars: number }).returnedChars).toBeLessThanOrEqual(64);
+    await expect(tool.execute("fixture", { action: "fetch", id: "deadbeef" }, undefined, undefined, {})).rejects.toThrow(/invalid, stale, or withheld/);
 
     const stats = await tool.execute("fixture", { action: "stats" }, undefined, undefined, {});
     expect(stats.content[0].text).toContain("counts: skill=");

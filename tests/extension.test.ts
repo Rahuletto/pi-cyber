@@ -65,7 +65,8 @@ test("actual SDK loader exposes one offense state and durable cyber checkpoints"
   expect(state.scope).toEqual(["local fixture only"]);
   expect(state.modes.offense.nextSteps).toEqual(["prepare dossier"]);
   expect(Object.keys(state.modes)).toEqual(["offense"]);
-  expect(h.extension.tools.size).toBe(22);
+  expect(h.extension.tools.size).toBe(23);
+  expect(h.extension.tools.has("cyber_artifacts")).toBe(true);
 });
 
 test("cyber command rejects removed mode switching and keeps offense active", async () => {

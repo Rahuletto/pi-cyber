@@ -7,6 +7,7 @@ import { delimiter, join } from "node:path";
 import { homedir, tmpdir } from "node:os";
 import { openEvidence } from "../evidence/db.ts";
 import { containsSecretLike } from "../evidence/secrets.ts";
+import { queryCowbirdInbox } from "./mail-inbox.ts";
 
 /**
  * `mailgen` — disposable inboxes for signup/verification flows, backed by the
@@ -522,10 +523,19 @@ const parameters = Type.Object({
   action: Type.Union([
     Type.Literal("new"),
     Type.Literal("wait"),
+    Type.Literal("list"),
+    Type.Literal("read"),
     Type.Literal("providers"),
     Type.Literal("canary"),
   ], { description: "Inbox interaction: new (acquire address), wait (long-poll first mail / OTP — if the mail ALREADY arrived it returns immediately with the full body: it doubles as read-now), providers (health matrix), canary (live probe all providers)." }),
   address: Type.Optional(Type.String({ description: "Inbox address (wait only). Does NOT have to be one mailgen created: for stateless providers (e.g. emailnator) wait reads any address without prior state." })),
+  messageId: Type.Optional(Type.String({ maxLength: 512, description: "read: provider-issued message ID returned by list." })),
+  sender: Type.Optional(Type.String({ maxLength: 254, description: "list/read/wait: case-insensitive sender substring filter." })),
+  subject: Type.Optional(Type.String({ maxLength: 512, description: "list/read/wait: case-insensitive subject substring filter." })),
+  receivedAfter: Type.Optional(Type.String({ maxLength: 40, description: "list/wait: ISO timestamp; only newer messages match." })),
+  cursor: Type.Optional(Type.String({ maxLength: 2048, description: "list: opaque continuation cursor bound to this inbox." })),
+  afterMessageId: Type.Optional(Type.String({ maxLength: 512, description: "wait: match only messages received after this known message ID." })),
+  limit: Type.Optional(Type.Number({ minimum: 1, maximum: 50, default: 20, description: "list: maximum returned messages (default 20)." })),
   provider: Type.Optional(Type.String({ description: "Provider name. new: require it. wait: required — must be the provider that issued the address. Polling a provider's mailbox is ALWAYS done through wait; never hand-call the provider's own web API." })),
   otp: Type.Optional(Type.Boolean({ description: "wait: return the numeric/alphanumeric OTP code instead of sender+subject." })),
   includeBody: Type.Optional(Type.Boolean({ default: true, description: "wait: also fetch the full message body (text + all links + html size) after the mail arrives, by replaying the stored state through the cowbird python env." })),
@@ -536,7 +546,13 @@ type MailgenParams = Static<typeof parameters>;
 
 function requireFields(params: MailgenParams): void {
   if (params.action === "wait" && !params.address) throw new Error("address required for the wait action.");
+  if ((params.action === "list" || params.action === "read") && !params.address) throw new Error(`address required for the ${params.action} action.`);
   if (params.action === "wait" && !params.provider) throw new Error("provider required for the wait action.");
+  if ((params.action === "list" || params.action === "read") && !params.provider) throw new Error(`provider required for the ${params.action} action.`);
+  if (params.action === "read" && !params.messageId) throw new Error("messageId required for read.");
+  if (params.action === "read" && (params.sender || params.subject || params.receivedAfter || params.cursor)) throw new Error("read accepts only messageId, address, and provider.");
+  if (params.action === "wait" && params.cursor) throw new Error("cursor is for list pagination; use afterMessageId for a newer-message wait.");
+  if (params.action !== "wait" && params.afterMessageId) throw new Error("afterMessageId applies to wait only.");
 }
 
 function buildCowbirdArgs(params: MailgenParams): string[] {
@@ -559,10 +575,28 @@ function buildCowbirdArgs(params: MailgenParams): string[] {
     case "canary":
       if (params.address || params.provider) throw new Error("canary takes no extra arguments.");
       return ["canary", "--json"];
+    case "list":
+    case "read":
+      throw new Error(`${params.action} uses the cowbird Inbox API, not CLI arguments.`);
   }
 }
 
 export async function runMailgen(params: MailgenParams, signal: AbortSignal | undefined): Promise<{ text: string; argv: string[] }> {
+  if (params.action === "list" || params.action === "read" || (params.action === "wait" && (params.sender || params.subject || params.receivedAfter || params.afterMessageId))) {
+    const action = params.action === "wait" ? "wait" : params.action;
+    const raw = await queryCowbirdInbox({ action, address: params.address!, provider: params.provider!, messageId: params.messageId, sender: params.sender, subject: params.subject, receivedAfter: params.receivedAfter, cursor: params.cursor, afterMessageId: params.afterMessageId, limit: params.limit, timeoutSec: params.action === "wait" ? Math.min(params.timeoutSec ?? 120, 180) : 0 }, signal);
+    let text = raw;
+    if (params.action === "wait") {
+      const parsed = JSON.parse(raw) as { id?: unknown; messages?: unknown[]; text?: string };
+      const matched = typeof parsed.id === "string" || Boolean(parsed.messages?.length);
+      if (!matched) text = waitTimeoutNotice(params.timeoutSec ?? 120, params.timeoutSec ?? 120);
+      else if (params.otp) {
+        const code = parsed.text?.match(/\b\d{4,8}\b/)?.[0] ?? parsed.text?.match(/(?:code|otp|verification)[^\w]{0,16}([A-Z0-9]{4,10})/i)?.[1];
+        text = code ? `code: ${code}` : "matching message arrived, but no code was found in its text";
+      }
+    }
+    return { text: clip(text), argv: ["Inbox.messages/get", action] };
+  }
   const command = resolveCowbirdCommand();
   if (!command) throw new Error("cowbird CLI not available — install cowbird (uv tool) or set CYBER_COWBIRD_BIN");
   const argv = buildCowbirdArgs(params);
@@ -624,12 +658,12 @@ export const mailgenTool: ToolDefinition<typeof parameters> = {
   label: "mailgen",
   description:
     "Disposable inbox via the cowbird CLI for signup/verification flows. " +
-    "Actions: new (acquire an address), wait (long-poll the first mail; doubles as READ-NOW when mail already arrived; returns sender, subject, full body text, and all links; accepts ANY address for a stateless provider — including ones you generated elsewhere; optional otp for the code instead), providers (health matrix), canary (live probe all providers). " +
+    "Actions: new (acquire an address), list (bounded provider message IDs with filters/cursor), read (read-now by listed message ID), wait (long-poll; optional sender/subject/time filters prevent unrelated old mail from matching), providers (health matrix), canary (live probe all providers). Some providers do not support list/get and return an explicit capability error. " +
     "Never hand-call a cowbird provider's own API (e.g. emailnator.com/api/message-list via bypass_fetch) to poll a mailbox — wait does that in-band with the provider's exact headers, and a raw call just burns an out-of-scope override. " +
     "providers list marks deliverability; many targets block disposable domains (mail.tm-style) — prefer a mainstream-domain provider (gmail-alias) or a fresh alias when nothing arrives. " +
     "Use in authorized engagements only.",
   promptSnippet:
-    "Use mailgen for disposable signup emails: new gives a deliverable address, wait long-polls for the verification mail and returns its full body text plus every link (or --otp for just the code). " +
+    "Use mailgen for disposable signup emails: new gives an address; list/read expose provider message IDs when supported; wait can filter by sender, subject, and receivedAfter. " +
     "wait doubles as a read-now (it returns immediately with the full body for mail that already arrived) and accepts any address for a stateless provider — poll mailboxes only through wait, never hand-call a provider's own API. " +
     "providers list marks deliverability; many targets block disposable domains (mail.tm-style) — prefer a mainstream-domain provider (gmail-alias) or a fresh alias when nothing arrives.",
   parameters,

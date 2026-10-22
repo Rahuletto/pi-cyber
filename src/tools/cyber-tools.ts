@@ -35,19 +35,36 @@ function firstSentence(description: string | undefined): string {
   return sentence.length > 200 ? sentence.slice(0, 199) + "…" : sentence;
 }
 
-/** Registered Pi tools that carry the cyber_ prefix, sorted. */
-export function registeredCyberTools(tools: readonly { name: string; description?: string }[]): { name: string; description: string }[] {
+type RegisteredTool = { name: string; description?: string; parameters?: unknown };
+
+function schemaText(tool: RegisteredTool): string {
+  try { return JSON.stringify(tool.parameters ?? {}); } catch { return "{}"; }
+}
+
+/** Snapshot the live registry, with optional case-insensitive name/capability matching. */
+export function registeredCyberTools(
+  tools: readonly RegisteredTool[],
+  filters: { name?: string; capability?: string; limit?: number } = {},
+): { name: string; description: string }[] {
+  const name = filters.name?.trim().toLocaleLowerCase();
+  const capability = filters.capability?.trim().toLocaleLowerCase();
   return tools
-    .filter((tool) => tool.name.startsWith("cyber_"))
+    .filter((tool) => !name || tool.name.toLocaleLowerCase().includes(name))
+    .filter((tool) => !capability || `${tool.name} ${tool.description ?? ""} ${schemaText(tool)}`.toLocaleLowerCase().includes(capability))
     .map((tool) => ({ name: tool.name, description: firstSentence(tool.description) }))
-    .sort((a, b) => a.name.localeCompare(b.name));
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .slice(0, Math.max(1, Math.min(filters.limit ?? 50, 100)));
 }
 
 const parameters = Type.Object({
   action: Type.Union([
     Type.Literal("list"),
+    Type.Literal("describe"),
     Type.Literal("readiness"),
-  ], { description: "list: registered cyber_* tools in THIS session (live registry). readiness: manifest catalog × on-disk state — the typed replacement for 'bun run doctor'." }),
+  ], { description: "list: actual registered tools in this session, optionally filtered by name/capability. describe: inspect one registered tool's description and parameter schema. readiness: manifest catalog and on-disk state from the doctor." }),
+  name: Type.Optional(Type.String({ maxLength: 100, description: "Case-insensitive substring of tool name; describe requires an exact name." })),
+  capability: Type.Optional(Type.String({ maxLength: 100, description: "Case-insensitive substring matched across registered name, description, and parameter schema." })),
+  limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 100, description: "Maximum list rows (default 50)." })),
 }, { additionalProperties: false });
 
 type CyberToolsParams = Static<typeof parameters>;
@@ -57,7 +74,7 @@ const cyberToolsTool: ToolDefinition<typeof parameters> = {
   label: "cyber tools",
   description:
     "Introspect this harness's own tool surface (read-only, never the target). " +
-    "Actions: list (registered cyber_* tools in this session), readiness (manifest catalog with the on-disk state of every cataloged binary — cataloged/installed/available/validated — the typed replacement for 'bun run doctor').",
+    "Actions: list (all registered tools in this session, with optional name/capability filters), describe (one tool's live description and parameter schema), readiness (manifest catalog and on-disk state). Registration and PATH presence do not prove credentials, successful execution, or target behavior.",
   promptSnippet:
     "Use cyber_tools readiness instead of shelling out to bun run doctor whenever a binary's state is in doubt.",
   parameters,
@@ -71,12 +88,27 @@ const cyberToolsTool: ToolDefinition<typeof parameters> = {
     ctx: ExtensionToolContext
   ): Promise<AgentToolResult> {
     if (params.action === "list") {
-      const tools = registeredCyberTools(ctx.tools);
+      const tools = registeredCyberTools(ctx.tools, params);
       const text = [
-        `this session registers ${tools.length} cyber_* tools:`,
+        `this session registers ${tools.length} tools (registry snapshot; registration does not prove execution or credentials):`,
         ...tools.map((tool) => `- ${tool.name}: ${tool.description}`),
       ].join("\n");
+      if (containsSecretLike(text)) throw new Error("tool registry snapshot tripped the secret heuristic — refusing to render");
       return { content: [{ type: "text", text: clip(text) }], details: { action: "list", count: tools.length } };
+    }
+    if (params.action === "describe") {
+      if (!params.name) throw new Error("describe requires a tool name");
+      const tool = ctx.tools.find((entry) => entry.name === params.name);
+      if (!tool) throw new Error(`Tool ${params.name} is not registered in this session`);
+      const text = [
+        `tool: ${tool.name}`,
+        "status: registered in this session; credentials and successful execution are not inferred",
+        `description: ${tool.description || "(no description)"}`,
+        "parameter schema:",
+        JSON.stringify(tool.parameters, null, 2),
+      ].join("\n");
+      if (containsSecretLike(text)) throw new Error("tool description/schema tripped the secret heuristic — refusing to render");
+      return { content: [{ type: "text", text: clip(text) }], details: { action: "describe", name: tool.name } };
     }
     const doc = await report();
     const rows = doc.tools.map((row) => `${row.name.padEnd(18)} ${row.disposition.padEnd(10)} ${row.state}`);

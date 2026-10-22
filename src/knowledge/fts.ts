@@ -26,6 +26,7 @@
  */
 
 import { Database } from "bun:sqlite";
+import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { basename, dirname, join } from "node:path";
@@ -45,6 +46,8 @@ export const SKILL_BODY_CAP = 8 * 1024;
 export const DOC_BODY_CAP = 32 * 1024;
 /** Maximum characters of a search query accepted by the index. */
 export const MAX_QUERY_CHARS = 512;
+/** Maximum characters returned by one document fetch window. */
+export const MAX_FETCH_WINDOW_CHARS = 8 * 1024;
 /** Marker appended to a body that hit its cap (counted inside the cap). */
 const TRUNCATION_MARKER = "[truncated]";
 
@@ -56,6 +59,7 @@ CREATE TABLE IF NOT EXISTS documents (
   title TEXT NOT NULL,
   body TEXT NOT NULL,
   indexed_at TEXT NOT NULL,
+  content_id TEXT NOT NULL DEFAULT '',
   UNIQUE (source, ref)
 );
 CREATE VIRTUAL TABLE IF NOT EXISTS documents_fts USING fts5(
@@ -388,11 +392,28 @@ export interface IngestResult {
 }
 
 export interface KnowledgeHit {
+  /** Opaque content-bound identifier; survives unchanged rebuilds, expires when content changes. */
+  id: string;
   source: KnowledgeSource;
   title: string;
   ref: string;
   snippet: string;
   score: number;
+}
+
+export interface KnowledgeDocumentWindow {
+  id: string;
+  source: KnowledgeSource;
+  title: string;
+  ref: string;
+  indexedAt: string;
+  offset: number;
+  totalChars: number;
+  text: string;
+}
+
+function documentId(source: string, ref: string, title: string, body: string): string {
+  return createHash("sha256").update(source).update("\0").update(ref).update("\0").update(title).update("\0").update(body).digest("hex");
 }
 
 export interface SourceStat {
@@ -422,6 +443,7 @@ export interface KnowledgeStore {
   ingest(source: KnowledgeSource): IngestResult;
   rebuild(source?: KnowledgeSource): { results: IngestResult[]; indexed: number; updated: number; refused: number };
   search(query: string, opts?: { limit?: number; source?: KnowledgeSource }): KnowledgeHit[];
+  fetch(id: string, opts?: { offset?: number; length?: number }): KnowledgeDocumentWindow | null;
   stats(): KnowledgeStats;
   clear(): void;
   close(): void;
@@ -484,10 +506,10 @@ function isSource(value: string): value is KnowledgeSource {
 function createStore(db: Database, paths: KnowledgePaths): KnowledgeStore {
   const selectDoc = db.prepare("SELECT id FROM documents WHERE source = ? AND ref = ?");
   const insertDoc = db.prepare(
-    "INSERT INTO documents (source, ref, title, body, indexed_at) VALUES (?, ?, ?, ?, ?) RETURNING id",
+    "INSERT INTO documents (source, ref, title, body, indexed_at, content_id) VALUES (?, ?, ?, ?, ?, ?) RETURNING id",
   );
   const updateDoc = db.prepare(
-    "UPDATE documents SET title = ?, body = ?, indexed_at = ? WHERE id = ?",
+    "UPDATE documents SET title = ?, body = ?, indexed_at = ?, content_id = ? WHERE id = ?",
   );
   const deleteDoc = db.prepare("DELETE FROM documents WHERE id = ?");
   const selectDocsOfSource = db.prepare("SELECT id, ref FROM documents WHERE source = ?");
@@ -521,12 +543,13 @@ function createStore(db: Database, paths: KnowledgePaths): KnowledgeStore {
   };
 
   const writeDoc = db.transaction((source: KnowledgeSource, ref: string, title: string, body: string, at: string) => {
+    const contentId = documentId(source, ref, title, body);
     const existing = selectDoc.get(source, ref) as { id: number } | null;
     if (existing) {
-      updateDoc.run(title, body, at, existing.id);
+      updateDoc.run(title, body, at, contentId, existing.id);
       return { id: existing.id, updated: true };
     }
-    const inserted = insertDoc.get(source, ref, title, body, at) as { id: number };
+    const inserted = insertDoc.get(source, ref, title, body, at, contentId) as { id: number };
     return { id: Number(inserted.id), updated: false };
   });
 
@@ -624,10 +647,10 @@ function createStore(db: Database, paths: KnowledgePaths): KnowledgeStore {
       let rows: Array<Record<string, unknown>>;
       try {
         const sql = source
-          ? "SELECT d.source AS source, d.title AS title, d.ref AS ref, d.body AS body, bm25(documents_fts) AS score " +
+          ? "SELECT d.source AS source, d.title AS title, d.ref AS ref, d.body AS body, d.content_id AS content_id, bm25(documents_fts) AS score " +
             "FROM documents_fts JOIN documents d ON d.id = documents_fts.rowid " +
             "WHERE documents_fts MATCH ? AND d.source = ? ORDER BY score ASC LIMIT ?"
-          : "SELECT d.source AS source, d.title AS title, d.ref AS ref, d.body AS body, bm25(documents_fts) AS score " +
+          : "SELECT d.source AS source, d.title AS title, d.ref AS ref, d.body AS body, d.content_id AS content_id, bm25(documents_fts) AS score " +
             "FROM documents_fts JOIN documents d ON d.id = documents_fts.rowid " +
             "WHERE documents_fts MATCH ? ORDER BY score ASC LIMIT ?";
         rows = (source
@@ -640,9 +663,33 @@ function createStore(db: Database, paths: KnowledgePaths): KnowledgeStore {
         source: String(row.source) as KnowledgeSource,
         title: String(row.title),
         ref: String(row.ref),
+        id: String(row.content_id),
         snippet: buildSnippet(String(row.body ?? ""), terms),
         score: Number(row.score ?? 0),
       }));
+    },
+    fetch(id: string, opts?: { offset?: number; length?: number }): KnowledgeDocumentWindow | null {
+      if (!/^[a-f0-9]{64}$/.test(id)) return null;
+      const offset = Math.max(0, Math.floor(opts?.offset ?? 0));
+      const length = Math.max(1, Math.min(MAX_FETCH_WINDOW_CHARS, Math.floor(opts?.length ?? MAX_FETCH_WINDOW_CHARS)));
+      const row = db.prepare("SELECT source, ref, title, body, indexed_at, content_id FROM documents WHERE content_id = ?").get(id) as Record<string, unknown> | null;
+      if (!row) return null;
+      const source = String(row.source);
+      const ref = String(row.ref);
+      const title = String(row.title);
+      const body = String(row.body ?? "");
+      // Verify the indexed key against this single row before returning it.
+      if (documentId(source, ref, title, body) !== id || containsSecretLike(title) || containsSecretLike(body)) return null;
+      return {
+        id,
+        source: source as KnowledgeSource,
+        title,
+        ref,
+        indexedAt: String(row.indexed_at),
+        offset,
+        totalChars: body.length,
+        text: body.slice(offset, offset + length),
+      };
     },
     stats(): KnowledgeStats {
       const counts = { skill: 0, research: 0, doc: 0 } as Record<KnowledgeSource, number>;
@@ -698,6 +745,23 @@ export function openKnowledge(overrides: KnowledgePathOverrides = {}): Knowledge
   try {
     db.exec("PRAGMA journal_mode=WAL");
     db.exec(SCHEMA);
+    // Upgrade older derived indexes in place; content IDs are rebuilt from the
+    // already-indexed, secret-checked rows and never cause source file reads.
+    const columns = db.prepare("PRAGMA table_info(documents)").all() as Array<{ name: string }>;
+    if (!columns.some((column) => column.name === "content_id")) {
+      db.exec("ALTER TABLE documents ADD COLUMN content_id TEXT NOT NULL DEFAULT ''");
+    }
+    const backfill = db.prepare("UPDATE documents SET content_id = ? WHERE id = ?");
+    const tx = db.transaction(() => {
+      const rows = db.prepare("SELECT id, source, ref, title, body FROM documents WHERE content_id = ''").all() as Array<Record<string, unknown>>;
+      for (const row of rows) {
+        const rowId = typeof row.id === "number" ? row.id : Number(row.id);
+        if (!Number.isSafeInteger(rowId) || rowId < 1) throw new Error("knowledge migration encountered an invalid document row ID");
+        backfill.run(documentId(String(row.source), String(row.ref), String(row.title), String(row.body ?? "")), rowId);
+      }
+    });
+    tx();
+    db.exec("CREATE UNIQUE INDEX IF NOT EXISTS documents_content_id_idx ON documents(content_id)");
     return createStore(db, paths);
   } catch (error) {
     db.close();

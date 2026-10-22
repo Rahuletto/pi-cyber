@@ -3,6 +3,7 @@ import { chmodSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync }
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { formatWaitResult, mailgenTool, parseBodyJson, parseNewJson, parseWaitOutput, runMailgen, type MailBody } from "../src/tools/mailgen.ts";
+import { queryCowbirdInbox } from "../src/tools/mail-inbox.ts";
 
 /**
  * Modelless: the cowbird CLI is a fake executable placed on disk and pointed
@@ -12,7 +13,7 @@ import { formatWaitResult, mailgenTool, parseBodyJson, parseNewJson, parseWaitOu
  * `state` blob stays out of the result and the evidence store.
  */
 
-const savedEnv = { CYBER_COWBIRD_BIN: process.env.CYBER_COWBIRD_BIN, CYBER_MAILGEN_FILE: process.env.CYBER_MAILGEN_FILE, CYBER_EVIDENCE_DIR: process.env.CYBER_EVIDENCE_DIR, CYBER_COWBIRD_PYTHON: process.env.CYBER_COWBIRD_PYTHON };
+const savedEnv = { CYBER_COWBIRD_BIN: process.env.CYBER_COWBIRD_BIN, CYBER_MAILGEN_FILE: process.env.CYBER_MAILGEN_FILE, CYBER_EVIDENCE_DIR: process.env.CYBER_EVIDENCE_DIR, CYBER_COWBIRD_PYTHON: process.env.CYBER_COWBIRD_PYTHON, PYTHONPATH: process.env.PYTHONPATH };
 
 let work = "";
 
@@ -380,11 +381,69 @@ describe("mailgen body fetch (full message body)", () => {
   });
 });
 
+describe("mailgen Inbox API fixture", () => {
+  test("uses installed Inbox list/get contract, keeps registry state, separates list cursors from newer waits", async () => {
+    uniqueDir();
+    fakeCowbird("", 0);
+    const python = Bun.which("python3");
+    if (!python) throw new Error("python3 required for local Inbox fixture");
+    process.env.CYBER_COWBIRD_PYTHON = python;
+    const packageDir = join(work, "python", "cowbird");
+    mkdirSync(packageDir, { recursive: true });
+    writeFileSync(join(packageDir, "__init__.py"), "");
+    writeFileSync(join(packageDir, "errors.py"), "class NotSupported(Exception): pass\n");
+    writeFileSync(join(packageDir, "models.py"), "class Address:\n def __init__(self, value, provider, state=None): self.value=value; self.provider=provider; self.state=state\n");
+    writeFileSync(join(packageDir, "health.py"), "class HealthStore:\n @staticmethod\n def load(path): return None\ndef default_health_path(): return ''\n");
+    writeFileSync(join(packageDir, "inbox.py"), [
+      "from datetime import datetime, timezone",
+      "from types import SimpleNamespace",
+      "class Provider:",
+      " async def list(self, address):",
+      "  assert address.state == 'STATE_OK'",
+      "  return [SimpleNamespace(id='new-1', sender='target@example.test', subject='Verify', received_at=datetime(2026,1,2,tzinfo=timezone.utc)), SimpleNamespace(id='old-1', sender='other@example.test', subject='Old', received_at=datetime(2026,1,1,tzinfo=timezone.utc))]",
+      " async def get(self, address, ident): return SimpleNamespace(id=ident, text='Your code is 123456', links=())",
+      "class Registry:",
+      " def get(self, name): return Provider()",
+      "class Pool:",
+      " def __init__(self): self.health=SimpleNamespace(seed=lambda x: None); self.registry=Registry()",
+      "class Inbox:",
+      " def __init__(self, provider, address): self.provider=provider; self.address=address",
+      " async def messages(self): return await self.provider.list(self.address)",
+      " async def get(self, ident): return await self.provider.get(self.address, ident)",
+      "_pool=None",
+      "def default_pool():",
+      " global _pool",
+      " if _pool is None: _pool=Pool()",
+      " return _pool",
+      "async def aclose_default_pool(): pass",
+    ].join("\n"));
+    process.env.PYTHONPATH = join(work, "python");
+    writeFileSync(process.env.CYBER_MAILGEN_FILE!, JSON.stringify({ "a@example.test": { provider: "fixture", state: "STATE_OK" } }));
+
+    process.env.CYBER_COWBIRD_PYTHON = join(work, "must-not-run-python");
+    writeFileSync(process.env.CYBER_MAILGEN_FILE!, JSON.stringify({ "a@example.test": { provider: "other-provider", state: "STATE_PRIVATE" } }));
+    await expect(queryCowbirdInbox({ action: "list", provider: "fixture", address: "a@example.test" }))
+      .rejects.toThrow(/registered to provider other-provider; refusing provider fixture/);
+    process.env.CYBER_COWBIRD_PYTHON = python;
+    writeFileSync(process.env.CYBER_MAILGEN_FILE!, JSON.stringify({ "a@example.test": { provider: "fixture", state: "STATE_OK" } }));
+
+    const first = JSON.parse(await queryCowbirdInbox({ action: "list", provider: "fixture", address: "a@example.test", limit: 1 }));
+    expect(first.messages[0].id).toBe("new-1");
+    expect(first.nextCursor).toBeTruthy();
+    const second = JSON.parse(await queryCowbirdInbox({ action: "list", provider: "fixture", address: "a@example.test", cursor: first.nextCursor, limit: 1 }));
+    expect(second.messages[0].id).toBe("old-1");
+    const { text: waited } = await runMailgen({ action: "wait", provider: "fixture", address: "a@example.test", afterMessageId: "old-1", sender: "target@", subject: "verify", receivedAfter: "2026-01-01T00:00:00Z", otp: true, timeoutSec: 1 }, undefined);
+    expect(waited).toBe("code: 123456");
+  });
+});
+
 afterAll(() => {
   if (savedEnv.CYBER_COWBIRD_BIN === undefined) delete process.env.CYBER_COWBIRD_BIN;
   if (savedEnv.CYBER_MAILGEN_FILE === undefined) delete process.env.CYBER_MAILGEN_FILE;
   if (savedEnv.CYBER_EVIDENCE_DIR === undefined) delete process.env.CYBER_EVIDENCE_DIR;
   if (savedEnv.CYBER_COWBIRD_PYTHON === undefined) delete process.env.CYBER_COWBIRD_PYTHON;
+  if (savedEnv.PYTHONPATH === undefined) delete process.env.PYTHONPATH;
+  else process.env.PYTHONPATH = savedEnv.PYTHONPATH;
 });
 
 void existsSync;

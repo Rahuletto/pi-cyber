@@ -5,6 +5,8 @@ import { join } from "node:path";
 import type { ExtensionToolContext } from "@earendil-works/pi-coding-agent";
 import { registerBypassFetchTool, resolveFetchEngine, buildCurlArgs, requestHost } from "../src/tools/bypass-fetch.ts";
 import type { ToolDefinition } from "@earendil-works/pi-coding-agent";
+import { readArtifact, resolveArtifactPath, storeArtifact } from "../src/artifacts/store.ts";
+import { finalResponseHeaders, parseRedirectHeaders, redactResponseHeaders } from "../src/tools/http-artifacts.ts";
 
 /**
  * Modelless: the fetch engine is a fake executable pointed at via
@@ -79,6 +81,33 @@ describe("bypass_fetch pure helpers", () => {
   test("buildCurlArgs rejects an invalid header name outright", () => {
     expect(() => buildCurlArgs({ method: "GET", url: "https://t.test/", headers: { "Bad\nName": "x" } }, "impersonate")).toThrow(/invalid header name/);
   });
+
+  test("typed multipart files use only artifact IDs and keep values in argv slots", () => {
+    freshWork();
+    process.env.CYBER_EVIDENCE_DIR = work;
+    const ref = storeArtifact(new Uint8Array([0, 255, 10]), { kind: "fixture", contentType: "application/octet-stream" });
+    const { argv } = buildCurlArgs({ method: "POST", url: "https://t.test/", multipart: { fields: { note: "hello there" }, files: [{ field: "upload", artifactId: ref.id, filename: "file.bin" }] } }, "curl");
+    expect(argv).toContain("--form-string");
+    expect(argv).toContain("note=hello there");
+    expect(argv.find((x) => x.startsWith("upload=@"))).toContain(resolveArtifactPath(ref.id));
+    expect(() => buildCurlArgs({ method: "POST", url: "https://t.test/", body: "x", multipart: {} }, "curl")).toThrow(/mutually exclusive/);
+    const binary = buildCurlArgs({ method: "POST", url: "https://t.test/", bodyArtifact: ref.id }, "curl").argv;
+    expect(binary).toContain(`@${resolveArtifactPath(ref.id)}`);
+  });
+
+  test("response provenance redacts credentials and strips redirect query strings", () => {
+    expect(redactResponseHeaders("X-Api-Key: secret\r\nContent-Type: text/plain\r\nSet-Cookie: sid=secret\r\n")).toEqual([
+      { name: "X-Api-Key", value: "[redacted]" },
+      { name: "Content-Type", value: "text/plain" },
+      { name: "Set-Cookie", value: "[redacted]" },
+    ]);
+    expect(parseRedirectHeaders("HTTP/1.1 302 Found\r\nLocation: https://target.test/next?token=secret\r\n\r\n")).toEqual([
+      { status: 302, location: "https://target.test/next" },
+    ]);
+    const chain = "HTTP/1.1 302 Found\r\nX-Hop: old\r\n\r\nHTTP/2 200\r\nLocation: https://user:pass@target.test/final?token=secret\r\nX-Hop: final\r\n\r\n";
+    expect(redactResponseHeaders(finalResponseHeaders(chain)).map((h) => h.value)).toEqual(["https://target.test/final", "final"]);
+    expect(finalResponseHeaders(chain)).toContain("X-Hop: final");
+  });
 });
 
 describe("bypass_fetch engine resolution", () => {
@@ -148,6 +177,30 @@ describe("bypass_fetch execute", () => {
     const execute = bypassFetch!.execute;
     await expect(execute("t5", { method: "GET", url: "https://target.test/" }, undefined, undefined, ctx))
       .rejects.toThrow(/Could not resolve host/);
+  });
+
+  test("explicit artifact response mode stores exact returned bytes", async () => {
+    freshWork();
+    process.env.CYBER_EVIDENCE_DIR = work;
+    fakeEngine("binary fixture\t200\t0.1\t14\tapplication/octet-stream\thttps://target.test/file\n");
+    const result = await bypassFetch!.execute("artifact", { method: "GET", url: "https://target.test/file", responseMode: "artifact" }, undefined, undefined, ctx);
+    const text = result.content[0].type === "text" ? result.content[0].text : "";
+    const id = /"id":"([a-f0-9]{32})"/.exec(text)?.[1];
+    expect(id).toBeDefined();
+    expect(readArtifact(id!, { encoding: "base64" }).data).toBe(Buffer.from("binary fixture").toString("base64"));
+    expect(text).toContain("redirects:");
+    expect(text).not.toContain("binary fixture");
+    expect(result.details).toMatchObject({ responseArtifact: { id }, responseHeaders: [], redirects: [] });
+  });
+
+  test("JavaScript and absent Content-Type keep valid UTF-8 text responses", async () => {
+    freshWork();
+    fakeEngine("console.log('ok')\t200\t0.1\t17\tapplication/javascript\thttps://target.test/app.js\n");
+    const js = await bypassFetch!.execute("js", { method: "GET", url: "https://target.test/app.js" }, undefined, undefined, ctx);
+    expect(js.content[0].type === "text" ? js.content[0].text : "").toContain("console.log('ok')");
+    fakeEngine("plain text\t200\t0.1\t10\t\thttps://target.test/text\n");
+    const plain = await bypassFetch!.execute("plain", { method: "GET", url: "https://target.test/text" }, undefined, undefined, ctx);
+    expect(plain.content[0].type === "text" ? plain.content[0].text : "").toContain("plain text");
   });
 });
 

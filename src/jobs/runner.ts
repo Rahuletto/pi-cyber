@@ -2,11 +2,11 @@
  * Typed job runner over the Task-5 adapter registry (ledgered Task-6 build).
  *
  * Guarantees / rulings implemented here:
- * - Job state persists ONLY through the Task-4 evidence store (`addJob` /
- *   `updateJobState` + typed `job` events). There is deliberately NO parallel
- *   JSON store or in-memory registry; the serialized `runJob` promise IS the
- *   job lifecycle for callers. (The plan's `src/jobs/store.ts` artifact-file
- *   design was superseded by the 2026-10-21 ledger ruling.)
+ * - Synchronous calls keep the `runJob` promise lifecycle. The async controller
+ *   adds process-local handles and persists normalized results as private
+ *   artifacts, linking their opaque IDs through typed job events. The evidence
+ *   store remains authoritative for durable job state; runtime handles do not
+ *   survive process restart.
  * - Adapter validation errors surface VERBATIM so the model can self-correct:
  *   unknown adapter names list the registry, typebox path/keyword failures are
  *   reported with their exact instance path, and `buildArgs` guard messages
@@ -37,9 +37,9 @@
  *   250-entry head, which the store never secret-checks) refuses with the
  *   canonical message before exec; the tool repeats the check on its details
  *   return path and gates stderr/spawnError exposures the same way.
- * - Concurrency: `runJob` serializes through one in-process promise chain
- *   (matching the tool's `executionMode: "sequential"`); parallel execution
- *   is deliberately not offered.
+ * - Concurrency: `runJob` serializes through one in-process promise chain.
+ *   Async cancellation kills the direct child and waits for its exit; queued
+ *   handles can be cancelled before execution. Parallel execution is not offered.
  * - Known limitation (documented, not silent): Bun's spawn API exposes no
  *   process-group hook, so no `setpgid`/`kill(-pgid)`. Argv-only spawning
  *   means there is no shell wrapper tree; on timeout the flagged direct
@@ -87,6 +87,20 @@ export interface RunJobOpts {
   stderrCapBytes?: number;
   /** Operator-only opts forwarded to buildArgs (wordlists, template dirs). */
   buildOpts?: { wordlistPath?: string; templatesDir?: string };
+  /** Stable ID allocated by the async controller before the serialized queue. */
+  jobId?: string;
+  /** Aborting this signal kills the direct child and waits for its exit. */
+  signal?: AbortSignal;
+  /** Coarse, output-free lifecycle progress. Callback failures are ignored. */
+  onProgress?: (progress: JobProgress) => void;
+  /** Environment snapshot captured when an async job handle was accepted. */
+  spawnEnv?: NodeJS.ProcessEnv;
+}
+
+export interface JobProgress {
+  phase: "running" | "capturing" | "persisting" | "finished";
+  stdoutBytes?: number;
+  stderrBytes?: number;
 }
 
 export interface JobResult {
@@ -96,6 +110,7 @@ export interface JobResult {
   state: JobState;
   exitCode: number | null;
   timedOut: boolean;
+  cancelled?: boolean;
   stdoutBytes: number;
   stderrBytes: number;
   stdoutTruncated: boolean;
@@ -194,7 +209,7 @@ function newJobId(adapter: string): string {
  * pipe). Text stays transient; only parsed rows and clipped stderr excerpts
  * ever leave this function.
  */
-async function drainPipe(stream: ReadableStream<Uint8Array>, cap: number): Promise<CapturedStream> {
+async function drainPipe(stream: ReadableStream<Uint8Array>, cap: number, onBytes?: (bytes: number) => void): Promise<CapturedStream> {
   const reader = stream.getReader();
   const decoder = new TextDecoder();
   let text = "";
@@ -203,6 +218,7 @@ async function drainPipe(stream: ReadableStream<Uint8Array>, cap: number): Promi
   for (;;) {
     const { done, value } = await reader.read();
     if (done) break;
+    try { onBytes?.(bytes + value.byteLength); } catch { /* progress is observational */ }
     if (!truncated && bytes + value.byteLength <= cap) {
       text += decoder.decode(value, { stream: true });
       bytes += value.byteLength;
@@ -243,6 +259,7 @@ function clipStderr(text: string): string {
 }
 
 async function executeJob(input: RunJobInput, opts: RunJobOpts): Promise<JobResult> {
+  if (opts.signal?.aborted) throw new DOMException("The job was cancelled before execution.", "AbortError");
   const adapter = byName(input.tool);
   if (!adapter) throw new UnknownAdapterError(input.tool, adapters.map((def) => def.name));
 
@@ -257,7 +274,7 @@ async function executeJob(input: RunJobInput, opts: RunJobOpts): Promise<JobResu
   // entry head) refuses with the canonical message BEFORE exec, so a tainted
   // command never runs and never reaches tool details either.
   assertArgvSecretFree(argv);
-  const jobId = newJobId(adapter.name);
+  const jobId = opts.jobId ?? newJobId(adapter.name);
 
   // 3) Evidence DB. When injected, the caller owns it; the default store is closed here.
   const ownsStore = !opts.evidenceDb;
@@ -265,6 +282,7 @@ async function executeJob(input: RunJobInput, opts: RunJobOpts): Promise<JobResu
   try {
     // Secret-tainted argv refuses here (verbatim canonical message), before any spawn.
     store.addJob({ jobId, adapter: adapter.name, argv: recordedArgv(argv), state: "running" });
+    try { opts.onProgress?.({ phase: "running", stdoutBytes: 0, stderrBytes: 0 }); } catch { /* observational */ }
 
     // 4) Spawn. Argv-only, stdin closed, capped pipes.
     let proc: Bun.Subprocess<"ignore", "pipe", "pipe">;
@@ -275,7 +293,7 @@ async function executeJob(input: RunJobInput, opts: RunJobOpts): Promise<JobResu
         stdin: "ignore",
         stdout: "pipe",
         stderr: "pipe",
-        env: { ...process.env },
+        env: { ...(opts.spawnEnv ?? process.env) },
       });
     } catch (error) {
       const spawnError = error instanceof Error ? error.message : String(error);
@@ -292,23 +310,48 @@ async function executeJob(input: RunJobInput, opts: RunJobOpts): Promise<JobResu
     const stdoutCap = resolveCap(opts.stdoutCapBytes, STDOUT_CAP_BYTES);
     const stderrCap = resolveCap(opts.stderrCapBytes, STDERR_CAP_BYTES);
     let timedOut = false;
+    let cancelled = false;
     const killer = setTimeout(() => {
       timedOut = true;
       try { proc.kill("SIGKILL"); } catch { /* already gone */ }
     }, resolveTimeout(opts.timeoutMs));
 
-    const [capsOut, capsErr, exitCode] = await Promise.all([
-      drainPipe(proc.stdout as ReadableStream<Uint8Array>, stdoutCap),
-      drainPipe(proc.stderr as ReadableStream<Uint8Array>, stderrCap),
-      proc.exited,
-    ]);
-    clearTimeout(killer);
+    const cancelChild = () => {
+      cancelled = true;
+      try { proc.kill("SIGKILL"); } catch { /* already gone */ }
+    };
+    if (opts.signal?.aborted) cancelChild();
+    else opts.signal?.addEventListener("abort", cancelChild, { once: true });
+    let stdoutBytes = 0;
+    let stderrBytes = 0;
+    try { opts.onProgress?.({ phase: "capturing", stdoutBytes, stderrBytes }); } catch { /* observational */ }
+
+    let capsOut: CapturedStream;
+    let capsErr: CapturedStream;
+    let exitCode: number;
+    try {
+      [capsOut, capsErr, exitCode] = await Promise.all([
+        drainPipe(proc.stdout as ReadableStream<Uint8Array>, stdoutCap, (bytes) => {
+          stdoutBytes = bytes;
+          try { opts.onProgress?.({ phase: "capturing", stdoutBytes, stderrBytes }); } catch { /* observational */ }
+        }),
+        drainPipe(proc.stderr as ReadableStream<Uint8Array>, stderrCap, (bytes) => {
+          stderrBytes = bytes;
+          try { opts.onProgress?.({ phase: "capturing", stdoutBytes, stderrBytes }); } catch { /* observational */ }
+        }),
+        proc.exited,
+      ]);
+    } finally {
+      clearTimeout(killer);
+      opts.signal?.removeEventListener("abort", cancelChild);
+    }
 
     const base = {
       jobId,
       adapter: adapter.name,
       argv,
       timedOut,
+      cancelled,
       stdoutBytes: capsOut.bytes,
       stderrBytes: capsErr.bytes,
       stdoutTruncated: capsOut.truncated,
@@ -323,9 +366,11 @@ async function executeJob(input: RunJobInput, opts: RunJobOpts): Promise<JobResu
     // (verified by probe), so 128..191 routes into the same branch — that is
     // the "never reached a clean completion" class, not a completed failure.
     const signalNo = !timedOut && code !== null && code >= 128 && code <= 191 ? code - 128 : null;
-    const abrupt = timedOut || code === null || signalNo !== null;
+    const abrupt = timedOut || cancelled || code === null || signalNo !== null;
     const abruptReason = timedOut
       ? "killed at timeout"
+      : cancelled
+        ? "cancelled by caller"
       : code === null
         ? "no-exit-code"
         : signalNo !== null
@@ -339,10 +384,15 @@ async function executeJob(input: RunJobInput, opts: RunJobOpts): Promise<JobResu
       // `outcome-unknown`. The annotated ledger record is guaranteed after
       // the guarded persist, whatever happens to the rows.
       const parsed = safeParse(adapter, capsOut.text, capsErr.text);
-      const state = parsed.rows.length > 0 ? "interrupted" : "outcome-unknown";
+      const state = parsed.rows.length > 0
+        ? "interrupted"
+        : cancelled && !timedOut && !adapter.mutating
+          ? "cancelled"
+          : "outcome-unknown";
+      try { opts.onProgress?.({ phase: "persisting", stdoutBytes: capsOut.bytes, stderrBytes: capsErr.bytes }); } catch { /* observational */ }
       store.updateJobState(jobId, state);
       const persist = persistRowsGuarded(store, jobId, adapter, parsed.rows);
-      annotateOutcome(store, jobId, "outcome-unknown", {
+      annotateOutcome(store, jobId, cancelled && state === "cancelled" ? "cancelled" : "outcome-unknown", {
         reason: abruptReason,
         state,
         partialEvidenceRows: persist.ids.length,
@@ -352,7 +402,7 @@ async function executeJob(input: RunJobInput, opts: RunJobOpts): Promise<JobResu
         stdoutTruncated: capsOut.truncated,
         stderrTruncated: capsErr.truncated,
       });
-      return {
+      const result: JobResult = {
         ...base, state, exitCode: code,
         parsedRows: persist.ids.length, byKind: countByKind(parsed.rows), evidenceIds: persist.ids,
         evidencePersistence: persist.evidencePersistence,
@@ -360,6 +410,8 @@ async function executeJob(input: RunJobInput, opts: RunJobOpts): Promise<JobResu
         ...(persist.error ? { persistError: persist.error.message } : {}),
         stderr: clipStderr(capsErr.text),
       };
+      try { opts.onProgress?.({ phase: "finished", stdoutBytes: capsOut.bytes, stderrBytes: capsErr.bytes }); } catch { /* observational */ }
+      return result;
     }
 
     if (code !== 0) {
@@ -379,6 +431,7 @@ async function executeJob(input: RunJobInput, opts: RunJobOpts): Promise<JobResu
 
     // Clean completion: parse, persist each Normalized row (guarded), annotate.
     const parsed = safeParse(adapter, capsOut.text, capsErr.text);
+    try { opts.onProgress?.({ phase: "persisting", stdoutBytes: capsOut.bytes, stderrBytes: capsErr.bytes }); } catch { /* observational */ }
     store.updateJobState(jobId, "succeeded");
     const persist = persistRowsGuarded(store, jobId, adapter, parsed.rows);
     const byKind = countByKind(parsed.rows);
@@ -409,13 +462,15 @@ async function executeJob(input: RunJobInput, opts: RunJobOpts): Promise<JobResu
       } catch { /* the running/succeeded records remain; nothing further can be written */ }
       throw cause instanceof Error ? cause : new Error(String(cause));
     }
-    return {
+    const result: JobResult = {
       ...base, state: "succeeded", exitCode: code,
       parsedRows: persist.ids.length, byKind, evidenceIds: persist.ids,
       evidencePersistence: persist.evidencePersistence,
       ...(persist.persistReason ? { refusedCount: persist.refusedCount, persistReason: persist.persistReason } : {}),
       ...(persist.error ? { persistError: persist.error.message } : {}),
     };
+    try { opts.onProgress?.({ phase: "finished", stdoutBytes: capsOut.bytes, stderrBytes: capsErr.bytes }); } catch { /* observational */ }
+    return result;
   } finally {
     if (ownsStore) store.close();
   }

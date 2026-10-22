@@ -13,6 +13,7 @@ import { registerBypassFetchTool } from "./tools/bypass-fetch.ts";
 import { registerCyberToolsTool } from "./tools/cyber-tools.ts";
 import { registerBrowserAutoTool } from "./tools/browser-auto.ts";
 import { registerKnowledgeTool } from "./tools/knowledge.ts";
+import { registerArtifactsTool } from "./tools/artifacts.ts";
 import { contextLine } from "./evidence/db.ts";
 import { isPersistedSession, writeExitCard } from "./exit-card.ts";
 
@@ -91,6 +92,7 @@ export default function cyber(pi: ExtensionAPI): void {
   registerBrowserAutoTool(pi);
   registerCyberToolsTool(pi);
   registerKnowledgeTool(pi);
+  registerArtifactsTool(pi);
   let visualReady = false;
   const current = (ctx: ExtensionContext) => recoverState(ctx.sessionManager.getBranch());
   const save = (state: CyberState) => pi.appendEntry(STATE_ENTRY, state);

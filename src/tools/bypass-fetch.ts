@@ -2,12 +2,13 @@ import type { AgentToolResult, ExtensionAPI, ExtensionToolContext, ToolDefinitio
 import { Type, type Static } from "typebox";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { accessSync, constants, existsSync, mkdirSync } from "node:fs";
+import { accessSync, constants, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync } from "node:fs";
 import { delimiter, join } from "node:path";
-import { homedir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import { openEvidence } from "../evidence/db.ts";
 import { containsSecretLike } from "../evidence/secrets.ts";
 import { recoverState } from "../state.ts";
+import { artifactBytes, artifactPath, finalResponseHeaders, parseRedirectHeaders, redactResponseHeaders, saveHttpResponseArtifact, validateMultipart, type HttpMultipartFile } from "./http-artifacts.ts";
 
 /**
  * `bypass_fetch` — raw HTTP with a real browser TLS/HTTP-2 fingerprint, backed
@@ -108,7 +109,7 @@ function hostInScope(host: string, scope: string[]): boolean {
 
 /** Build the curl argv for one request. Every user value stays one argv element. */
 export function buildCurlArgs(
-  params: { method: HttpMethod; url: string; headers?: Record<string, string>; body?: string; profile?: string; timeoutSec?: number; followRedirects?: boolean; session?: string },
+  params: { method: HttpMethod; url: string; headers?: Record<string, string>; body?: string; bodyArtifact?: string; multipart?: { fields?: Record<string, string>; files?: HttpMultipartFile[] }; profile?: string; timeoutSec?: number; followRedirects?: boolean; session?: string; responseFile?: string; headerFile?: string },
   engine: "impersonate" | "curl"
 ): { argv: string[]; warnings: string[] } {
   const warnings: string[] = [];
@@ -138,10 +139,34 @@ export function buildCurlArgs(
     argv.push("--cookie", jar, "--cookie-jar", jar);
   }
 
+  const modes = Number(params.body !== undefined) + Number(params.bodyArtifact !== undefined) + Number(params.multipart !== undefined);
+  if (modes > 1) throw new Error("body, bodyArtifact, and multipart are mutually exclusive.");
   if (params.body !== undefined) {
     if (params.method === "GET") throw new Error("GET takes no body; use POST/PUT/PATCH or move the payload into headers.");
     argv.push("--data-raw", params.body);
   }
+
+  if (params.bodyArtifact) {
+    if (params.method === "GET") throw new Error("GET takes no body; use POST/PUT/PATCH or move the payload into headers.");
+    argv.push("--data-binary", `@${artifactPath(params.bodyArtifact)}`);
+  }
+  if (params.multipart) {
+    if (params.method === "GET") throw new Error("GET takes no body; use POST/PUT/PATCH.");
+    const files = params.multipart.files ?? [];
+    validateMultipart(files);
+    for (const [field, value] of Object.entries(params.multipart.fields ?? {})) {
+      if (!/^[A-Za-z0-9_.-]{1,80}$/.test(field)) throw new Error("invalid multipart field name.");
+      argv.push("--form-string", `${field}=${value}`);
+    }
+    for (const file of files) {
+      const type = file.contentType ? `;type=${file.contentType}` : "";
+      argv.push("--form", `${file.field}=@${artifactPath(file.artifactId)};filename=${file.filename}${type}`);
+    }
+  }
+
+  if (params.responseFile) argv.push("--output", params.responseFile);
+  if (params.headerFile) argv.push("--dump-header", params.headerFile);
+  argv.push("--max-filesize", String(32 * 1024 * 1024));
 
   argv.push("--request", params.method, params.url, "--write-out", "\t%{http_code}\t%{time_total}\t%{size_download}\t%{content_type}\t%{url_effective}\n");
   return { argv, warnings };
@@ -180,6 +205,12 @@ const parameters = Type.Object({
   url: Type.Optional(Type.String({ description: "Absolute http(s) URL." })),
   headers: Type.Optional(Type.Record(Type.String(), Type.String({ maxLength: 8192 }), { description: "Request headers. Avoid overriding User-Agent (the profile's UA is part of the fingerprint)." })),
   body: Type.Optional(Type.String({ maxLength: 1_000_000, description: "Raw request body (integer/POST etc.); sent as --data-raw." })),
+  bodyArtifact: Type.Optional(Type.String({ pattern: "^[a-f0-9]{32}$", description: "Artifact ID for a binary request body. Cannot be combined with body or multipart." })),
+  multipart: Type.Optional(Type.Object({
+    fields: Type.Optional(Type.Record(Type.String(), Type.String({ maxLength: 65536 }))),
+    files: Type.Optional(Type.Array(Type.Object({ field: Type.String(), artifactId: Type.String({ pattern: "^[a-f0-9]{32}$" }), filename: Type.String(), contentType: Type.Optional(Type.String()) }, { additionalProperties: false }), { maxItems: 8 })),
+  }, { additionalProperties: false, description: "Typed multipart fields and artifact-backed files; caller filesystem paths are not accepted." })),
+  responseMode: Type.Optional(Type.Union([Type.Literal("text"), Type.Literal("artifact")], { default: "text", description: "artifact stores the raw response bytes and returns only a bounded artifact reference and metadata." })),
   profile: Type.Optional(Type.String({ description: `Impersonation profile for the curl-impersonate engine: ${IMPERSONATE_PROFILES.join(", ")}. Default chrome152. "none" skips impersonation.` })),
   session: Type.Optional(Type.String({ maxLength: 64, description: "Named cookie jar (shared across calls) — required for login flows where Set-Cookie must persist." })),
   timeoutSec: Type.Optional(Type.Number({ minimum: 1, maximum: 120, default: 60, description: "Total request timeout (default 60)." })),
@@ -241,7 +272,11 @@ const bypassFetchTool: ToolDefinition<typeof parameters> = {
       }
     }
 
-    const { argv, warnings } = buildCurlArgs({ ...params, url, method: params.method }, engine.kind);
+    const tempDir = mkdtempSync(join(tmpdir(), "cyber-http-"));
+    try {
+    const responseFile = join(tempDir, "response.bin");
+    const headerFile = join(tempDir, "headers.txt");
+    const { argv, warnings } = buildCurlArgs({ ...params, url, method: params.method, responseFile, headerFile }, engine.kind);
     const started = Date.now();
     let stdout = "";
     try {
@@ -261,6 +296,23 @@ const bypassFetchTool: ToolDefinition<typeof parameters> = {
 
     const outcome = parseCurlOutput(stdout, profile, engine.kind, outOfScope);
     if (!outcome) throw new Error("curl returned no parseable response (connection failure or timeout before a status line)");
+    if (existsSync(responseFile) && statSync(responseFile).size > 32 * 1024 * 1024) throw new Error("HTTP response exceeded the 32 MiB artifact limit.");
+    const responseBytes = existsSync(responseFile) ? readFileSync(responseFile) : Buffer.from(outcome.body, "utf8");
+    if (responseBytes.byteLength > 32 * 1024 * 1024) throw new Error("HTTP response exceeded the 32 MiB artifact limit.");
+    const textualMime = /^(?:text\/|application\/(?:json|xml|javascript|x-javascript|x-www-form-urlencoded)|image\/svg\+xml|application\/(?:[^;]+\+json|[^;]+\+xml))(?:\s*;|$)/i.test(outcome.contentType);
+    const declaredBinary = /^(?:application\/octet-stream|application\/(?:pdf|zip|x-7z-compressed|gzip)|image\/(?!svg\+xml)|audio\/|video\/|font\/)/i.test(outcome.contentType);
+    let validUtf8 = true;
+    try { new TextDecoder("utf-8", { fatal: true }).decode(responseBytes); } catch { validUtf8 = false; }
+    if (params.responseMode !== "artifact" && responseBytes.byteLength > 0 && (declaredBinary || (!textualMime && !validUtf8))) {
+      throw new Error("binary response bodies require responseMode: artifact.");
+    }
+    if (existsSync(headerFile) && statSync(headerFile).size > 1024 * 1024) throw new Error("response headers exceeded the 1 MiB limit.");
+    const rawHeaders = existsSync(headerFile) ? readFileSync(headerFile, "utf8") : "";
+    const responseHeaders = redactResponseHeaders(finalResponseHeaders(rawHeaders));
+    const redirects = parseRedirectHeaders(rawHeaders);
+    const responseArtifact = params.responseMode === "artifact"
+      ? saveHttpResponseArtifact(responseBytes, outcome.contentType === "none" ? "application/octet-stream" : outcome.contentType, `${params.method} ${parsedUrl.origin}/`)
+      : null;
     outcome.warnings = warnings;
     const elapsedMs = Date.now() - started;
 
@@ -274,11 +326,14 @@ const bypassFetchTool: ToolDefinition<typeof parameters> = {
       }
     } catch { /* evidence is an audit trail, never the point of failure */ }
 
-    const bodyClipped = clip(outcome.body);
+    const bodyClipped = params.responseMode === "artifact" ? "[response body stored as artifact]" : clip(responseBytes.toString("utf8"));
     const head = [
       `status: ${outcome.status} (${elapsedMs}ms total, ${outcome.size} bytes)`,
       `content-type: ${outcome.contentType}`,
       `url: ${outcome.url}`,
+      `redirects: ${JSON.stringify(redirects)}`,
+      `headers (final hop): ${JSON.stringify(responseHeaders)}`,
+      ...(responseArtifact ? [`artifact: ${JSON.stringify(responseArtifact)}`] : []),
       `engine: ${engine.kind === "impersonate" ? `curl-impersonate (${profile})` : "stock curl (no TLS impersonation)"}`,
       ...(outcome.warnings.length ? [`warnings: ${outcome.warnings.join("; ")}`] : []),
       ...(outOfScope ? ["scope: out-of-scope acknowledged"] : []),
@@ -293,8 +348,23 @@ const bypassFetchTool: ToolDefinition<typeof parameters> = {
       profile: profile ?? "none",
       outOfScope,
       elapsedMs,
+      responseHeaders,
+      redirects,
+      responseArtifact: responseArtifact ? {
+        id: responseArtifact.id,
+        kind: responseArtifact.kind,
+        contentType: responseArtifact.contentType,
+        bytes: responseArtifact.bytes,
+        sha256: responseArtifact.sha256,
+        createdAt: responseArtifact.createdAt,
+      } : null,
     };
+    rmSync(tempDir, { recursive: true, force: true });
     return { content: [{ type: "text", text: `${head}\n${bodyClipped}` }], details };
+    } catch (error) {
+      rmSync(tempDir, { recursive: true, force: true });
+      throw error;
+    }
   },
 };
 

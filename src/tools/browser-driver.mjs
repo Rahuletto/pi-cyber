@@ -44,6 +44,10 @@ import { existsSync, mkdirSync, readFileSync, statSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { serve as serveSession, readEndpoint, sendSpec } from "./browser-session.mjs";
 
+import { attachRecorder } from "./browser-network.mjs";
+import { snapshotDom } from "./browser-dom.mjs";
+import { watchDownloads, listDownloads, exportDownload } from "./browser-downloads.mjs";
+import { describeTabs, selectTab, rememberTab, tabMetadata, resolveFrame, describeFrames, interact } from "./browser-controls.mjs";
 const spec = JSON.parse(process.argv[2] ?? "{}");
 
 const fail = (error, diag) => {
@@ -56,7 +60,7 @@ const fail = (error, diag) => {
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const clampStr = (value, n) => String(value == null ? "" : value).slice(0, n);
 
-const ACTIONS = ["navigate", "eval", "snapshot", "close", "turnstile", "clearance", "fingerprint"];
+const ACTIONS = ["navigate", "eval", "snapshot", "domSnapshot", "downloads", "download", "networkArtifact", "close", "turnstile", "clearance", "fingerprint", "tabs", "newTab", "switchTab", "frames", "act", "network", "reload", "back", "forward"];
 
 /* ---------------------------------------------------------------------- */
 /* Turnstile harvest (the proven recipe from the old challenge lane)         */
@@ -148,17 +152,7 @@ async function turnstileDiag(page, timeoutMs, everLoaded) {
     frameUrls: (snap.frameUrls ?? []).slice(0, 6),
   };
 }
-const STEP_OPS = ["click", "fill", "press", "waitSel", "setCookie", "eval"];
-/** Resource types considered "script-ish" for the xhrScripts slice.
- *  CDP delivers these capitalized ("Document", "Script"), so match
- *  case-insensitively and fall back to the mimeType when empty. */
-const SCRIPTISH = new Set(["document", "script", "fetch", "xhr", "stylesheet", "manifest"]);
-function isScriptish(entry) {
-  const type = String(entry?.resourceType ?? "").toLowerCase();
-  if (SCRIPTISH.has(type)) return true;
-  return !type && /javascript/.test(String(entry?.mimeType ?? "").toLowerCase());
-}
-
+const STEP_OPS = ["click", "fill", "press", "waitSel", "setCookie", "eval", "hover", "check", "uncheck", "select", "waitURL", "waitLoad"];
 /**
  * A semantic failure raised AFTER resources are held: caught in the outer
  * flow so the recorder/CDP cleanup in the inner finally still runs before
@@ -170,56 +164,6 @@ class DriverFailure extends Error {
     this.name = "DriverFailure";
     if (diag && typeof diag === "object") this.diag = diag;
   }
-}
-
-/**
- * Network recorder: one CDP session on the selected page, registered ONCE
- * per driver call right after page selection (before any navigation) and
- * detached in the inner finally. requestWillBeSent opens an entry keyed by
- * requestId; responseReceived fills status/type; loadingFinished fills the
- * received byte length when the engine reports it. Deterministic clamp:
- * at most 200 entries kept, oldest dropped, last 40 script-ish reported.
- */
-async function attachRecorder(context, page) {
-  const cdp = await context.newCDPSession(page);
-  await cdp.send("Network.enable").catch(() => {});
-  const entries = new Map();
-  const order = [];
-  cdp.on("Network.requestWillBeSent", (params) => {
-    const url = clampStr(params?.request?.url, 300);
-    if (!/^https?:/.test(url)) return;
-    const entry = {
-      method: clampStr(params?.request?.method, 10),
-      url,
-      status: null,
-      size: null,
-      resourceType: clampStr(params?.type, 24),
-    };
-    entries.set(params.requestId, entry);
-    if (order.length >= 200) order.shift();
-    order.push(params.requestId);
-  });
-  cdp.on("Network.responseReceived", (params) => {
-    const entry = entries.get(params?.requestId);
-    if (!entry) return;
-    if (typeof params?.response?.status === "number") entry.status = params.response.status;
-    if (params?.type) entry.resourceType = clampStr(params.type, 24);
-    const mime = clampStr(params?.response?.mimeType, 60);
-    if (mime) entry.mimeType = mime;
-  });
-  cdp.on("Network.loadingFinished", (params) => {
-    const entry = entries.get(params?.requestId);
-    if (!entry) return;
-    if (typeof params?.encodedDataLength === "number") {
-      entry.size = Math.max(0, Math.floor(params.encodedDataLength));
-    }
-  });
-  return {
-    cdp,
-    take: () => order.map((id) => entries.get(id)).filter(Boolean),
-    total: () => order.length,
-    async detach() { await cdp.detach().catch(() => {}); },
-  };
 }
 
 /**
@@ -262,42 +206,19 @@ function normalizeSteps(raw) {
     if (!STEP_OPS.includes(op)) continue;
     const step = { op };
     if (entry.sel != null) step.sel = String(entry.sel).slice(0, 256);
+    if (entry.ref != null) step.ref = String(entry.ref).slice(0, 32);
     if (entry.value != null) step.value = String(entry.value).slice(0, 8000);
+    if (entry.frame !== undefined) step.frame = entry.frame;
+    if (entry.state !== undefined) step.state = entry.state;
     steps.push(step);
   }
   return steps;
 }
 
-/**
- * Runner for one interaction step. MAIN-frame selectors only: on this
- * engine page.click/fill resolve to the main frame, and frame.evaluate for
- * cross-origin frames silently executes in the host context, so sub-frame
- * automation is intentionally unsupported (see the header note). Returns a
- * step-report object; per-step errors are recorded, never fatal.
- */
-async function runStep(page, context, step, stepTimeout) {
+/** One step in the selected frame; mutations are never retried by us. */
+async function runStep(page, context, step, stepTimeout, defaultFrame) {
+  if (!["setCookie", "eval"].includes(step.op)) return interact(page, step, stepTimeout, defaultFrame);
   switch (step.op) {
-    case "click": {
-      if (!step.sel) throw new Error("sel required");
-      await page.click(step.sel, { timeout: stepTimeout });
-      return { ok: true };
-    }
-    case "fill": {
-      if (!step.sel) throw new Error("sel required");
-      await page.fill(step.sel, String(step.value ?? ""), { timeout: stepTimeout });
-      return { ok: true };
-    }
-    case "press": {
-      // optional sel: focus via main-frame click first, then the keyboard key
-      if (step.sel) await page.click(step.sel, { timeout: stepTimeout });
-      await page.keyboard.press(String(step.value ?? "Enter"));
-      return { ok: true };
-    }
-    case "waitSel": {
-      if (!step.sel) throw new Error("sel required");
-      await page.waitForSelector(step.sel, { timeout: stepTimeout, state: "attached" });
-      return { ok: true };
-    }
     case "setCookie": {
       // requires navigating FIRST: the cookie url is the CURRENT page origin.
       // value = JSON string {name,value[,domain,path]}.
@@ -322,7 +243,7 @@ async function runStep(page, context, step, stepTimeout) {
       // statements executed as a function body: use an explicit return or
       // the result is undefined. The result must be JSON-serializable.
       const value = String(step.value ?? "").slice(0, 8000);
-      const result = await page.evaluate((src) => { const fn = new Function(src); return fn(); }, value);
+      const result = await resolveFrame(page, step.frame ?? defaultFrame).evaluate((src) => { const fn = new Function(src); return fn(); }, value);
       return { ok: true, result: describeValue(result, 2000) };
     }
     default:
@@ -356,15 +277,16 @@ function optionFlags(spec) {
  */
 async function buildSnapshot(page, context, recorder, consoleMsgs, spec) {
   const flags = optionFlags(spec);
+  const targetFrame = resolveFrame(page, spec.frame);
   const out = {};
   try { out.url = page.url().slice(0, 500); } catch { out.url = ""; }
   try { out.title = (await page.title()).slice(0, 200); } catch { out.title = ""; }
   try {
-    const text = await page.evaluate(() => (document.body ? document.body.innerText : ""));
+    const text = await targetFrame.evaluate(() => (document.body ? document.body.innerText : ""));
     out.text = clampStr(text, 6000);
   } catch { out.text = ""; }
   try {
-    const inputs = await page.evaluate(() =>
+    const inputs = await targetFrame.evaluate(() =>
       Array.from(document.querySelectorAll("input, textarea, select"), (el) => {
         const row = {
           name: String(el.getAttribute("name") ?? "").slice(0, 100),
@@ -385,15 +307,20 @@ async function buildSnapshot(page, context, recorder, consoleMsgs, spec) {
   if (flags.network && recorder) {
     const all = recorder.take();
     out.xhrScripts = all
-      .filter(isScriptish)
+      .filter((entry) => (!spec.networkFilter || entry.url.includes(spec.networkFilter)))
       .slice(-40)
       .map((entry) => ({
+        captureId: entry.captureId,
         method: entry.method,
         url: entry.url,
         ...(entry.status == null ? {} : { status: entry.status }),
         ...(entry.resourceType ? { resourceType: entry.resourceType } : {}),
         ...(entry.mimeType ? { mimeType: entry.mimeType } : {}),
         ...(entry.size == null ? {} : { size: entry.size }),
+        ...(entry.durationMs == null ? {} : { durationMs: entry.durationMs }),
+        ...(entry.error ? { error: entry.error } : {}),
+        requestHeaders: entry.requestHeaders,
+        responseHeaders: entry.responseHeaders,
       }));
     out.networkTotal = recorder.total();
   }
@@ -482,57 +409,121 @@ function shotBytes(path) {
  * the any earlier degrade payload (e.g. recorderError). Throws DriverFailure
  * carrying the diag snapshot for the ok:false path; the caller decides.
  */
+// Track page identity across close/reopen and URL changes. Token completion
+// need not emit a navigation event, so wait() also supports a bounded fallback.
+function watchTurnstileTabs(context) {
+  const watched = new Set();
+  let pending = false;
+  let resume;
+  const changed = () => {
+    pending = true;
+    resume?.();
+  };
+  const watch = (page) => {
+    if (watched.has(page)) return;
+    watched.add(page);
+    for (const event of ["close", "domcontentloaded", "framenavigated"]) page.on(event, changed);
+    changed();
+  };
+  context.on("page", watch);
+  for (const page of context.pages()) watch(page);
+  return {
+    async wait(ms) {
+      if (pending) { pending = false; return; }
+      await new Promise((resolve) => {
+        const timer = setTimeout(done, ms);
+        function done() {
+          clearTimeout(timer);
+          resume = undefined;
+          pending = false;
+          resolve();
+        }
+        resume = done;
+      });
+    },
+    clearPending() { pending = false; },
+    dispose() {
+      resume?.();
+      context.off("page", watch);
+      for (const page of watched) {
+        for (const event of ["close", "domcontentloaded", "framenavigated"]) page.off(event, changed);
+      }
+    },
+  };
+}
+
 async function performAction(action, spec, page, context, recorder, consoleMsgs, timeoutMs, connectDeadline, base) {
+  if (action === "downloads") return {ok: true, downloads: listDownloads(context)};
+  if (action === "download") return {ok: true, download: await exportDownload(context, spec.downloadIndex)};
+  if (action === "networkArtifact") {
+    if (!recorder) throw new Error("network recorder unavailable");
+    return {ok: true, networkArtifact: await recorder.capture(spec.captureId, spec.maxBytes)};
+  }
   if (action === "turnstile") {
-    // Proven recipe: goto, then poll the three channels every ~750ms.
-    // NO init-script trap — a get-only accessor on window.turnstile makes
-    // api.js silently bail ("already loaded") and the widget never boots.
     const target = String(spec.url ?? "");
     if (!/^https?:\/\//.test(target)) throw new DriverFailure("driver misconfigured: turnstile needs an http(s) url");
+    const origin = new URL(target).origin;
+    const watcher = watchTurnstileTabs(context);
     let everLoaded = false;
+    let lastPage = page;
     try {
-      await page.goto(target, { timeout: Math.min(timeoutMs, 60_000), waitUntil: "load" });
-    } catch (error) {
-      const message = clampStr(error?.message ?? String(error), 160).replace(/\s+/g, " ");
-      throw new DriverFailure(`goto failed at ${target}: ${message}`, await turnstileDiag(page, timeoutMs, false));
-    }
- const deadline = Date.now() + timeoutMs;
- // Re-scan EVERY open tab each pass, not just the one this call opened:
- // the operator closes a suspected tab and reopens a fresh one, and the
- // token lands in that new tab.
- while (Date.now() < deadline) {
- const open = context.pages().filter((p) => { try { return !p.isClosed(); } catch { return false; } });
- let snap = { token: "", globalLoaded: false, source: "" };
- for (const candidate of open) {
- const probe = await harvestSnapshot(candidate).catch(() => null);
- if (!probe) continue;
- if (probe.globalLoaded) snap.globalLoaded = true;
- if (probe.token && probe.token.length > 20) { snap = probe; page = candidate; break; }
- }
-      everLoaded = everLoaded || snap.globalLoaded;
-      if (snap.token && snap.token.length > 20) {
-        let siteKey = null;
-        try {
-          siteKey = await page.evaluate(() => {
-            const el = document.querySelector(".cf-turnstile[data-sitekey], [data-sitekey]");
-            return el ? String(el.getAttribute("data-sitekey") ?? "").slice(0, 64) : null;
-          });
-        } catch { /* best-effort */ }
-        let ua = "";
-        try { ua = await page.evaluate(() => navigator.userAgent); } catch { /* keep empty */ }
-        return {
-          ok: true,
-          url: target,
-          ua,
-          token: snap.token,
-          source: snap.source,
-          siteKey,
-          ...(base ?? {}),
-        };
+      try {
+        await page.goto(target, { timeout: Math.min(timeoutMs, 60_000), waitUntil: "load" });
+      } catch (error) {
+        // Closing the original tab is expected when the operator reopens it.
+        if (!page.isClosed()) {
+          const message = clampStr(error?.message ?? String(error), 160).replace(/\s+/g, " ");
+          throw new DriverFailure(`goto failed at ${target}: ${message}`, await turnstileDiag(page, timeoutMs, false));
+        }
       }
-      await sleep(5_000);
+      const deadline = Date.now() + timeoutMs;
+      const stepsReport = [];
+      // These are explicit caller mutations: execute once, never replay them
+      // automatically in a replacement tab.
+      if (!page.isClosed()) for (const [index, step] of normalizeSteps(spec.steps).entries()) {
+        try {
+          stepsReport.push({index, op: step.op, ...(await runStep(page, context, step, Math.min(10_000, Math.max(1, deadline - Date.now())), spec.frame))});
+        } catch (error) {
+          throw new DriverFailure(`turnstile setup step ${index} failed: ${clampStr(error?.message, 200)}`, {steps: stepsReport});
+        }
+      }
+      while (Date.now() < deadline) {
+        watcher.clearPending();
+        const open = context.pages().filter((candidate) => !candidate.isClosed());
+        for (const candidate of open) {
+          // Inspect all tabs, but never return another site's challenge token.
+          let candidateOrigin;
+          try { candidateOrigin = new URL(candidate.url()).origin; } catch { continue; }
+          if (candidateOrigin !== origin) continue;
+          lastPage = candidate;
+          const snap = await harvestSnapshot(candidate).catch(() => null);
+          if (!snap) continue;
+          everLoaded ||= snap.globalLoaded;
+          if (!snap.token || snap.token.length <= 20 || candidate.isClosed()) continue;
+          let siteKey = null;
+          try {
+            siteKey = await candidate.evaluate(() => {
+              const el = document.querySelector(".cf-turnstile[data-sitekey], [data-sitekey]");
+              return el ? String(el.getAttribute("data-sitekey") ?? "").slice(0, 64) : null;
+            });
+          } catch { /* best-effort */ }
+          let ua = "";
+          try { ua = await candidate.evaluate(() => navigator.userAgent); } catch { /* keep empty */ }
+          const result = {
+            ok: true, url: target, finalUrl: clampStr(candidate.url(), 500),
+            ua, token: snap.token, source: snap.source, siteKey, steps: stepsReport,
+            ...(base ?? {}),
+            ...tabMetadata(context, candidate),
+          };
+          // Screenshot the page that supplied the token, not the original tab.
+          return await withScreenshot(result, candidate, spec, action);
+        }
+        await watcher.wait(Math.min(10_000, Math.max(0, deadline - Date.now())));
+      }
+      throw new DriverFailure(`no turnstile token resolved within ${timeoutMs}ms at ${target}`, await turnstileDiag(lastPage, timeoutMs, everLoaded));
+    } finally {
+      watcher.dispose();
     }
-    throw new DriverFailure(`no turnstile token resolved within ${timeoutMs}ms at ${target}`, await turnstileDiag(page, timeoutMs, everLoaded));
   }
   if (action === "clearance") {
     // Full CF challenge interstitial: run headed-offscreen, poll the context
@@ -620,12 +611,19 @@ async function performAction(action, spec, page, context, recorder, consoleMsgs,
     await page.close().catch(() => {});
     return { ok: true, closed: true, ...(base ?? {}), url: closedUrl };
   }
-  if (action === "navigate") {
+  if (["reload", "back", "forward"].includes(action)) {
+    const options = {timeout: timeoutMs, waitUntil: "domcontentloaded"};
+    if (action === "reload") await page.reload(options);
+    if (action === "back") await page.goBack(options);
+    if (action === "forward") await page.goForward(options);
+    return {ok: true, ...(await buildSnapshot(page, context, recorder, consoleMsgs, spec))};
+  }
+  if (["navigate", "act", "newTab"].includes(action)) {
     const target = String(spec.url ?? "");
-    if (!/^https?:\/\//.test(target)) throw new DriverFailure("driver misconfigured: navigate needs an http(s) url");
+    if (action === "navigate" && !/^https?:\/\//.test(target)) throw new DriverFailure("driver misconfigured: navigate needs an http(s) url");
     let navError = null;
     try {
-      await page.goto(target, { timeout: Math.min(timeoutMs, 60_000), waitUntil: "load" });
+      if (target && action !== "act") await page.goto(target, { timeout: Math.min(timeoutMs, 60_000), waitUntil: "domcontentloaded" });
     } catch (error) {
       navError = clampStr(error?.message ?? String(error), 300);
     }
@@ -638,7 +636,7 @@ async function performAction(action, spec, page, context, recorder, consoleMsgs,
       const step = steps[index];
       const remaining = Math.max(1, timeoutMs - (Date.now() - startedAt));
       try {
-        const report = { index, op: step.op, ...(await runStep(page, context, step, Math.min(10_000, remaining))) };
+        const report = { index, op: step.op, ...(await runStep(page, context, step, Math.min(10_000, remaining), spec.frame)) };
         stepsReport.push(report);
       } catch (error) {
         stepsReport.push({
@@ -647,9 +645,11 @@ async function performAction(action, spec, page, context, recorder, consoleMsgs,
           ok: false,
           error: clampStr(error?.message ?? String(error), 200).replace(/\s+/g, " "),
         });
+        if (spec.stopOnError === true || (action === "act" && spec.stopOnError !== false)) break;
       }
     }
     const snapshot = await buildSnapshot(page, context, recorder, consoleMsgs, spec);
+    if (action === "act" && stepsReport.some((step) => !step.ok)) throw new DriverFailure("interaction step failed", {...snapshot, steps: stepsReport});
     if (navError) {
       throw new DriverFailure(`navigation failed: ${navError}`, { ...snapshot, steps: stepsReport });
     }
@@ -664,7 +664,7 @@ async function performAction(action, spec, page, context, recorder, consoleMsgs,
     let evalTimer;
     try {
       result = await Promise.race([
-        page.evaluate((src) => { const fn = new Function(src); return fn(); }, code),
+        resolveFrame(page, spec.frame).evaluate((src) => { const fn = new Function(src); return fn(); }, code),
         new Promise((_, reject) => {
           evalTimer = setTimeout(() => reject(new Error(`eval exceeded its ${remaining}ms budget`)), remaining);
         }),
@@ -722,35 +722,43 @@ async function runOnce(spec, context) {
   let recorder = null;
   let page;
   let detachConsole;
+  let detachDownloads;
+  let onDialog;
   try {
     if (!ACTIONS.includes(action)) throw new DriverFailure(`unknown action "${clampStr(action, 32)}"`);
     const connectDeadline = Date.now();
-    const pages = context.pages().filter((p) => !p.isClosed() && /^https?:/.test(p.url()));
-    const tabs = pages.map((p, index) => ({ index, url: clampStr(p.url(), 300) }));
-    if (spec.tab === undefined || spec.tab === null) {
-      page = pages.length ? pages[pages.length - 1] : await context.newPage();
-    } else {
-      const index = Number(spec.tab);
-      if (!Number.isInteger(index) || index < 0 || index >= pages.length) {
-        throw new DriverFailure(`tab ${clampStr(String(spec.tab), 12)} is not an open tab (open: ${pages.length})`, { tabs });
-      }
-      page = pages[index];
+    if (action === "tabs") return {ok: true, tabs: describeTabs(context)};
+    page = action === "newTab" ? await context.newPage() : selectTab(context, spec);
+    if (!page) page = await context.newPage();
+    if (action === "switchTab" || action === "newTab") {
+      rememberTab(context, page);
+      await page.bringToFront();
     }
-    const tabIndex = Math.max(0, pages.indexOf(page));
+    if (action === "frames") return {ok: true, ...tabMetadata(context, page), frames: describeFrames(page)};
+  if (action === "domSnapshot") return {ok: true, url: page.url(), ...tabMetadata(context, page), ...(await snapshotDom(page, spec.frame))};
     const consoleMsgs = [];
     detachConsole = attachConsole(page, consoleMsgs);
+    detachDownloads = watchDownloads(context, page);
+    const dialogs = [];
+    onDialog = async (dialog) => {
+      if (dialogs.length < 10) dialogs.push({type: String(dialog.type()).slice(0, 24), message: String(dialog.message()).slice(0, 240), action: spec.dialogAction === "accept" ? "accept" : "dismiss"});
+      try { if (spec.dialogAction === "accept") await dialog.accept(String(spec.dialogPrompt ?? "").slice(0, 500)); else await dialog.dismiss(); } catch { /* page may close while handling */ }
+    };
+    page.on("dialog", onDialog);
     let base = null;
     try { recorder = await attachRecorder(context, page); }
     catch (error) { base = { recorderError: clampStr(error?.message ?? String(error), 200) }; }
     let result = await performAction(action, spec, page, context, recorder, consoleMsgs, timeoutMs, connectDeadline, base);
-    result = await withScreenshot({ ...result, tab: tabIndex, tabs }, page, spec, action);
+    if (dialogs.length && result && typeof result === "object") result = {...result, dialogs};
+    if (action !== "turnstile") result = await withScreenshot({ ...result, ...tabMetadata(context, page) }, page, spec, action);
     return { ...result, ...(action === "close" && spec.shutdown === true ? { shutdown: true } : {}) };
   } catch (error) {
     return { ok: false, error: clampStr(error?.message ?? String(error), 500),
       ...(error instanceof DriverFailure && error.diag ? { diag: error.diag } : {}) };
   } finally {
-    try { if (recorder) await recorder.detach(); } catch { /* already detached */ }
     detachConsole?.();
+    detachDownloads?.();
+    if (page && onDialog) page.off("dialog", onDialog);
   }
 }
 

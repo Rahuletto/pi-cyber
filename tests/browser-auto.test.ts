@@ -182,6 +182,14 @@ describe("browser (single-tool) validation", () => {
     expect(() => validateParams({ action: "navigate", url: "https://example.com", profile: "ok.name" } as any)).not.toThrow();
   });
 
+  test("download export requires an explicit index and network artifact needs a capture ref", () => {
+    expect(() => validateParams({action:"download"} as any)).toThrow(/downloadIndex required/);
+    expect(() => validateParams({action:"download", downloadIndex:20} as any)).toThrow(/downloadIndex must/);
+    expect(() => validateParams({action:"networkArtifact"} as any)).toThrow(/captureId required/);
+    expect(() => validateParams({action:"networkArtifact", captureId:"n1", maxBytes:600000} as any)).toThrow(/opaque ID/);
+    expect(() => validateParams({action:"networkArtifact", captureId:`n${"a".repeat(32)}`, maxBytes:600000} as any)).toThrow(/maxBytes must/);
+  });
+
   test("includeScreenshot/fullPage apply to navigate+snapshot+harvest, not eval/close/fingerprint", () => {
     expect(() => validateParams({ action: "eval", code: "return 1", includeScreenshot: true } as any))
       .toThrow(/includeScreenshot\/fullPage apply only to the navigate, turnstile and clearance actions \(not eval\)/);
@@ -366,6 +374,20 @@ describe("browser (single-tool) execute — session actions", () => {
 
 
 describe("browser harvest actions", () => {
+  test("bounded download bytes become an opaque artifact reference", async () => {
+    freshWork();
+    stubCloakRoot();
+    stubProfileBase();
+    fakeNode(JSON.stringify({ok:true, download:{filename:"fixture.json", contentType:"application/json", bytes:7, dataBase64:Buffer.from('{"ok":1}').toString("base64")}}) + "\n");
+    stubEvidence();
+    const execute = browserTool!.execute as any;
+    const result = await execute("download", {action:"download", downloadIndex:0}, undefined, undefined, ctx);
+    expect(result.details.artifacts).toHaveLength(1);
+    expect(result.details.artifacts[0]).toMatchObject({kind:"browser-download", contentType:"application/json", bytes:8});
+    expect(textOf(result)).toContain("fixture.json");
+    expect(textOf(result)).not.toContain(Buffer.from('{"ok":1}').toString("base64"));
+  });
+
   test("turnstile spec shape: url + profileDir, no steps; token renders in its own line, never in the summary meta", async () => {
     freshWork();
     stubCloakRoot();
@@ -374,6 +396,12 @@ describe("browser harvest actions", () => {
     const canned = JSON.stringify({
       ok: true,
       url: "https://target.test/signup",
+      finalUrl: "https://target.test/token",
+      tab: 1,
+      tabId: "t4",
+      tabs: [{ index: 1, id: "t4", url: "https://target.test/token" }],
+      screenshotPath: "/tmp/token.png",
+      screenshotBytes: 1234,
       ua: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Chrome/145.0.0.0",
       token,
       source: "getResponse",
@@ -397,6 +425,11 @@ describe("browser harvest actions", () => {
     expect(text).toContain(token); // the token appears in its designated line
     expect(result.details.tokenLength).toBe(token.length);
     expect(result.details.source).toBe("getResponse");
+    expect(text).toContain("page: https://target.test/token");
+    expect(text).toContain("screenshot: /tmp/token.png (1234 bytes)");
+    expect(result.details.url).toBe("https://target.test/token");
+    expect(result.details.tabId).toBe("t4");
+    expect(result.details.screenshotPath).toBe("/tmp/token.png");
   });
 
   test("turnstile ok:false diag renders as isError with sawChallenge + frame info", async () => {
@@ -570,5 +603,31 @@ describe("browser compactDiag", () => {
   test("non-object diag renders empty", () => {
     expect(compactDiag(null)).toBe("");
     expect(compactDiag([1])).toBe("");
+  });
+});
+
+describe("browser expanded controls", () => {
+  test("accepts tab controls, frame interaction, and network inspection", () => {
+    for (const action of ["tabs", "newTab", "switchTab", "frames", "network", "reload", "back", "forward"]) {
+      expect(() => validateParams({ action, ...(action === "switchTab" ? {tabId: "t1"} : {}) } as any)).not.toThrow();
+    }
+    expect(() => validateParams({ action: "act", frame: 1, steps: [
+      {op: "check", sel: "#agree"}, {op: "select", sel: "#plan", value: "basic"},
+      {op: "waitSel", sel: "#done", state: "visible"}, {op: "waitURL", value: "**/done"},
+    ] } as any)).not.toThrow();
+    expect(() => validateParams({action: "act", steps: [{op: "click"}]} as any)).toThrow(/sel required/);
+    expect(() => validateParams({action: "snapshot", tab: 0, tabId: "t1"} as any)).toThrow(/one tab selector/);
+    expect(() => validateParams({action: "snapshot", frame: -1} as any)).toThrow(/frame/);
+  });
+
+  test("forwards stable tab, frame, step controls, and network filter to the driver", async () => {
+    freshWork(); stubCloakRoot(); stubProfileBase(); stubEvidence(); fakeNode(CANNED_OK);
+    await (browserTool!.execute as any)("controls", { action: "act", tabId: "t2", frame: 1,
+      steps: [{op: "hover", sel: "#menu"}], stopOnError: true,
+      includeNetwork: true, networkFilter: "/api/",
+    }, undefined, undefined, ctx);
+    expect(driverSpec()).toMatchObject({action: "act", tabId: "t2", frame: 1,
+      steps: [{op: "hover", sel: "#menu"}], stopOnError: true,
+      includeNetwork: true, networkFilter: "/api/"});
   });
 });

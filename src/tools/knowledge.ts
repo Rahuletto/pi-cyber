@@ -4,6 +4,7 @@ import { containsSecretLike } from "../evidence/secrets.ts";
 import {
   KNOWLEDGE_SOURCES,
   MAX_HITS,
+  MAX_FETCH_WINDOW_CHARS,
   openKnowledge,
   type KnowledgeHit,
   type KnowledgeSource,
@@ -46,8 +47,12 @@ const parameters = Type.Object({
     Type.Literal("search"),
     Type.Literal("stats"),
     Type.Literal("rebuild"),
+    Type.Literal("fetch"),
   ], { description: "Knowledge interaction to perform: search, stats, rebuild." }),
   query: Type.Optional(Type.String({ maxLength: 512, description: "Free-text query (search). Quoted phrases are kept; terms are ANDed." })),
+  id: Type.Optional(Type.String({ minLength: 1, maxLength: 64, description: "Opaque identifier returned by search (fetch). Content changes or removal invalidate it." })),
+  offset: Type.Optional(Type.Number({ minimum: 0, maximum: 32_768, description: "Character offset into the indexed document (fetch)." })),
+  length: Type.Optional(Type.Number({ minimum: 1, maximum: MAX_FETCH_WINDOW_CHARS, default: 4_000, description: `Window length in characters; hard cap ${MAX_FETCH_WINDOW_CHARS}.` })),
   source: Type.Optional(Type.Union(
     KNOWLEDGE_SOURCES.map((source) => Type.Literal(source)),
     { description: "Restrict to one source (search) or re-index one source (rebuild). Omit for all sources." },
@@ -65,6 +70,7 @@ function safeQueryEcho(query: string): string {
 function renderHit(hit: KnowledgeHit, index: number): string {
   return [
     `${index}. [${hit.source}] ${hit.title}`,
+    `   id: ${hit.id}`,
     `   ref: ${hit.ref}`,
     hit.snippet ? `   ${hit.snippet}` : null,
   ].filter(Boolean).join("\n");
@@ -166,6 +172,25 @@ const knowledgeTool: ToolDefinition<typeof parameters> = {
             stale: stats.sources.filter((source) => source.stale).map((source) => source.source),
             refusals: stats.refusals.length,
           },
+        };
+      }
+      if (params.action === "fetch") {
+        if (!params.id) throw new Error("id required for the fetch action.");
+        if ((params.offset !== undefined && !Number.isInteger(params.offset)) || (params.length !== undefined && !Number.isInteger(params.length))) {
+          throw new Error("offset and length must be integers.");
+        }
+        const doc = store.fetch(params.id, { offset: params.offset, length: params.length ?? 4_000 });
+        if (!doc) throw new Error("knowledge hit ID is invalid, stale, or withheld.");
+        const text = [
+          `[${doc.source}] ${doc.title}`,
+          `ref: ${doc.ref}`,
+          `indexed: ${doc.indexedAt}`,
+          `window: ${doc.offset}-${doc.offset + doc.text.length} of ${doc.totalChars} characters`,
+          doc.text,
+        ].join("\n");
+        return {
+          content: [{ type: "text", text: clipOutput(text) }],
+          details: { action: "fetch", id: doc.id, source: doc.source, ref: doc.ref, indexedAt: doc.indexedAt, offset: doc.offset, returnedChars: doc.text.length, totalChars: doc.totalChars },
         };
       }
       const rebuild = store.rebuild(params.source);
