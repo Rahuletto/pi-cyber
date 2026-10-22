@@ -1,7 +1,6 @@
 import type { AgentToolResult, ExtensionAPI, ExtensionToolContext, ToolDefinition } from "@earendil-works/pi-coding-agent";
 import { Type, type Static } from "typebox";
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
+import { spawn } from "node:child_process";
 import { mkdirSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
@@ -44,7 +43,7 @@ import { browserProfileDir, resolveCloakDir, resolveNodeBin } from "./cloak.ts";
  *                them (what URLs the network layer presents).
  *
  * Process topology per call:
- *   Bun tool -> (execFile) -> node browser-driver.mjs (single JSON argv)
+ *   Bun tool -> detached node browser-driver.mjs (single JSON argv)
  *   -> cloakbrowser launchPersistentContext (profile dir)
  *
  * Secret discipline: cookie/token values appear in the tool output ONLY in
@@ -55,12 +54,10 @@ import { browserProfileDir, resolveCloakDir, resolveNodeBin } from "./cloak.ts";
  */
 
 const DRIVER_PATH = fileURLToPath(new URL("./browser-driver.mjs", import.meta.url));
-/** execFile watchdog: params budget + engine launch/teardown headroom. */
+/** First-result watchdog: params budget + engine launch/teardown headroom. */
 const EXEC_BUFFER_MS = 45_000;
 const MAX_OUTPUT_CHARS = 16_000;
 const TRUNCATED = "[truncated]";
-
-const execFileAsync = promisify(execFile);
 
 const URL_PATTERN = /^(https?):\/\/[A-Za-z0-9._~:/?#[\]@!$&'()*+,;=%-]+$/;
 
@@ -180,8 +177,8 @@ export function validateParams(params: BrowserParams): void {
   if (params.shutdown === true && action !== "close") {
     throw new Error(`shutdown applies only with action "close".`);
   }
-  // Harvest actions are single purpose: no steps/code mixing (screenshot fine).
-  if ((HARVEST_ACTIONS as readonly string[]).includes(action) && params.steps !== undefined) {
+  // Turnstile widgets can mount only after interacting with the page.
+  if (action === "clearance" && params.steps !== undefined) {
     throw new Error(`steps do not apply to ${action}.`);
   }
   if (action === FINGERPRINT_ACTION && params.steps !== undefined) {
@@ -496,6 +493,8 @@ export async function runBrowser(params: BrowserParams, signal: AbortSignal | un
     spec.url = action === FINGERPRINT_ACTION
       ? (params.url ?? "https://tls.peet.ws/api/all").trim()
       : params.url!.trim();
+    // Run interaction steps before polling a widget that mounts on demand.
+    if (action === "turnstile" && params.steps?.length) spec.steps = params.steps.slice(0, 15);
   }
   if (action === "eval") spec.code = params.code!;
   if (action === "snapshot") {
@@ -506,16 +505,60 @@ export async function runBrowser(params: BrowserParams, signal: AbortSignal | un
   if (params.includeCookies === true) spec.includeCookies = true;
   if (wantsShot) { spec.screenshot = true; spec.screenshotDir = shotDir; }
   spec.fullPage = params.fullPage === true;
+  if (params.shutdown === true) spec.shutdown = true;
 
   let stdout = "";
   try {
-    const result = (await execFileAsync(nodeBin, [DRIVER_PATH, JSON.stringify(spec)], {
-      encoding: "utf-8",
-      timeout: timeoutSec * 1_000 + EXEC_BUFFER_MS,
-      maxBuffer: 16 * 1024 * 1024,
-      signal,
-    })) as unknown as { stdout: string };
-    stdout = result.stdout;
+    signal?.throwIfAborted();
+    const child = spawn(nodeBin, [DRIVER_PATH, JSON.stringify(spec)], {
+      detached: true,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    child.unref();
+    stdout = await new Promise<string>((resolve, reject) => {
+      let out = "";
+      let err = "";
+      let settled = false;
+      const finish = (error?: Error, line?: string) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        signal?.removeEventListener("abort", abort);
+        // The daemon owns the browser now. Release the pipes as well as the
+        // process handle so the tool host can exit independently.
+        child.stdout!.destroy();
+        child.stderr!.destroy();
+        if (error) reject(error);
+        else resolve(line!);
+      };
+      const abort = () => {
+        child.kill();
+        finish(new Error("browser driver aborted"));
+      };
+      const timer = setTimeout(() => {
+        child.kill();
+        finish(new Error("browser driver timed out"));
+      }, timeoutSec * 1_000 + EXEC_BUFFER_MS);
+      signal?.addEventListener("abort", abort, { once: true });
+      child.stdout!.setEncoding("utf8");
+      child.stderr!.setEncoding("utf8");
+      child.stdout!.on("data", (chunk: string) => {
+        out += chunk;
+        const newline = out.indexOf("\n");
+        if (newline >= 0) finish(undefined, out.slice(0, newline));
+        else if (out.length > 2_000_000) {
+          child.kill();
+          finish(new Error("browser driver output exceeded the limit"));
+        }
+      });
+      child.stderr!.on("data", (chunk: string) => { err = (err + chunk).slice(-4096); });
+      child.once("error", (error) => finish(error));
+      // close follows final stdout data; exit can precede pipe drainage.
+      child.once("close", (code) => {
+        if (!settled) finish(new Error(err.trim().slice(0, 300) || `browser driver exited ${code}`));
+      });
+      if (signal?.aborted) abort();
+    });
   } catch (error) {
     const err = error as NodeJS.ErrnoException & { stderr?: string | Buffer };
     const stderr = typeof err.stderr === "string" ? err.stderr.trim() : "";

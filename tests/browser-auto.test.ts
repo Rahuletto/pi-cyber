@@ -162,8 +162,11 @@ describe("browser (single-tool) validation", () => {
   test("harvest actions need a url and take no steps (turnstile/clearance/fingerprint)", () => {
     expect(() => validateParams({ action: "turnstile" } as any)).toThrow(/url required for the turnstile action/);
     expect(() => validateParams({ action: "clearance" } as any)).toThrow(/url required for the clearance action/);
-    expect(() => validateParams({ action: "turnstile", url: "https://e.test", steps: [{ op: "click", sel: "#x" }] } as any))
-      .toThrow(/steps do not apply to turnstile/);
+ // turnstile ACCEPTS steps: a widget that mounts only after the page is acted
+ // on never loads unless they run before the poll.
+ expect(() => validateParams({ action: "turnstile", url: "https://e.test", steps: [{ op: "click", sel: "#x" }] } as any)).not.toThrow();
+ expect(() => validateParams({ action: "clearance", url: "https://e.test", steps: [{ op: "click", sel: "#x" }] } as any))
+ .toThrow(/steps do not apply to clearance/);
     expect(() => validateParams({ action: "fingerprint", steps: [] } as any))
       .toThrow(/steps do not apply to fingerprint/);
     // fingerprint without a url is fine (defaults to the tls probe endpoint)

@@ -20,9 +20,9 @@
  *   fingerprint — the engine's UA + JA3/JA4/HTTP-2 as any target sees it.
  *
  * Contract:
- *   - spawned with execFile as `node browser-driver.mjs <one JSON argv>`,
+ *   - spawned detached as `node browser-driver.mjs <one JSON argv>`,
  *   - prints exactly ONE JSON object line to stdout,
- *   - {"ok":true,...} and {"ok":false,"error":...,"diag":...} both exit 0,
+ *   - later calls attach to the per-profile daemon; shutdown releases it,
  *   - catastrophic setup failure (bad argv, missing cloak install) writes
  *     a plain message to stderr and exits non-zero; the tool surfaces
  *     that path as "browser driver failed:".
@@ -33,17 +33,16 @@
  * is printed elsewhere; a turnstile token appears only in its own result
  * field. Nothing token/cookie-shaped is ever logged.
  *
- * State reuse: the profile dir is the state — launchPersistentContext
- * restores cookies/localStorage from disk every call, so a cf_clearance
- * or site login harvested once stays good for later calls. The driver
- * still reuses the LAST non-blank page inside the fresh context so a
- * multi-step flow continues on the page where the last call left off
- * within a lived-in context (pages() in insertion order).
+ * State reuse: one detached daemon keeps each profile context alive and
+ * later driver calls attach over localhost. The last open http(s) tab is
+ * selected by default; spec.tab pins a tab. On shutdown the persistent
+ * profile saves cookies/localStorage for the next launch.
  */
 import { createRequire } from "node:module";
 import { join } from "node:path";
 import { existsSync, mkdirSync, readFileSync, statSync } from "node:fs";
 import { pathToFileURL } from "node:url";
+import { serve as serveSession, readEndpoint, sendSpec } from "./browser-session.mjs";
 
 const spec = JSON.parse(process.argv[2] ?? "{}");
 
@@ -229,18 +228,24 @@ async function attachRecorder(context, page) {
  * recorded instead of losing the event. Last 40 messages, type-distinguished.
  */
 function attachConsole(page, sink) {
-  page.on("console", (message) => {
+  const onConsole = (message) => {
     let text = "";
     let type = "";
     try { text = message.text(); } catch { text = "<unavailable>"; }
     try { type = message.type(); } catch { type = ""; }
     if (sink.length >= 40) sink.shift();
     sink.push({ type: clampStr(type, 24), text: clampStr(text, 240) });
-  });
-  page.on("pageerror", (error) => {
+  };
+  const onPageError = (error) => {
     if (sink.length >= 40) sink.shift();
     sink.push({ type: "pageerror", text: clampStr(error?.message ?? String(error), 240) });
-  });
+  };
+  page.on("console", onConsole);
+  page.on("pageerror", onPageError);
+  return () => {
+    page.off("console", onConsole);
+    page.off("pageerror", onPageError);
+  };
 }
 
 /**
@@ -336,7 +341,7 @@ function describeValue(value, limit) {
 }
 
 /** Per-action output flags: navigate always reports network+console. */
-function optionFlags() {
+function optionFlags(spec) {
   const navDefault = String(spec.action ?? "") === "navigate";
   return {
     network: spec.includeNetwork === undefined ? navDefault : spec.includeNetwork === true,
@@ -349,8 +354,8 @@ function optionFlags() {
  * The snapshot: lightweight, always built on success AND on failure (as
  * diag). Cookie objects appear only when requested, only here.
  */
-async function buildSnapshot(page, context, recorder, consoleMsgs) {
-  const flags = optionFlags();
+async function buildSnapshot(page, context, recorder, consoleMsgs, spec) {
+  const flags = optionFlags(spec);
   const out = {};
   try { out.url = page.url().slice(0, 500); } catch { out.url = ""; }
   try { out.title = (await page.title()).slice(0, 200); } catch { out.title = ""; }
@@ -634,7 +639,7 @@ async function performAction(action, spec, page, context, recorder, consoleMsgs,
         });
       }
     }
-    const snapshot = await buildSnapshot(page, context, recorder, consoleMsgs);
+    const snapshot = await buildSnapshot(page, context, recorder, consoleMsgs, spec);
     if (navError) {
       throw new DriverFailure(`navigation failed: ${navError}`, { ...snapshot, steps: stepsReport });
     }
@@ -646,16 +651,21 @@ async function performAction(action, spec, page, context, recorder, consoleMsgs,
     const consoleStart = consoleMsgs.length;
     const remaining = Math.max(1, timeoutMs - (Date.now() - connectDeadline));
     let result;
+    let evalTimer;
     try {
       result = await Promise.race([
         page.evaluate((src) => { const fn = new Function(src); return fn(); }, code),
-        sleep(remaining).then(() => { throw new Error(`eval exceeded its ${remaining}ms budget`); }),
+        new Promise((_, reject) => {
+          evalTimer = setTimeout(() => reject(new Error(`eval exceeded its ${remaining}ms budget`)), remaining);
+        }),
       ]);
     } catch (error) {
-      const snapshot = await buildSnapshot(page, context, recorder, consoleMsgs);
+      const snapshot = await buildSnapshot(page, context, recorder, consoleMsgs, spec);
       throw new DriverFailure(`eval failed: ${clampStr(error?.message ?? String(error), 300).replace(/\s+/g, " ")}`, snapshot);
+    } finally {
+      clearTimeout(evalTimer);
     }
-    const snapshot = await buildSnapshot(page, context, recorder, consoleMsgs);
+    const snapshot = await buildSnapshot(page, context, recorder, consoleMsgs, spec);
     return {
       ok: true,
       ...snapshot,
@@ -666,7 +676,7 @@ async function performAction(action, spec, page, context, recorder, consoleMsgs,
     };
   }
   // action snapshot: no navigation, current page state only.
-  const snapshot = await buildSnapshot(page, context, recorder, consoleMsgs);
+  const snapshot = await buildSnapshot(page, context, recorder, consoleMsgs, spec);
   return { ok: true, ...snapshot, ...(base ?? {}) };
 }
 
@@ -681,98 +691,83 @@ async function withScreenshot(result, page, spec, action) {
 /* ---------------------------------------------------------------------- */
 /* Main flow                                                                */
 /* ---------------------------------------------------------------------- */
-try {
+async function launchContext(spec) {
+  const cloak = await loadCloak(String(spec.cloakDir));
+  if (typeof cloak.launchPersistentContext !== "function") {
+    throw new Error("cloakbrowser exports no launchPersistentContext()");
+  }
+  const harvest = spec.action === "turnstile" || spec.action === "clearance";
+  const showUi = spec.showUi === true;
+  const args = harvest && !showUi ? ["--window-position=-32000,-32000", "--window-size=1280,900"] : [];
+  if (!spec.profileDir) throw new Error("driver misconfigured: cloak mode needs profileDir");
+  return cloak.launchPersistentContext({
+    userDataDir: String(spec.profileDir), headless: harvest ? false : !showUi,
+    viewport: { width: 1280, height: 900 }, ...(args.length ? { args } : {}),
+  });
+}
+
+async function runOnce(spec, context) {
   const timeoutMs = Math.min(Math.max(Number(spec.timeoutMs ?? 60_000), 1_000), 180_000);
   const action = String(spec.action ?? "");
-  if (!ACTIONS.includes(action)) {
-    fail(`unknown action "${clampStr(action, 32)}" (expected navigate | eval | snapshot | close | turnstile | clearance | fingerprint)`);
-  }
-
-  if (spec.cloakDir) {
-    /* ------------------------------------------------------------------ */
-    /* CLOAK (the only engine): CloakBrowser launchPersistentContext       */
-    /* ------------------------------------------------------------------ */
-    const cloak = await loadCloak(String(spec.cloakDir));
-    if (typeof cloak.launchPersistentContext !== "function") {
-      fail(`cloakbrowser under ${clampStr(String(spec.cloakDir), 120)} exports no launchPersistentContext()`);
-    }
-    const harvest = action === "turnstile" || action === "clearance";
-    const showUi = spec.showUi === true;
-    // Harvest actions MUST run headed (offscreen — invisible on the
-    // operator's screen): headless never starts a Cloudflare challenge, the
-    // widget mounts but never boots. showUi keeps a genuinely visible window.
-    const headless = harvest ? false : !showUi;
-    const launchArgs = harvest && !showUi
-      ? ["--window-position=-32000,-32000", "--window-size=1280,900"]
-      : [];
-    const profileDir = String(spec.profileDir ?? "");
-    if (!profileDir) fail("driver misconfigured: cloak mode needs profileDir");
-    // PERSISTENT PROFILE: launchPersistentContext returns a CONTEXT directly
-    // (not a browser) and its cookies + localStorage live in profileDir —
-    // closing the context SAVES the profile, so a solved challenge or login
-    // persists for later calls.
-    const context = await cloak.launchPersistentContext({
-      userDataDir: profileDir,
-      headless,
-      viewport: { width: 1280, height: 900 },
-      ...(launchArgs.length ? { args: launchArgs } : {}),
-    });
-
+  let recorder = null;
+  let page;
+  let detachConsole;
+  try {
+    if (!ACTIONS.includes(action)) throw new DriverFailure(`unknown action "${clampStr(action, 32)}"`);
     const connectDeadline = Date.now();
-    let finalResult = null;
-    let recorder = null;
-    try {
-      // PAGE REUSE: act on the LAST
-      // http(s) page in the restored context, else create one.
-      // TAB SELECTION. Every open http(s) tab is listed and the chosen one
- // reported back: a Cloudflare challenge that smells automation is beaten
- // by CLOSING the suspected tab and reopening a fresh one, and the tab
- // that finally passes is not predictable. `spec.tab` (0-based, insertion
- // order) pins the choice; absent, the LAST open tab wins, which is the
- // freshly reopened one.
- const pages = context.pages().filter((p) => {
- try { return !p.isClosed() && /^https?:/.test(p.url()); } catch { return false; }
- });
- const tabs = pages.map((p, i) => ({ index: i, url: clampStr(p.url(), 300) }));
- let page;
- if (spec.tab === undefined || spec.tab === null) {
- page = pages.length ? pages[pages.length - 1] : await context.newPage();
- } else {
- const index = Number(spec.tab);
- if (!Number.isInteger(index) || index < 0 || index >= pages.length) {
- fail(`tab ${clampStr(String(spec.tab), 12)} is not an open tab (open: ${pages.length})`, { tabs });
- }
- page = pages[index];
- }
- const tabIndex = Math.max(0, pages.indexOf(page));
-
-      const consoleMsgs = [];
-      attachConsole(page, consoleMsgs);
-
-      // recorder registered once per driver call, right after page selection
-      // (BEFORE any navigation), detached in the inner finally. cloak is real
-      // chromium: context.newCDPSession works; degrade on any surprise.
-      try {
-        recorder = await attachRecorder(context, page);
-      } catch (error) {
-        // network recording is best-effort: degrade, never fail the call
-        recorder = null;
-        finalResult = { recorderError: clampStr(error?.message ?? String(error), 200) };
+    const pages = context.pages().filter((p) => !p.isClosed() && /^https?:/.test(p.url()));
+    const tabs = pages.map((p, index) => ({ index, url: clampStr(p.url(), 300) }));
+    if (spec.tab === undefined || spec.tab === null) {
+      page = pages.length ? pages[pages.length - 1] : await context.newPage();
+    } else {
+      const index = Number(spec.tab);
+      if (!Number.isInteger(index) || index < 0 || index >= pages.length) {
+        throw new DriverFailure(`tab ${clampStr(String(spec.tab), 12)} is not an open tab (open: ${pages.length})`, { tabs });
       }
-
-      finalResult = await performAction(action, spec, page, context, recorder, consoleMsgs, timeoutMs, connectDeadline, finalResult);
- finalResult = { ...finalResult, tab: tabIndex, tabs };
-      finalResult = await withScreenshot(finalResult, page, spec, action);
-    } finally {
-      // The recorder detaches; closing the persistent context SAVES the
-      // profile and exits the browser. 5s race guard so a wedged Chromium
-      // can never hang the driver past this point.
-      try { if (recorder) await recorder.detach(); } catch { /* detached or never attached */ }
-      await Promise.race([context.close().catch(() => {}), sleep(5_000)]);
+      page = pages[index];
     }
+    const tabIndex = Math.max(0, pages.indexOf(page));
+    const consoleMsgs = [];
+    detachConsole = attachConsole(page, consoleMsgs);
+    let base = null;
+    try { recorder = await attachRecorder(context, page); }
+    catch (error) { base = { recorderError: clampStr(error?.message ?? String(error), 200) }; }
+    let result = await performAction(action, spec, page, context, recorder, consoleMsgs, timeoutMs, connectDeadline, base);
+    result = await withScreenshot({ ...result, tab: tabIndex, tabs }, page, spec, action);
+    return { ...result, ...(action === "close" && spec.shutdown === true ? { shutdown: true } : {}) };
+  } catch (error) {
+    return { ok: false, error: clampStr(error?.message ?? String(error), 500),
+      ...(error instanceof DriverFailure && error.diag ? { diag: error.diag } : {}) };
+  } finally {
+    try { if (recorder) await recorder.detach(); } catch { /* already detached */ }
+    detachConsole?.();
+  }
+}
 
-    process.stdout.write(JSON.stringify(finalResult) + "\n");
-    process.exit(0);
+try {
+  const profileDir = String(spec.profileDir ?? "");
+  const live = profileDir ? readEndpoint(profileDir) : null;
+  if (live) {
+    try {
+      const attached = await sendSpec(live.port, live.token, spec);
+      process.stdout.write(JSON.stringify(attached) + "\n");
+      process.exit(0);
+    } catch (error) {
+      // Only a refused connection proves the old daemon is gone. A slow or
+      // disconnected response must never replay a potentially mutating action.
+      if (error.code !== "ECONNREFUSED" && error.code !== "ENOENT") throw error;
+    }
+  }
+  const context = await launchContext(spec);
+  const first = await runOnce(spec, context);
+  if (spec.action === "close" && spec.shutdown === true) {
+    await context.close();
+    process.stdout.write(JSON.stringify(first) + "\n");
+  } else {
+    // Publish the endpoint before acknowledging the first call.
+    const session = await serveSession(profileDir, context, (next) => runOnce(next, context));
+    process.stdout.write(JSON.stringify(first) + "\n");
+    await session.closed;
   }
 } catch (error) {
   if (error instanceof DriverFailure) fail(error.message, error.diag);
