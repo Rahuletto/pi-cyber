@@ -118,7 +118,7 @@ const ACTIONS = ["navigate", "eval", "snapshot", "close", "turnstile", "clearanc
 
 const parameters = Type.Object({
   action: Type.Union(ACTIONS.map((action) => Type.Literal(action)), {
-    description: "navigate: open url, optionally run ≤15 interaction steps, ALWAYS return a snapshot (url/title/text/inputs + network/console, cookies on request). eval: console break-in on the current page: JS code, explicit return required, result clamped. snapshot: snapshot the CURRENT page without navigating (respects the include* flags). close: close the driver's page (the persistent profile itself is kept). turnstile: HARVEST a Cloudflare Turnstile token — runs HEAD-OFFSCREEN (invisible; headless never starts a challenge) inside the profile and returns the resolved token (single-use, ~300s: present via bypass_fetch from the same host immediately). clearance: HARVEST a cf_clearance cookie jar — runs the full managed challenge HEAD-OFFSCREEN and returns the origin jar + engine UA for a coherent same-host bypass_fetch handoff; the jar persists in the profile. fingerprint: the engine's own UA + JA3/JA4/HTTP-2 as any target sees it.",
+    description: "navigate: open url, optionally run ≤15 interaction steps, ALWAYS return a snapshot (url/title/text/inputs + network/console, cookies on request). eval: console break-in on the current page: JS code, explicit return required, result clamped. snapshot: snapshot the CURRENT page without navigating (respects the include* flags). close: close the driver's page (the persistent profile itself is kept). Every result lists the open tabs (`index*=url`, star = the tab acted on); pass `tab` to pin one — a close-and-reopen that finally passes a challenge lands as the LAST tab, which is the default. turnstile: HARVEST a Cloudflare Turnstile token — runs HEAD-OFFSCREEN (invisible; headless never starts a challenge) inside the profile and returns the resolved token (single-use, ~300s: present via bypass_fetch from the same host immediately). clearance: HARVEST a cf_clearance cookie jar — runs the full managed challenge HEAD-OFFSCREEN and returns the origin jar + engine UA for a coherent same-host bypass_fetch handoff; the jar persists in the profile. fingerprint: the engine's own UA + JA3/JA4/HTTP-2 as any target sees it.",
   }),
   url: Type.Optional(Type.String({ maxLength: 2000, description: "Absolute http(s) URL (navigate, turnstile, clearance; optional default tls.peet.ws for fingerprint)." })),
   steps: Type.Optional(Type.Array(browserStepSchema, { maxItems: 15, description: "navigate only, ≤15 sequential steps. Step failures are reported per-step and the sequence continues." })),
@@ -129,7 +129,8 @@ const parameters = Type.Object({
   timeoutSec: Type.Optional(Type.Number({ minimum: 5, maximum: 180, default: 60, description: "Whole-action budget (default 60, max 180). Turnstile/clearance typically need 45-90." })),
   shutdown: Type.Optional(Type.Boolean({ description: "close only: close the context now and saves the profile for the next call." })),
   showUi: Type.Optional(Type.Boolean({ default: false, description: "open a real visible browser window and keep working in it (default: headless, invisible). Harvest actions (turnstile/clearance) force a REAL window anyway, offscreen at -32000,-32000, so nothing appears on the operator's screen." })),
-  profile: Type.Optional(Type.String({ maxLength: 32, description: "named persistent profile: cookies + localStorage survive across calls and close (default profile name: 'default'); per-target profiles keep sites isolated" })),
+  tab: Type.Optional(Type.Number({ minimum: 0, maximum: 50, description: "0-based index of the open tab to act on (see the tabs list every result returns). Omit it and the LAST open tab is used — the freshly reopened one after a close-and-reopen." })),
+ profile: Type.Optional(Type.String({ maxLength: 32, description: "named persistent profile: cookies + localStorage survive across calls and close (default profile name: 'default'); per-target profiles keep sites isolated" })),
   includeScreenshot: Type.Optional(Type.Boolean({ description: "save a PNG of the page and return its file path (agent can open it with the read tool)" })),
   fullPage: Type.Optional(Type.Boolean({ description: "only with includeScreenshot: capture the full scroll height instead of the viewport (viewport fallback past Chromium's ~16384px page cap)" })),
 }, { additionalProperties: false });
@@ -315,6 +316,14 @@ function failureSnapshotLines(diag: Record<string, unknown>): string[] {
   return lines;
 }
 
+/** `0=url | 1*=url` — the star marks the tab this call acted on. */
+function tabLines(result: Record<string, unknown>): string[] {
+ const tabs = Array.isArray(result.tabs) ? (result.tabs as Array<Record<string, unknown>>) : [];
+ if (tabs.length === 0) return [];
+ const active = Number(result.tab ?? -1);
+ return ["tabs: " + tabs.map((t) => `${t.index}${Number(t.index) === active ? "*" : ""}=${String(t.url ?? "").slice(0, 120)}`).join(" | ")];
+}
+
 function renderResult(action: string, result: Record<string, unknown>): BrowserOutcome {
   // Harvest actions get dedicated renderers — the token/jar contract is
   // their whole point and must not compete with the snapshot renderer.
@@ -336,6 +345,7 @@ function renderResult(action: string, result: Record<string, unknown>): BrowserO
       `siteKey: ${result.siteKey ?? "null"}`,
       `engine ua: ${result.ua ?? "unknown"}`,
       "token: below — present it to the same target from the same egress via bypass_fetch immediately (single-use, ~300s)",
+ ...tabLines(result),
       "---",
     ].join("\n");
     return { text: `${head}\n${clip(token)}`, meta, cookies: [] };
@@ -360,6 +370,7 @@ function renderResult(action: string, result: Record<string, unknown>): BrowserO
       `cfClearance: ${clf ? `present (${String(clf.value ?? "").length} chars)` : "MISSING"}`,
       `engine ua: ${result.ua ?? "unknown"} (present cookies with a matching UA header via bypass_fetch, same egress, immediately)`,
       `cookies(${cookieList.length}): ${shown || "none"}`,
+ ...tabLines(result),
     ].join("\n");
     return { text: head, meta, cookies: cookieList };
   }
@@ -378,6 +389,7 @@ function renderResult(action: string, result: Record<string, unknown>): BrowserO
       `ja3: ${result.ja3 ?? "n/a"}`,
       `ja4: ${result.ja4 ?? "n/a"}`,
       `http2 (akamai): ${result.http2 ?? "n/a"}`,
+ ...tabLines(result),
       ...((result.text ? [`---\n${clip(String(result.text))}`] : []) as string[]),
     ].join("\n");
     return { text: head, meta, cookies: [] };
@@ -388,6 +400,7 @@ function renderResult(action: string, result: Record<string, unknown>): BrowserO
   const pageUrl = String(result.url ?? "");
   const head: string[] = [`browser ${action} ok`];
   if (pageUrl || title) head.push(`page: ${pageUrl}${title ? ` — ${title}` : ""}`);
+ head.push(...tabLines(result));
   const inputs = Array.isArray(result.inputs) ? (result.inputs as Array<Record<string, unknown>>) : [];
   if (inputs.length > 0) {
     head.push(`inputs(${inputs.length}): ${inputs.slice(0, 8).map(renderInput).join(" | ")}${inputs.length > 8 ? " …" : ""}`);
@@ -472,6 +485,7 @@ export async function runBrowser(params: BrowserParams, signal: AbortSignal | un
     profileDir: profile.dir,
     showUi: params.showUi === true,
   };
+ if (params.tab !== undefined) spec.tab = params.tab;
   if (action === "navigate") {
     spec.url = params.url!.trim();
     spec.steps = (params.steps ?? []).slice(0, 15);

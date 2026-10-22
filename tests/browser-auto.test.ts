@@ -226,7 +226,32 @@ describe("browser (single-tool) execute — session actions", () => {
     expect(text).toContain("[log] boot");
     expect(text).toContain("cookies: probe=yes");
     expect(text).toContain("step eval#0 → doc title");
-  });
+ });
+
+
+ test("tab pinning: the index reaches the driver spec and the tab list marks the acted-on tab", async () => {
+ freshWork();
+ stubCloakRoot();
+ stubProfileBase();
+ const canned = JSON.stringify({
+ ok: true,
+ url: "https://target.example/challenge",
+ title: "Just a moment",
+ text: "challenge passed",
+ tab: 1,
+ tabs: [
+ { index: 0, url: "https://target.example/signup" },
+ { index: 1, url: "https://target.example/challenge" },
+ ],
+ }) + "\n";
+ fakeNode(canned);
+ stubEvidence();
+ const execute = browserTool!.execute as any;
+ const result = await execute("t-tab", { action: "snapshot", tab: 1 }, undefined, undefined, ctx);
+ expect(driverSpec().tab).toBe(1);
+ const text = textOf(result);
+ expect(text).toContain("tabs: 0=https://target.example/signup | 1*=https://target.example/challenge");
+ });
 
   test("ok:false with diag renders the error + compact diag as an isError result", async () => {
     freshWork();
@@ -335,6 +360,7 @@ describe("browser (single-tool) execute — session actions", () => {
     expect(result.details.shutdown).toContain("cookies persist for the next call");
   });
 });
+
 
 describe("browser harvest actions", () => {
   test("turnstile spec shape: url + profileDir, no steps; token renders in its own line, never in the summary meta", async () => {

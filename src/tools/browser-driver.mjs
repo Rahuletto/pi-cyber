@@ -724,10 +724,27 @@ try {
     try {
       // PAGE REUSE: act on the LAST
       // http(s) page in the restored context, else create one.
-      const pages = context.pages().filter((p) => {
-        try { return !p.isClosed() && /^https?:/.test(p.url()); } catch { return false; }
-      });
-      const page = pages.length ? pages[pages.length - 1] : await context.newPage();
+      // TAB SELECTION. Every open http(s) tab is listed and the chosen one
+ // reported back: a Cloudflare challenge that smells automation is beaten
+ // by CLOSING the suspected tab and reopening a fresh one, and the tab
+ // that finally passes is not predictable. `spec.tab` (0-based, insertion
+ // order) pins the choice; absent, the LAST open tab wins, which is the
+ // freshly reopened one.
+ const pages = context.pages().filter((p) => {
+ try { return !p.isClosed() && /^https?:/.test(p.url()); } catch { return false; }
+ });
+ const tabs = pages.map((p, i) => ({ index: i, url: clampStr(p.url(), 300) }));
+ let page;
+ if (spec.tab === undefined || spec.tab === null) {
+ page = pages.length ? pages[pages.length - 1] : await context.newPage();
+ } else {
+ const index = Number(spec.tab);
+ if (!Number.isInteger(index) || index < 0 || index >= pages.length) {
+ fail(`tab ${clampStr(String(spec.tab), 12)} is not an open tab (open: ${pages.length})`, { tabs });
+ }
+ page = pages[index];
+ }
+ const tabIndex = Math.max(0, pages.indexOf(page));
 
       const consoleMsgs = [];
       attachConsole(page, consoleMsgs);
@@ -744,6 +761,7 @@ try {
       }
 
       finalResult = await performAction(action, spec, page, context, recorder, consoleMsgs, timeoutMs, connectDeadline, finalResult);
+ finalResult = { ...finalResult, tab: tabIndex, tabs };
       finalResult = await withScreenshot(finalResult, page, spec, action);
     } finally {
       // The recorder detaches; closing the persistent context SAVES the
