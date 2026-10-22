@@ -2,7 +2,7 @@
 name: offensive-operator
 description: Develop and validate active paths against authorized targets, chaining supported weaknesses toward the stated objective. Returns demonstrated access, effects and prerequisites.
 advertise: true
-tools: read, grep, find, ls, cyber_state, cyber_evidence, cyber_jobs, cyber_spec, cyber_browser, nuclei, interactsh, httpx, katana, ffuf
+tools: read, grep, find, ls, cyber_state, cyber_evidence, cyber_jobs, cyber_spec, browser, nuclei, interactsh, httpx, katana, ffuf
 extensions: ../../../src/index.ts
 excludeTools: write, edit, bash
 inheritProjectContext: false

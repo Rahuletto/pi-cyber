@@ -30,8 +30,7 @@ fail() { # fail <tool> <reason>
 default_flag() {
   case "$1" in
     ffuf) echo "-V" ;;
-    obscura) echo "--help" ;;
-    trivy|osv-scanner|gitleaks|syft|semgrep) echo "--version" ;;
+        trivy|osv-scanner|gitleaks|syft|semgrep) echo "--version" ;;
     zap) echo "-version" ;;
     *) echo "-version" ;;
   esac

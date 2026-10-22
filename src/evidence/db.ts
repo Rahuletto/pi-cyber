@@ -11,10 +11,10 @@
  *
  * Browser leases (browser_sessions) carry NO partial unique constraint: the
  * table stays a plain append-only ledger so the schema is never rewritten.
- * "One owner per live browser session" is therefore enforced one layer up,
- * by the tool that reads `listSessions({ activeOnly: true })` before it
- * acquires — see src/tools/browser.ts for why that check is sound under the
- * tool's sequential execution mode.
+ * "One owner per live browser session" was enforced one layer up by the
+ * cyber_browser lease tool, which was removed when browser work moved to the
+ * single CloakBrowser `browser` tool (src/tools/browser-auto.ts). The table
+ * stays as an append-only ledger of historical leases; nothing writes it now.
  *
  * Path resolution (worker env):
  * - `CYBER_EVIDENCE_DIR` — base directory, default `<repoRoot>/config/cyber/evidence`

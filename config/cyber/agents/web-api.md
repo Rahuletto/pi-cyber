@@ -2,7 +2,7 @@
 name: web-api
 description: Browser and traffic mapping, route/role matrices, session behaviour and API trust boundaries. Returns reproducible, identity-bound observations.
 advertise: true
-tools: read, grep, find, ls, cyber_state, cyber_evidence, cyber_jobs, cyber_spec, cyber_browser, katana, httpx, naabu, ffuf
+tools: read, grep, find, ls, cyber_state, cyber_evidence, cyber_jobs, cyber_spec, browser, katana, httpx, naabu, ffuf
 extensions: ../../../src/index.ts
 excludeTools: write, edit, bash
 inheritProjectContext: false

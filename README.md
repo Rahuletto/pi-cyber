@@ -5,7 +5,7 @@ Pi Cyber is a local-first security assessment harness for [Pi](https://pi.dev/).
 ## What it provides
 
 - One offense workflow with a red-accented Pi theme and durable session checkpoints.
-- Typed Pi tools for the installed scanner adapters, job tracking, evidence, browser leases, GitHub lookups, and local documentation search.
+- Typed Pi tools for the installed scanner adapters, job tracking, evidence, browser automation, GitHub lookups, and local documentation search.
 - A pinned installer and readiness checks for supported command-line tools.
 - Twelve specialist profiles available through `pi-subagents`.
 - Six project workflow skills and an indexed research catalog.
@@ -88,7 +88,7 @@ The extension registers 18 custom tools. Pi's own built-in tools and tools suppl
 | `cyber_spec` | Load the full specification or one of its focused packages. |
 | `cyber_evidence` | Store and retrieve sanitized evidence references, findings, and summaries. |
 | `cyber_jobs` | List adapters, run a typed job, and inspect job status. |
-| `cyber_browser` | Acquire, release, and inspect an exclusive browser lease; it does not launch a browser. |
+| `browser` | Drive the CloakBrowser engine: navigate, eval, snapshot, and harvest Turnstile/Cloudflare clearance with persistent profiles. |
 | `cyber_knowledge` | Search, inspect, and explicitly rebuild the local skills, research, and documentation index. |
 | `github` | Perform supported GitHub lookups through the `gh` executable. |
 | `subfinder` | Passive subdomain discovery. |

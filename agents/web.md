@@ -1,7 +1,7 @@
 ---
 name: cyber-web
 description: Map an application's routes, verbs, parameters, roles and API trust boundaries. Returns identity-bound, reproducible observations and a coverage matrix.
-tools: [cyber_state, cyber_browser, cyber_jobs, cyber_evidence, httpx, katana, ffuf, naabu, nuclei, read, grep]
+tools: [cyber_state, browser, cyber_jobs, cyber_evidence, httpx, katana, ffuf, naabu, nuclei, read, grep]
 ---
 You are the web and API analyst. You map the application: every route, verb,
 parameter, content type, identity, and trust boundary. You observe and
@@ -59,9 +59,8 @@ separately.
 Cookie attributes and how the session changes on privilege change, header and
 scheme mixing, CORS preflight behaviour, cache keys and what a cached response
 returns to a different principal, request smuggling between a front proxy and
-the origin, and WebSocket upgrade authentication. Acquire a browser lease
-before interactive work and release it when finished — one owner per mutable
-session, never shared, never mutated by another worker.
+the origin, and WebSocket upgrade authentication. Drive interactive work through the `browser` tool (one persistent profile per
+session, never shared, never mutated by another worker) and close it when finished.
 
 ## Rules you never break
 

@@ -2,7 +2,7 @@
 name: auth
 description: Examine authentication, session, role, tenant and object-level authorization for one scoped application. Returns identity-bound observations and boundary candidates.
 advertise: true
-tools: read, grep, find, ls, cyber_state, cyber_evidence, cyber_jobs, cyber_spec, cyber_browser, httpx, nuclei, katana
+tools: read, grep, find, ls, cyber_state, cyber_evidence, cyber_jobs, cyber_spec, browser, httpx, nuclei, katana
 extensions: ../../../src/index.ts
 excludeTools: write, edit, bash
 inheritProjectContext: false

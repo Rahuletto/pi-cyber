@@ -8,7 +8,6 @@ import { registerGithubTool } from "./tools/github.ts";
 import { registerEvidenceTool } from "./tools/evidence.ts";
 import { registerCyberJobsTool } from "./tools/jobs.ts";
 import { registerAdapterTools } from "./tools/adapter-tools.ts";
-import { registerBrowserTool } from "./tools/browser.ts";
 import { registerMailgenTool } from "./tools/mailgen.ts";
 import { registerBypassFetchTool } from "./tools/bypass-fetch.ts";
 import { registerCyberToolsTool } from "./tools/cyber-tools.ts";
@@ -87,8 +86,7 @@ export default function cyber(pi: ExtensionAPI): void {
   registerEvidenceTool(pi);
   registerCyberJobsTool(pi);
   registerAdapterTools(pi);
-  registerBrowserTool(pi);
-  registerMailgenTool(pi);
+    registerMailgenTool(pi);
   registerBypassFetchTool(pi);
   registerBrowserAutoTool(pi);
   registerCyberToolsTool(pi);
