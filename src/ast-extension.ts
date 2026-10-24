@@ -1,10 +1,18 @@
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
+import { Assert } from "typebox/value";
 import type { AstWorkspace, Binding } from "./ast.ts";
 
 const language = Type.Optional(Type.Union(["javascript", "typescript", "tsx", "css", "html"].map((name) => Type.Literal(name))));
 const path = Type.String({ minLength: 1, maxLength: 1024 });
 const pat = Type.String({ minLength: 1, maxLength: 4096 });
+const ops = Type.Array(Type.Object({ pat, out: Type.String({ maxLength: 4096 }) }, { additionalProperties: false }), { minItems: 1, maxItems: 8 });
+const proposalId = Type.String({ minLength: 1, maxLength: 64 });
+// Keep action-specific validation local: Bedrock rejects root schema unions.
+const editInputSchema = Type.Union([
+  Type.Object({ action: Type.Literal("preview"), path, language, ops }, { additionalProperties: false }),
+  Type.Object({ action: Type.Literal("apply"), proposalId }, { additionalProperties: false }),
+]);
 
 /** Intentionally absent from the package's default pi.extensions entry list. */
 export default function astExtension(pi: ExtensionAPI): void {
@@ -31,12 +39,13 @@ export default function astExtension(pi: ExtensionAPI): void {
   pi.registerTool({
     name: "ast_edit", label: "AST staged edit",
     description: "Explicitly requested implementation only: preview structural replacements in one workspace file without writing, then apply its opaque proposalId separately. Preview returns before/after changes; apply rechecks session/branch, original hash, canonical path, symlinks/hardlinks, overlap and parser errors. Proposals expire on session/tree changes or after eight newer previews. Limits: 8 operations, 100 matches, 256 KiB file, 64 KiB result. Empty out deletes matched syntax. No multi-file transaction or semantic refactoring guarantee; review and run compiler/tests. Mode prompts do not authorize edits. No automatic evidence/session copies beyond the ordinary tool result.",
-    parameters: Type.Union([
-      Type.Object({ action: Type.Literal("preview"), path, language, ops: Type.Array(Type.Object({ pat, out: Type.String({ maxLength: 4096 }) }, { additionalProperties: false }), { minItems: 1, maxItems: 8 }) }, { additionalProperties: false }),
-      Type.Object({ action: Type.Literal("apply"), proposalId: Type.String({ minLength: 1, maxLength: 64 }) }, { additionalProperties: false }),
-    ]),
+    parameters: Type.Object({
+      action: Type.Union([Type.Literal("preview"), Type.Literal("apply")], { description: "preview requires path and ops; apply takes only proposalId." }),
+      path: Type.Optional(path), language, ops: Type.Optional(ops), proposalId: Type.Optional(proposalId),
+    }, { additionalProperties: false }),
     executionMode: "sequential",
     async execute(_id, params, _signal, _onUpdate, ctx) {
+      Assert(editInputSchema, params);
       const tools = await workspace(ctx), identity = binding(ctx);
       return result(params.action === "preview" ? await tools.preview(params, identity) : await tools.apply(params.proposalId, identity));
     },

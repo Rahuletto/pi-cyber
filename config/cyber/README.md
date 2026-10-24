@@ -1,9 +1,12 @@
 # config/cyber
 
-Dedicated profile; provider login happens here; nothing personal copied.
+Dedicated profile used by `bun run pi`; provider login and custom model
+configuration happen here. The global installer configures `~/.pi/agent`
+instead, unless `PI_CODING_AGENT_DIR` overrides that destination.
 
-This directory is the Pi **agent directory** for the cyber harness
-(`PI_CODING_AGENT_DIR`). Pi reads `settings.json`, `web-search.json`,
+This directory is the default Pi **agent directory** for the repository
+launcher (`PI_CODING_AGENT_DIR`); an existing environment override takes
+precedence. Pi reads `settings.json`, `web-search.json`,
 `extensions/subagent/config.json`, `agents/` and `skills/` from here, and the
 personal profile in `~/.pi/agent` stays untouched.
 
@@ -18,8 +21,10 @@ personal profile in `~/.pi/agent` stays untouched.
 | `skills/` | Pi skill loader | The six selected bigpowers skills (copied from the pinned package). |
 | `SKILLS-NOTICE.md` | — | Provenance for the copied skills. |
 
-The harness extension itself is loaded from the command line
-(`pi -e <repo>/src/index.ts`); each specialist role also declares
+The repository launcher loads `src/boot.ts`, which defers loading the core
+extension and package factories until `session_start`. Its optional OpenCode
+factory currently references an operator-specific installation path; that
+integration needs a local installation at that path. Each specialist role declares
 `extensions: ../../../src/index.ts` so the child session gets the same cyber
 tools.
 
@@ -29,9 +34,13 @@ tools.
    four pinned packages. Verify with `bun scripts/install-packages.ts --check`
    (read-only) or `bun scripts/install-packages.ts` (also refreshes the copied
    skills).
-2. **Sign in to a provider.** Pi keeps credentials in this profile
-   (`auth.json`); nothing personal is copied. `bun run pi` then asks for the
-   provider login on first use.
+2. **Configure a provider in this profile.** Pi keeps login credentials in
+   `auth.json` and custom provider definitions in `models.json`. For the current
+   proxy use provider ID `marban`, base URL `https://ai.marban.lol/v1`, and API
+   `openai-completions`; see the [model provider example](../../README.md#model-provider).
+   The parent `config/models.json` is an optional installer input, not this
+   profile's model catalogue. The personal profile's providers are not copied
+   automatically.
 3. **Search provider.** `web-search.json` pins `duckduckgo`, which is keyless
    and explicit-only, so no provider is ever auto-selected and no key is
    required. If the operator prefers a keyed provider (Brave, Tavily, Exa,

@@ -65,6 +65,17 @@ test("refuses parser errors including missing tokens and invalid replacement wit
   expect(await readFile(file, "utf8")).toBe("console.log(x);");
 });
 
+test("staged edit rejects fields from the other action before applying a proposal", async () => {
+  const h = await host(), file = resolve(h.cwd, "a.ts");
+  await writeFile(file, "console.log(x);");
+  const proposal = await h.call("ast_edit", { action: "preview", path: "a.ts", ops: [{ pat: "console.log($A)", out: "logger($A)" }] });
+  await expect(h.call("ast_edit", { action: "apply", proposalId: proposal.proposalId, path: "a.ts" })).rejects.toThrow();
+  expect(await readFile(file, "utf8")).toBe("console.log(x);");
+  await expect(h.call("ast_edit", { action: "preview", path: "a.ts", ops: [{ pat: "console.log($A)", out: "logger($A)" }], proposalId: proposal.proposalId })).rejects.toThrow();
+  await h.call("ast_edit", { action: "apply", proposalId: proposal.proposalId });
+  expect(await readFile(file, "utf8")).toBe("logger(x);");
+});
+
 test("refuses stale files, replaced sessions and navigated branches", async () => {
   const h = await host(), file = resolve(h.cwd, "a.ts");
   await writeFile(file, "console.log(x);");

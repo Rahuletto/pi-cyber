@@ -1,5 +1,6 @@
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
+import { Assert } from "typebox/value";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
@@ -81,6 +82,11 @@ const patchSchema = Type.Object({
   scope: Type.Optional(strings), objective: Type.Optional(Type.String({ maxLength: 2000 })),
   coverage: Type.Optional(strings), evidenceRefs: Type.Optional(strings), nextSteps: Type.Optional(strings),
 }, { additionalProperties: false });
+// Keep action-specific validation local: Bedrock rejects root schema unions.
+const stateInputSchema = Type.Union([
+  Type.Object({ action: Type.Literal("get") }, { additionalProperties: false }),
+  Type.Object({ action: Type.Literal("update"), patch: patchSchema }, { additionalProperties: false }),
+]);
 
 export default function cyber(pi: ExtensionAPI): void {
   registerGithubTool(pi);
@@ -198,12 +204,13 @@ export default function cyber(pi: ExtensionAPI): void {
     name: "cyber_state", label: "Cyber state",
     description: "Read or replace selected durable engagement fields: scope, objective, coverage, evidence references and next steps. The engagement is offense-only; record established user scope only. No raw secrets. Lists replace their previous values; use get first.",
     promptSnippet: "Maintain concise engagement scope, objective, coverage, sanitized evidence references and next steps across compaction.",
-    parameters: Type.Union([
-      Type.Object({ action: Type.Literal("get") }, { additionalProperties: false }),
-      Type.Object({ action: Type.Literal("update"), patch: patchSchema }, { additionalProperties: false }),
-    ]),
+    parameters: Type.Object({
+      action: Type.Union([Type.Literal("get"), Type.Literal("update")], { description: "get takes no patch; update requires patch." }),
+      patch: Type.Optional(patchSchema),
+    }, { additionalProperties: false }),
     executionMode: "sequential",
     async execute(_id, params, _signal, _onUpdate, ctx) {
+      Assert(stateInputSchema, params);
       const state = current(ctx);
       const next = params.action === "update" ? updateState(state, params.patch) : state;
       if (params.action === "update") save(next);

@@ -16,22 +16,21 @@ The repository does not include a vulnerable demo target. Use only systems you a
 
 - macOS or Linux. Binary availability depends on the individual tool and platform.
 - [Bun](https://bun.sh/) for installation, scripts, tests, and the `bun:sqlite` runtime.
+- Node.js for the Pi CLI and browser driver, Python 3 for installer configuration, and Git/curl plus platform archive and SHA-256 utilities for downloads.
 - Pi CLI 1.3.0 or compatible. This repository pins the Pi package at 1.3.0.
 - A Pi-supported model provider configured in the dedicated profile before model-backed work or specialist runs.
 
 ## Install and launch
 
-One command, on a machine that has [bun](https://bun.sh) and nothing else:
+With the requirements above available:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/Rahuletto/pi-cyber/main/install.sh | bash
 ```
 
-No clone, no GitHub login, no token. The script fetches the repository itself
-and installs everything the harness needs.
-
 The script fetches the repository itself when it is piped, so there is no
-clone step. From a clone the same script works directly:
+separate clone step for a public checkout. A private fork needs Git credentials.
+From a clone the same script works directly:
 
 ```sh
 git clone https://github.com/Rahuletto/pi-cyber.git ~/.pi/pi-cyber && ~/.pi/pi-cyber/install.sh
@@ -39,9 +38,11 @@ git clone https://github.com/Rahuletto/pi-cyber.git ~/.pi/pi-cyber && ~/.pi/pi-c
 
 That installs the repository dependencies, the global `pi` CLI, the agent
 configuration (extension, theme, skills, operator commands, the twelve
-specialist roles and the pinned packages), the model catalogue, and the
+specialist roles and the pinned packages), and the
 digest-pinned scanner toolchain under `~/.pi/scanners`. It then verifies the
-result. The clone is under 1 MB; the toolchain is the large part.
+result. If an operator-owned `config/models.json` exists, the installer copies
+it into the agent directory. That catalogue is ignored by Git and is absent
+from a fresh clone; configure your provider separately as described below.
 
 Then just run `pi` — from any directory. The harness resolves its own paths,
 so no launcher, environment variable or working directory is required.
@@ -53,15 +54,70 @@ so no launcher, environment variable or working directory is required.
 | `CYBER_REPO_URL` / `CYBER_REF` | Fetch the harness from another fork or tag. |
 | `SKIP_WORDLIST=1` | Skip the ffuf SecLists wordlist. |
 | `SKIP_GLOBAL_PI=1` | Do not install the `pi` CLI. |
-| `CYBER_PROXY_KEY=…` | Write the provider key without the interactive prompt. |
+| `PI_VERSION=…` | Override the global Pi CLI version; the default is 1.3.0. |
+| `PI_CODING_AGENT_DIR=…` | Choose the agent profile configured by the installer. |
+| `CYBER_PROXY_KEY=…` | Create a missing provider key file without prompting. |
+| `CYBER_PROXY_KEY_PATH=…` | Choose the key-file location; defaults to `~/.config/opencode/aimylove.key`. |
 | `PI_TOOLS_DIR=…` | Install the toolchain elsewhere. |
 
-`./install.sh --check` verifies an existing install and changes nothing.
+`./install.sh --check` skips dependency and scanner installation, but still
+writes agent configuration, can copy the local model catalogue, and repairs
+resource links. For read-only inspection, use `bun run packages:check` and
+`bun run doctor`.
 
-`bun run pi` is still available and launches the same harness through the
-dedicated profile in `config/cyber`. Provider credentials and settings for this profile are separate from your personal Pi profile. The first launch may require provider sign-in.
+`bun run pi` launches the harness through the dedicated profile in
+`config/cyber` by default; an existing `PI_CODING_AGENT_DIR` overrides that
+choice. Provider credentials and settings for this profile are separate from
+your personal Pi profile. The first launch may require provider sign-in.
 
-To refresh the six selected workflow skills from the pinned `bigpowers` package, run `bun run packages`. The check-only command above does not modify files.
+To refresh the six selected workflow skills from the pinned `bigpowers` package, run `bun run packages`. `bun run packages:check` checks without refreshing them.
+
+### Model provider
+
+The current proxy endpoint is `https://ai.marban.lol/v1`, with provider ID
+`marban` and API type `openai-completions`. Configure it in the profile you
+actually launch: `~/.pi/agent/models.json` for plain `pi`, or
+`config/cyber/models.json` for `bun run pi`. The two profiles do not share
+provider configuration automatically.
+
+A minimal model catalogue is:
+
+```json
+{
+  "providers": {
+    "marban": {
+      "name": "marban.lol",
+      "baseUrl": "https://ai.marban.lol/v1",
+      "api": "openai-completions",
+      "apiKey": "!cat ~/.config/opencode/aimylove.key",
+      "models": [{ "id": "claude-sonnet-4-6" }]
+    }
+  }
+}
+```
+
+The legacy key filename is compatible with the renamed provider; it is a local
+credential source, not the provider ID. Point `apiKey` at your own configured
+key source, add the model definitions you need, then restart Pi and select
+`marban/claude-sonnet-4-6`. Existing sessions may still reference the old
+`aimylove` ID and need the model selected again.
+
+For a small inference check, with `MARBAN_API_KEY` set in your shell:
+
+```sh
+curl https://ai.marban.lol/v1/chat/completions \
+  -H "Authorization: Bearer $MARBAN_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"claude-sonnet-4-6","messages":[{"role":"user","content":"Reply with OK"}],"max_tokens":32}'
+```
+
+A model appearing in `/v1/models` does not establish inference access. Model
+routes can differ in credentials, credits, tool support, and streaming behavior.
+A rejected tool schema is a request-compatibility problem; a 502
+`upstream_connection_error` indicates a gateway/upstream failure and requires
+server logs to identify its precise cause. Tool schemas use an object at the
+root; action-specific checks run before execution so providers that reject
+top-level schema unions can accept the tools.
 
 ## Commands
 
@@ -80,14 +136,18 @@ Offense is the only workflow; there is no mode toggle. The `cyber_state` tool ma
 
 ## Pi tools
 
-The extension registers 18 custom tools. Pi's own built-in tools and tools supplied by optional extensions are separate.
+The extension registers 23 custom tools, including 12 scanner adapters. Pi's own built-in tools and tools supplied by optional extensions are separate.
 
 | Tool | Function |
 | --- | --- |
 | `cyber_state` | Read or update the durable offense brief. |
 | `cyber_spec` | Load the full specification or one of its focused packages. |
 | `cyber_evidence` | Store and retrieve sanitized evidence references, findings, and summaries. |
-| `cyber_jobs` | List adapters, run a typed job, and inspect job status. |
+| `cyber_jobs` | List adapters, start synchronous or background jobs, inspect/cancel jobs, and read bounded result windows. |
+| `cyber_artifacts` | Create small upload artifacts, inspect metadata, and read bounded UTF-8 or base64 windows using opaque IDs. |
+| `cyber_tools` | List the live tool registry, describe a tool's schema, and inspect scanner readiness. |
+| `mailgen` | Create disposable mailboxes and wait for messages, OTPs, and verification links through the installed mail provider tooling. |
+| `bypass_fetch` | Make typed HTTP requests through the configured curl-impersonate bundle, with artifact-backed uploads and response storage. |
 | `browser` | Drive the CloakBrowser engine: navigate, eval, snapshot, and harvest Turnstile/Cloudflare clearance with persistent profiles. |
 | `cyber_knowledge` | Search, inspect, and explicitly rebuild the local skills, research, and documentation index. |
 | `github` | Perform supported GitHub lookups through the `gh` executable. |
@@ -102,8 +162,9 @@ The extension registers 18 custom tools. Pi's own built-in tools and tools suppl
 | `vulnx` | Query vulnerability intelligence. |
 | `interactsh` | Run an out-of-band callback client. |
 | `semgrep` | Scan local source paths with a selected ruleset. |
+| `jwt-hack` | Run typed JWT inspection, payload, and cracking operations through the installed adapter. |
 
-The eleven adapter tools use typed parameters and route execution through the job runner. Their presence in Pi does not prove that a binary is installed, compatible, authenticated, or able to reach a target. Use the readiness checks below and inspect each job result.
+The twelve adapter tools use typed parameters and route execution through the job runner. Their presence in Pi does not prove that a binary is installed, compatible, authenticated, or able to reach a target. Use the readiness checks below and inspect each job result.
 
 ### Tool installation and readiness
 
@@ -162,6 +223,13 @@ AST=1 bun run pi             # opt in to the separate AST extension
 ```
 
 Tests use temporary sessions, fake scanner executables, parser fixtures, and local-only unit fixtures. They do not establish live provider behavior or validate an external target. The optional AST extension registers `ast_grep` and `ast_edit`; it is not loaded by the default launcher.
+
+Browser fixture tests bind localhost; a sandbox that blocks local listeners
+cannot run those fixtures successfully. The missing-binary readiness fixture
+also expects scanner binaries to be absent from its test PATH. Keep live API
+benchmark scripts and raw results outside the checkout; report failures and
+sample counts alongside latency percentiles, and distinguish stream delivery
+bursts from model generation speed.
 
 ## License, security, and citation
 

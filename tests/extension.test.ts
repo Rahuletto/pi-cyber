@@ -76,6 +76,21 @@ test("cyber command rejects removed mode switching and keeps offense active", as
   expect((await h.tool({ action: "get" })).details.mode).toBe("offense");
 });
 
+test("state tool rejects mismatched action fields without appending a checkpoint", async () => {
+  const h = await host();
+  const before = h.session.getBranch().length;
+  for (const params of [
+    { action: "get", patch: {} },
+    { action: "update" },
+    { action: "delete" },
+    { action: "update", patch: { unknown: true } },
+  ]) {
+    await expect(h.tool(params)).rejects.toThrow();
+    expect(h.session.getBranch()).toHaveLength(before);
+  }
+  expect((await h.tool({ action: "get" })).details.revision).toBe(0);
+});
+
 test("single offense theme stays active and renders a red offense badge", async () => {
   const h = await host(true);
   expect(h.theme).toBe("cyber-offense");
