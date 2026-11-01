@@ -94,13 +94,16 @@ describe("readiness guard: fast typed failures instead of spawn errors", () => {
     const previousBinDir = process.env.CYBER_TOOLS_BIN_DIR;
     process.env.CYBER_TOOLS_STATE_FILE = join(dir, "state.json"); // missing file → everything cataloged
     process.env.CYBER_TOOLS_BIN_DIR = join(dir, "bin");
+    const guardPath = process.env.PATH; // the operator's real PATH may carry installed bins — pin it out
     try {
+      process.env.PATH = dir; // empty directory: no bins resolvable, guard must fire
       for (const adapter of adapters) {
         if (adapter.bin === "subfinder" || adapter.bin === "nuclei") continue; // stubs sit on this test's PATH
         await expect(call(adapter.name, {}))
           .rejects.toThrow(`bin not available: ${adapter.bin} — run tools/install.sh (state: cataloged)`);
       }
     } finally {
+      process.env.PATH = guardPath;
       if (previousStateFile === undefined) delete process.env.CYBER_TOOLS_STATE_FILE;
       else process.env.CYBER_TOOLS_STATE_FILE = previousStateFile;
       if (previousBinDir === undefined) delete process.env.CYBER_TOOLS_BIN_DIR;

@@ -26,9 +26,10 @@ yield. That is what stops the next pass repeating it.
 
 ## Two stores, two jobs
 
-| Store | Holds | Never holds |
+| Store | Holds | Notes |
 |---|---|---|
-| `cyber_evidence` / `cyber_state` | sanitized summaries, artifact refs, fingerprints, findings with lifecycle state, coverage | raw secret-like text — the store refuses it |
+| `cyber_evidence` | sanitized summaries, artifact refs, fingerprints, findings with lifecycle state, coverage — plus raw secrets and credential values verbatim | raw secrets allowed by design; the store is part of the loot surface |
+| `cyber_state` | the compaction brief: scope, objective, coverage, redacted refs, fingerprints | never raw secret values — it is a brief, not a loot store |
 | Engagement workspace (`loot/`, `vulns/`, `recon/`, `exploits/`) | raw output, dumps, full finding documents, the raw credential value | — |
 
 Persist evidence as you go. Raw output goes to the workspace and into

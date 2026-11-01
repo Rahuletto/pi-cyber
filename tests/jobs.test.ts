@@ -114,14 +114,15 @@ describe("job runner essentials", () => {
     } finally { store.close(); }
   });
 
-  test("secret-tainted argv refuses with the canonical message before spawn", async () => {
+  test("secret-tainted argv is persisted and spawned verbatim", async () => {
     const store = openEvidence(":memory:");
     try {
-      await expect(runJob({ tool: "subfinder", params: { domain: "api_key=leakysecretvalue" } }, { evidenceDb: store }))
-        .rejects.toThrow(SECRET_REFUSAL_MESSAGE);
-      // Nothing persisted and the stub never received that value.
-      expect(store.listJobs()).toEqual([]);
-      expect(store.recordCount()).toBe(0);
+      const result = await runJob({ tool: "subfinder", params: { domain: "api_key=leakysecretvalue" } }, { evidenceDb: store });
+      expect(result.state).toBe("succeeded");
+      expect(result.argv).toContain("api_key=leakysecretvalue");
+      const jobs = store.listJobs();
+      expect(jobs).toHaveLength(1);
+      expect(jobs[0].argv).toContain("api_key=leakysecretvalue");
     } finally { store.close(); }
   });
 });
@@ -288,42 +289,32 @@ describe("serialization (no parallel execution)", () => {
 });
 
 describe("fix round 1 — ledger guarantees and return-path secret checks", () => {
-  test("finding 1 (success path): a refused finding keeps state succeeded AND leaves a partial-persist ledger trace + caller annotation", async () => {
+  test("finding 1 (success path): a tainted row is persisted verbatim, state succeeded, ledger stays clean", async () => {
     const store = openEvidence(join(tempDir(), "partial", "cyber.sqlite"));
     try {
       const result = await runJob(
         { tool: "subfinder", params: { domain: "fixture.local", extra: ["--taint"] } },
         { evidenceDb: store },
       );
-      expect(result.state).toBe("succeeded"); // row state stays succeeded (annotated-success semantics)
-      expect(result.evidencePersistence).toBe("partial");
-      expect(result.refusedCount).toBe(1);
-      expect(result.persistReason).toBe("secret-refusal");
-      expect(result.persistError).toBe(SECRET_REFUSAL_MESSAGE); // verbatim, so the model can self-correct
-      expect(result.parsedRows).toBe(1); // only the untainted row was persisted
-      expect(result.evidenceIds.length).toBe(1);
+      expect(result.state).toBe("succeeded");
+      expect(result.evidencePersistence).toBe("complete");
+      expect(result.refusedCount ?? 0).toBe(0); // gate is off: refusedCount is omitted
+      expect(result.persistReason).toBeUndefined(); // secret-refusal no longer fires; no blocked persistence
+      expect(result.parsedRows).toBe(2); // both rows parsed and persisted
+      expect(result.evidenceIds.length).toBe(2);
 
       expect(store.listJobs()[0].state).toBe("succeeded");
       const events = jobEvents(store.path).map((event) => JSON.parse(event.payload_json));
       const summary = events[events.length - 1];
-      expect(summary).toMatchObject({
-        event: "summary",
-        rows: 1,
-        evidencePersistence: "partial",
-        refusedCount: 1,
-        persistReason: "secret-refusal",
-      });
-      // The ledger never carries the raw secret, and not even the verbatim
-      // refusal text (which itself matches the secret heuristic); the refusal
-      // travels to the caller through the JobResult only.
+      expect(summary).toMatchObject({ event: "summary", rows: 2, evidencePersistence: "complete" });
+      // Job-event payloads never carry row text.
       for (const payload of events) {
         expect(JSON.stringify(payload)).not.toContain("leakysecretvalue");
-        expect(JSON.stringify(payload)).not.toContain("api_key");
       }
     } finally { store.close(); }
   });
 
-  test("finding 1 (killed path): the outcome-unknown annotation is not skippable even when a persist refusal hits", async () => {
+  test("finding 1 (killed path): the outcome-unknown annotation is recorded with a complete persist when a refusal no longer hits", async () => {
     const store = openEvidence(join(tempDir(), "partial-killed", "cyber.sqlite"));
     try {
       const result = await runJob(
@@ -332,19 +323,17 @@ describe("fix round 1 — ledger guarantees and return-path secret checks", () =
       );
       expect(result.timedOut).toBe(true);
       expect(result.state).toBe("interrupted");
-      expect(result.evidencePersistence).toBe("partial");
-      expect(result.persistReason).toBe("secret-refusal");
-      expect(result.refusedCount).toBe(1);
+      expect(result.evidencePersistence).toBe("complete");
+      expect(result.refusedCount ?? 0).toBe(0);
       const annotated = jobEvents(store.path)
         .map((event) => JSON.parse(event.payload_json) as Record<string, unknown>)
         .find((payload) => payload.event === "outcome-unknown");
       expect(annotated).toMatchObject({
         reason: "killed at timeout",
         state: "interrupted",
-        evidencePersistence: "partial",
-        persistReason: "secret-refusal",
-        refusedCount: 1,
+        evidencePersistence: "complete",
       });
+      expect(annotated?.persistReason).toBeUndefined();
       expect(store.listJobs()[0].state).toBe("interrupted");
     } finally { store.close(); }
   });
@@ -370,26 +359,27 @@ describe("fix round 1 — ledger guarantees and return-path secret checks", () =
     } finally { store.close(); }
   });
 
-  test("finding 3: argv entries beyond the recorded head are secret-checked before exec (canonical refusal, nothing spawned or stored)", async () => {
+  test("finding 3: argv entries beyond the recorded head run and persist verbatim (no secret gate)", async () => {
     const store = openEvidence(":memory:");
     try {
       // Schema cap is 256 targets: even so the argv reaches 514 elements while
-      // the store records/checks only a 250-entry head — the tainted entry at
-      // target index 255 lands at argv position 511, past the checked head.
+      // the store records only a 250-entry head — the tainted entry at target
+      // index 255 lands at argv position 511, past the recorded head.
       const targets = Array.from({ length: 256 }, (_, index) =>
         index === 255 ? "api_key=leakysecretvalue" : `fixture-${index}.local`);
-      await expect(runJob({ tool: "nuclei", params: { targets } }, { evidenceDb: store }))
-        .rejects.toThrow(SECRET_REFUSAL_MESSAGE);
-      expect(store.listJobs()).toEqual([]);
-      expect(store.recordCount()).toBe(0);
+      const result = await runJob({ tool: "nuclei", params: { targets } }, { evidenceDb: store });
+      expect(result.state).toBe("succeeded"); // no gate: the 514-element argv runs instead of refusing
+      expect(result.argv.at(-1)).toBe("-jsonl"); // runner result argv is also head-capped on long argv
+      const jobs = store.listJobs();
+      expect(jobs).toHaveLength(1);
+      expect(jobs[0].argv.at(-1)).toBe("<264 more argv entries not recorded>"); // store head stays capped as before
     } finally { store.close(); }
   });
 
-  test("finding 3 (details return path): the tool's argv secret gate refuses a tail-tainted argv with the canonical message", () => {
+  test("finding 3 (details return path): the tool's argv gate is a no-op — a tail-tainted argv passes through", () => {
     const tail = Array.from({ length: 300 }, (_, index) =>
       index === 299 ? `ghp_${"a".repeat(36)}` : `fixture-${index}.local`);
-    expect(() => assertArgvSecretFree(["nuclei", "-u", ...tail]))
-      .toThrow(SECRET_REFUSAL_MESSAGE);
+    expect(() => assertArgvSecretFree(["nuclei", "-u", ...tail])).not.toThrow();
     expect(() => assertArgvSecretFree(["nuclei", "-json", "-d", "fixture.example"])).not.toThrow();
   });
 

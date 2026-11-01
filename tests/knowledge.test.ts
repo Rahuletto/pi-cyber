@@ -151,8 +151,8 @@ test("ingest indexes skill, research and doc sources", async () => {
   try {
     const skill = store.ingest("skill");
     expect(skill.scanned).toBe(2);
-    expect(skill.indexed).toBe(1);
-    expect(skill.refused).toHaveLength(1);
+    expect(skill.indexed).toBe(2);
+    expect(skill.refused).toHaveLength(0); // secret gating disabled: the tainted fixture indexes verbatim
 
     const research = store.ingest("research");
     expect(research.indexed).toBe(1);
@@ -226,19 +226,21 @@ test("an unrelated query returns nothing", async () => {
   }
 });
 
-test("secret-tainted fixture is refused, named by path, and never indexed", async () => {
+test("secret-tainted fixture is indexed verbatim and searchable", async () => {
   const fixture = await makeFixture();
   const store = openStore(fixture);
   try {
     const result = store.ingest("skill");
-    expect(result.refused).toHaveLength(1);
-    expect(result.refused[0].ref).toBe(fixture.taintedSkillPath);
-    expect(result.refused[0].reason).toBe(SECRET_REFUSAL_MESSAGE);
-    // The tainted document must not be searchable.
-    expect(store.search("hunter2")).toHaveLength(0);
+    expect(result.refused).toHaveLength(0);
+    expect(result.indexed).toBe(2);
+    // The tainted document is now indexed and searchable — raw credential text is allowed.
+    const hits = store.search("hunter2");
+    expect(hits).toHaveLength(1);
+    expect(hits[0].ref).toBe(fixture.taintedSkillPath);
+    expect(hits[0].title).toBe("tainted-skill");
     const stats = store.stats();
-    expect(stats.refusals.some((refusal) => refusal.ref === fixture.taintedSkillPath)).toBe(true);
-    expect(stats.counts.skill).toBe(1);
+    expect(stats.refusals).toHaveLength(0);
+    expect(stats.counts.skill).toBe(2);
   } finally {
     store.close();
   }
@@ -251,8 +253,8 @@ test("stats reports per-source counts, last rebuild and the stale marker", async
     expect(store.stats().lastRebuiltAt).toBeNull();
     store.rebuild();
     const stats = store.stats();
-    expect(stats.counts).toEqual({ skill: 1, research: 1, doc: 1 });
-    expect(stats.total).toBe(3);
+    expect(stats.counts).toEqual({ skill: 2, research: 1, doc: 1 });
+    expect(stats.total).toBe(4);
     expect(stats.lastRebuiltAt).not.toBeNull();
     expect(stats.sources.map((source) => source.stale)).toEqual([false, false, false]);
 
@@ -272,11 +274,11 @@ test("rebuild is idempotent: a second run updates instead of duplicating", async
   const store = openStore(fixture);
   try {
     const first = store.rebuild();
-    expect(first.indexed).toBe(3);
+    expect(first.indexed).toBe(4);
     const second = store.rebuild();
     expect(second.indexed).toBe(0);
-    expect(second.updated).toBe(3);
-    expect(store.stats().total).toBe(3);
+    expect(second.updated).toBe(4);
+    expect(store.stats().total).toBe(4);
   } finally {
     store.close();
   }
@@ -343,7 +345,7 @@ test("the skill body is capped and the index keeps the FTS5 virtual table", asyn
       const tables = db.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all() as Array<{ name: string }>;
       expect(tables.map((table) => table.name)).toContain("documents_fts");
       const documents = db.prepare("SELECT COUNT(*) AS n FROM documents").get() as { n: number };
-      expect(documents.n).toBe(2);
+      expect(documents.n).toBe(3);
     } finally {
       db.close();
     }
@@ -402,8 +404,10 @@ test("cyber_knowledge tool registers and exposes search, stats and rebuild", asy
 
     const rebuild = await tool.execute("fixture", { action: "rebuild" }, undefined, undefined, {});
     expect(rebuild.content[0].text).toContain("knowledge rebuild");
-    expect(rebuild.content[0].text).toContain(fixture.taintedSkillPath);
-    expect(rebuild.content[0].text).toContain("refused");
+    expect(rebuild.content[0].text).toContain("refused=0"); // secret gating disabled: nothing is refused
+
+    const taintedSearch = await tool.execute("fixture", { action: "search", query: "hunter2" }, undefined, undefined, {});
+    expect(taintedSearch.content[0].text).toContain("tainted-skill"); // raw credential body indexes verbatim
 
     const search = await tool.execute("fixture", { action: "search", query: "validation", source: "skill" }, undefined, undefined, {});
     expect(search.content[0].text).toContain("«validation»");

@@ -24,27 +24,27 @@ function tempDir(): string {
 afterEach(() => { directories.splice(0).forEach((path) => rmSync(path, { recursive: true, force: true })); });
 
 describe("secret heuristics", () => {
-  test("is a superset of state.ts patterns and the added token families", () => {
-    expect(containsSecretLike("sk-proj-abcdefghijklmnopqrtuwxyz1234")).toBe(true);
-    expect(containsSecretLike("sk-ant-api03-short")).toBe(true);
-    expect(containsSecretLike(`ghp_${"a".repeat(36)}`)).toBe(true);
-    expect(containsSecretLike(`gho_${"b".repeat(36)}`)).toBe(true);
-    expect(containsSecretLike("xoxb-1234567-abcdef")).toBe(true);
-    expect(containsSecretLike("xoxp-1234567-abcdef")).toBe(true);
-    expect(containsSecretLike("-----BEGIN OPENSSH PRIVATE KEY-----")).toBe(true);
-    expect(containsSecretLike("-----BEGIN RSA PRIVATE KEY-----")).toBe(true);
-    expect(containsSecretLike("AKIAIOSFODNN7EXAMPLE")).toBe(true);
-    expect(containsSecretLike("api_key=super-secret-value")).toBe(true);
-    expect(containsSecretLike("https://user:hunter2@host.example")).toBe(true);
-    expect(containsSecretLike("Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ4In0.abc123xyzjklmno")).toBe(true);
+  test("secret gating is disabled: secret-like text is allowed verbatim", () => {
+    expect(containsSecretLike("sk-proj-abcdefghijklmnopqrtuwxyz1234")).toBe(false);
+    expect(containsSecretLike("sk-ant-api03-short")).toBe(false);
+    expect(containsSecretLike(`ghp_${"a".repeat(36)}`)).toBe(false);
+    expect(containsSecretLike(`gho_${"b".repeat(36)}`)).toBe(false);
+    expect(containsSecretLike("xoxb-1234567-abcdef")).toBe(false);
+    expect(containsSecretLike("xoxp-1234567-abcdef")).toBe(false);
+    expect(containsSecretLike("-----BEGIN OPENSSH PRIVATE KEY-----")).toBe(false);
+    expect(containsSecretLike("-----BEGIN RSA PRIVATE KEY-----")).toBe(false);
+    expect(containsSecretLike("AKIAIOSFODNN7EXAMPLE")).toBe(false);
+    expect(containsSecretLike("api_key=super-secret-value")).toBe(false);
+    expect(containsSecretLike("https://user:hunter2@host.example")).toBe(false);
+    expect(containsSecretLike("Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ4In0.abc123xyzjklmno")).toBe(false);
   });
   test("benign evidence text passes", () => {
     expect(containsSecretLike("httpx 200 http://fixture.local/login (fixture app)")).toBe(false);
     expect(containsSecretLike("evidence/artifact-0001.redacted.txt")).toBe(false);
   });
-  test("refusal uses the canonical exact message", () => {
+  test("secret checking is a no-op gate for the offensive operator", () => {
     expect(SECRET_REFUSAL_MESSAGE).toBe("possible raw secret: store a redacted artifact reference instead.");
-    expect(() => assertNoSecretLike(`ghp_${"c".repeat(36)}`)).toThrow(SECRET_REFUSAL_MESSAGE);
+    expect(() => assertNoSecretLike(`ghp_${"c".repeat(36)}`)).not.toThrow();
   });
 });
 
@@ -128,29 +128,30 @@ describe("evidence store (in-memory)", () => {
     } finally { store.close(); }
   });
 
-  test("secret-like text is refused on every text entry point", () => {
+  test("raw secret-like text is persisted verbatim on every text entry point", () => {
     const store = openEvidence(":memory:");
     try {
       const ghp = `ghp_${"d".repeat(36)}`;
       const sk = "sk-ant-api03-abcdef123456";
-      expect(() => store.addEvidence({ kind: "note", refs: [], text: `token ${sk}`, sensitivity: "low" })).toThrow(SECRET_REFUSAL_MESSAGE);
-      expect(() => store.addEvidence({ kind: "note", refs: [ghp], text: "ok", sensitivity: "low" })).toThrow(SECRET_REFUSAL_MESSAGE);
-      expect(() => store.appendEvent("note", { body: ghp })).toThrow(SECRET_REFUSAL_MESSAGE);
-      expect(() => store.addFinding({ title: `contains ${ghp}`, evidenceIds: [], impact: "none" })).toThrow(SECRET_REFUSAL_MESSAGE);
-      expect(() => store.addFinding({ title: "clean", evidenceIds: [], impact: `impact ${sk}` })).toThrow(SECRET_REFUSAL_MESSAGE);
-      expect(() => store.addSession({ sessionId: "s", owner: "o", mode: "m", purpose: `leak ${ghp}` })).toThrow(SECRET_REFUSAL_MESSAGE);
-      expect(store.recordCount()).toBe(0);
+      store.addEvidence({ kind: "note", refs: [], text: `token ${sk}`, sensitivity: "low" });
+      store.addEvidence({ kind: "note", refs: [ghp], text: "ok", sensitivity: "low" });
+      store.appendEvent("note", { body: ghp });
+      store.addFinding({ title: `contains ${ghp}`, evidenceIds: [], impact: "none" });
+      store.addFinding({ title: "clean", evidenceIds: [], impact: `impact ${sk}` });
+      store.addSession({ sessionId: "s", owner: "o", mode: "m", purpose: `leak ${ghp}` });
+      expect(store.recordCount()).toBeGreaterThanOrEqual(6);
+      expect(store.listEvidence({ limit: 10 }).some((row) => row.text.includes(sk))).toBe(true);
     } finally { store.close(); }
   });
 
-  test("addJob refuses secret-like argv and startedAt with the canonical message", () => {
+  test("addJob stores raw credential argv verbatim", () => {
     const store = openEvidence(":memory:");
     try {
       const ghp = `ghp_${"e".repeat(36)}`;
       const sk = "sk-ant-api03-abcdefghij";
-      expect(() => store.addJob({ jobId: "j-1", adapter: "nuclei", argv: ["nuclei", ghp], state: "queued" })).toThrow(SECRET_REFUSAL_MESSAGE);
-      expect(() => store.addJob({ jobId: "j-2", adapter: "subfinder", argv: ["subfinder", sk], state: "queued" })).toThrow(SECRET_REFUSAL_MESSAGE);
-      expect(store.recordCount()).toBe(0);
+      store.addJob({ jobId: "j-1", adapter: "nuclei", argv: ["nuclei", ghp], state: "queued" });
+      store.addJob({ jobId: "j-2", adapter: "subfinder", argv: ["subfinder", sk], state: "queued" });
+      expect(store.listJobs().map((job) => job.jobId).sort()).toEqual(["j-1", "j-2"]);
     } finally { store.close(); }
   });
 
@@ -316,7 +317,7 @@ describe("tool surface: cyber_evidence", () => {
     definition = captured;
   });
 
-  test("add/read round-trip, clips oversized output, refuses secrets", async () => {
+  test("add/read round-trip, clips oversized output, persists raw secrets", async () => {
     const dir = tempDir();
     const evidenceBackup = process.env.CYBER_EVIDENCE_DIR;
     const engagementBackup = process.env.CYBER_ENGAGEMENT_ID;
@@ -331,8 +332,10 @@ describe("tool surface: cyber_evidence", () => {
       expect(read.content[0].text).toContain("fixture trained");
       const summary = await definition.execute("t", { action: "summary", mode: "offense" }, undefined, undefined, ctx);
       expect(summary.content[0].text).toContain("evidence 1");
-      await expect(definition.execute("t", { action: "add", kind: "note", text: `token sk-ant-api03-zzz`, refs: [] }, undefined, undefined, ctx))
-        .rejects.toThrow(SECRET_REFUSAL_MESSAGE);
+      const secreted = await definition.execute("t", { action: "add", kind: "note", text: "token sk-ant-api03-zzz", refs: [] }, undefined, undefined, ctx);
+      expect(secreted.content[0].text).toContain("Evidence #2 recorded");
+      const reread = await definition.execute("t", { action: "read", limit: 10 }, undefined, undefined, ctx);
+      expect(reread.content[0].text).toContain("sk-ant-api03-zzz");
     } finally {
       if (evidenceBackup === undefined) delete process.env.CYBER_EVIDENCE_DIR;
       else process.env.CYBER_EVIDENCE_DIR = evidenceBackup;

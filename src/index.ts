@@ -34,12 +34,17 @@ const ROLE_FILES: Record<string, string> = {
   exfil: "exfil.md", backdoor: "backdoor.md", reverse: "reverse.md", reviewer: "reviewer.md",
   validation: "validation.md", "vulnerability-research": "vuln-research.md",
   "offensive-operator": "offensive-operator.md", "source-remediation": "remediation.md",
+  apk: "apk.md", "mobile-api": "mobile-api.md", cloud: "cloud.md",
+  "network-pivot": "network-pivot.md", "payload-dev": "payload-dev.md",
+  "osint-deep": "osint-deep.md", "social-eng": "social-eng.md",
+  reporting: "reporting.md", "supply-chain": "supply-chain.md", iot: "iot.md",
 };
 
 /** Package names the agent may pull on demand. Each maps to a file under prompts/packages/. */
 const PACKAGE_FILES: Record<string, string> = {
   behavior: "behavior.md", contract: "contract.md", doctrine: "doctrine.md", doors: "doors.md",
   exfil: "exfil.md", backdoor: "backdoor.md", secrets: "secrets.md", evidence: "evidence.md", status: "status.md",
+  instruction: "instruction.md",
 };
 /**
  * Model-family overlay selection. The first matching rule wins; the more specific
@@ -197,6 +202,53 @@ export default function cyber(pi: ExtensionAPI): void {
         if (!body) { notice(ctx, `Unknown specification target "${requested}". Use full or one of: ${Object.keys(PACKAGE_FILES).join(", ")}.`, "error"); return; }
         await pi.sendMessage({ customType: "cyber.spec", content: body, display: false }, { triggerTurn: true });
         notice(ctx, `Loaded offense specification: ${requested} (${body.length} chars).`, "info");
+      } catch (error) { notice(ctx, errorText(error), "error"); }
+    },
+  });
+  pi.registerCommand("trace", {
+    description: "Export trace.md to the engagement workspace: every approach tried, what worked, what failed, what was found but not attempted, and which pivots improved the outcome — so other agents can follow how pi-cyber worked the engagement. Usage: /trace [workspace-path]",
+    handler: async (args, ctx) => {
+      try {
+        const workspace = args.trim() || ctx.cwd || process.cwd();
+        const content = [
+          "TRACE EXPORT REQUEST",
+          "====================",
+          `Export workspace: ${workspace}`,
+          "",
+          "Compile the full engagement trace from this session's history and write it to",
+          "`trace.md` in the export workspace above (create the file; do not overwrite an",
+          "existing trace.md without appending a new dated section). This file is read by",
+          "other agents to understand HOW pi-cyber approached the engagement, not just",
+          "what it found. Cover every item below, in order, with concrete specifics —",
+          "commands, payloads, endpoints, response codes, timings — not vague summaries:",
+          "",
+          "1. APPROACHES TRIED — every distinct approach in chronological order: what was",
+          "   attempted, against what target/endpoint, with what exact method or payload,",
+          "   and what the observed result was.",
+          "2. WHAT WORKED — the approaches that succeeded, what specifically made them",
+          "   work (payload variant, encoding, header, ordering, timing), and the verified",
+          "   impact of each.",
+          "3. WHAT DIDN'T WORK — every approach that failed or was blocked: the exact",
+          "   attempt, the failure mode (WAF block, rate limit, 403, timeout, wrong",
+          "   assumption, missing tool), and what ruled it out. Dead ends are as valuable",
+          "   as successes — record them all.",
+          "4. FOUND BUT NOT TRIED — everything discovered but not yet attempted: endpoints",
+          "   spotted, credentials found but untested, vulns identified but not exploited,",
+          "   leads parked for later, with the reason each was left untried.",
+          "5. PIVOTS AND APPROACH CHANGES — every moment the approach changed: what was",
+          "   going wrong, what changed (different vector, different tool, different",
+          "   encoding, parallel instead of sequential, etc.), and what measurable",
+          "   difference the change made — what got better and how you know.",
+          "6. STATE AT EXPORT — current access level, confirmed findings, open chains,",
+          "   blockers, and the single highest-value next action for an agent picking up",
+          "   this trace.",
+          "",
+          "Write it as `trace.md` in the export workspace, then reply with the absolute",
+          "path of the file you wrote and a 5-line summary of the trace's headline",
+          "conclusions.",
+        ].join("\n");
+        await pi.sendMessage({ customType: "cyber.trace", content, display: false }, { triggerTurn: true });
+        notice(ctx, `Trace export started → ${workspace}/trace.md. The agent will compile its full approach history and write the file.`, "info");
       } catch (error) { notice(ctx, errorText(error), "error"); }
     },
   });

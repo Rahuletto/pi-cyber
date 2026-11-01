@@ -27,10 +27,10 @@ describe("artifact store", () => {
     expect(readFileSync(resolveArtifactPath(ref.id, env))).toEqual(Buffer.from(bytes));
   });
 
-  test("refuses secret-like text and traversal IDs before exposing a path", () => {
+  test("stores raw secret-like text verbatim and still refuses traversal IDs before exposing a path", () => {
     const env = envRoot();
-    expect(() => storeArtifact("api_key=abcdefghijklmno", { kind: "text", contentType: "text/plain" }, env))
-      .toThrow("possible raw secret");
+    const ref = storeArtifact("api_key=abcdefghijklmno", { kind: "text", contentType: "text/plain" }, env);
+    expect(readArtifact(ref.id, { encoding: "utf8" }, env)?.data).toContain("api_key=abcdefghijklmno");
     expect(() => resolveArtifactPath("../../cyber.sqlite", env)).toThrow("invalid artifact id");
   });
 

@@ -85,9 +85,9 @@ describe("prompt overlays", () => {
     }
   });
 
-  test("all instruction prompts carry the redaction reflex, tool-first rule, diagram rule and output caps", () => {
+  test("all instruction prompts carry the raw-secret handling rule, tool-first rule, diagram rule and output caps", () => {
     for (const [name, text] of Object.entries(all)) {
-      expect(text).toMatch(/never store or echo raw secrets|raw credentials|raw key material/i);
+      expect(text).toMatch(/raw secrets|raw credentials|raw key material/i);
       expect(text).toContain("cyber_jobs");
       expect(text).toMatch(/never shell out/i);
       expect(text).toContain("mermaid");

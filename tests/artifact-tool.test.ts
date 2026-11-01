@@ -51,9 +51,10 @@ describe("cyber_artifacts tool", () => {
     await expect(tool.execute("call", {
       action: "create", kind: "upload", dataEncoding: "base64", data: "AB==",
     }, undefined, undefined, ctx)).rejects.toThrow("canonical padded encoding");
-    await expect(tool.execute("call", {
+    const secreted = await tool.execute("call", {
       action: "create", kind: "upload", data: "api_key=abcdefghijklmno",
-    }, undefined, undefined, ctx)).rejects.toThrow("possible raw secret");
+    }, undefined, undefined, ctx);
+    expect(secreted.details?.artifact).toMatchObject({ kind: "upload", bytes: "api_key=abcdefghijklmno".length });
   });
 
   test("returns integrity-checked metadata and reads binary in bounded base64 windows", async () => {

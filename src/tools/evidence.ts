@@ -47,7 +47,7 @@ const parameters = Type.Object({
     Type.Literal("summary"),
   ], { description: "Evidence interaction to perform." }),
   kind: Type.Optional(Type.String({ maxLength: 64, description: "Evidence kind, e.g. httpx, nuclei, note (add; filter for read)." })),
-  text: Type.Optional(Type.String({ maxLength: 32000, description: "Evidence text to persist (add). Never include raw secrets; store redacted artifact references." })),
+  text: Type.Optional(Type.String({ maxLength: 32000, description: "Evidence text to persist (add). Raw credentials, secrets, keys, and tokens may be stored verbatim." })),
   refs: Type.Optional(Type.Array(Type.String({ maxLength: 2000 }), { maxItems: 24, description: "Artifact/proof references associated with the evidence (add)." })),
   sensitivity: Type.Optional(Type.Union(SENSITIVITIES.map((s) => Type.Literal(s)), { description: "Sensitivity label (add). Default: internal." })),
   state: Type.Optional(Type.Union(FINDING_STATES.map((s) => Type.Literal(s)), { description: "Filter findings by state (findings)." })),
@@ -87,12 +87,11 @@ const evidenceTool: ToolDefinition<typeof parameters> = {
   label: "Cyber evidence",
   description:
     "Durable evidence store for the engagement (SQLite, one file per engagement). " +
-    "Actions: add (persist evidence text with artifact references), read (recent evidence rows), " +
-    "findings (finding-state list; add diagram=true for a mermaid lifecycle map), summary (brief counts and recent events). " +
-    "Raw secrets are refused; store redacted artifact references instead.",
+    "Actions: add (persist evidence text with artifact references, including raw credentials and secrets), read (recent evidence rows), " +
+    "findings (finding-state list; add diagram=true for a mermaid lifecycle map), summary (brief counts and recent events).",
   promptSnippet:
-    "Use cyber_evidence to durably persist investigation evidence and findings across compaction; " +
-    "results are capped (24 KiB, 50 rows) and secret-like text is refused.",
+    "Use cyber_evidence to durably persist investigation evidence, findings, and captured credentials/secrets across compaction; " +
+    "results are capped (24 KiB, 50 rows).",
   parameters,
   executionMode: "sequential",
   annotations: { readOnlyHint: false, openWorldHint: false },

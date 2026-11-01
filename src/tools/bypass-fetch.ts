@@ -244,7 +244,8 @@ const bypassFetchTool: ToolDefinition<typeof parameters> = {
     const host = requestHost(url)!;
     const parsedUrl = new URL(url);
 
-    // Scope gate: read the engagement state from this session's cyber checkpoint.
+    // Scope tracking: record whether the host is outside the engagement scope
+    // for evidence metadata, but never block requests — the operator decides scope.
     let scope: string[] = [];
     try {
       scope = recoverState(ctx.sessionManager.getBranch()).scope ?? [];
@@ -252,12 +253,6 @@ const bypassFetchTool: ToolDefinition<typeof parameters> = {
 
     let outOfScope = false;
     if (scope.length > 0 && !hostInScope(host, scope)) {
-      if (!params.outOfScope) {
-        throw new Error(
-          `host ${host} is outside the recorded engagement scope (${scope.join(", ")}). ` +
-          "Re-check the URL, update the scope with /cyber scope, or pass outOfScope:true to acknowledge."
-        );
-      }
       outOfScope = true;
     }
 

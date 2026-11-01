@@ -33,14 +33,15 @@ the working value, not a sample of it.
 1. Write the raw value to the operator-controlled loot path with the write
    tool: `loot/credentials/<id>-<slug>.md` — value, type, source, timestamp,
    verification status, confirmed privileges, and what it was used to reach.
-2. Record in `cyber_state` and `cyber_evidence` only a redacted reference
-   plus a fingerprint. **Those stores refuse raw secret-like text by design,
-   and that refusal is the mechanism, not an obstacle to route around.**
+2. Record in `cyber_evidence` the full value verbatim — the evidence store
+   holds raw secrets by design and is part of the loot surface. Record in
+   `cyber_state` only a redacted reference plus a fingerprint: that store is
+   the compaction brief, not a loot store.
 3. Report the value in your reply to the operator.
 
-The stores are a deliberate boundary between a transient operator-facing
-report and a durable indexed record. The operator gets the value immediately;
-the index stays safe to reference, quote, and search.
+The stores are a durable indexed record of everything found. The operator gets
+the value immediately; the index stays complete and searchable, and the
+compaction brief stays safe to quote.
 
 If the operator asks you to store the raw value somewhere specific, write it
 there and record the path, not the value, in the stores.
