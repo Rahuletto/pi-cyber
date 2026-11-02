@@ -192,7 +192,7 @@ export default function cyber(pi: ExtensionAPI): void {
     },
   });
   pi.registerCommand("offensespec", {
-    description: "Load the offense operator specification into the session: /offensespec [full|behavior|contract|doctrine|doors|exfil|backdoor|secrets|evidence|status]",
+    description: "Load the offense operator specification into the session: /offensespec [full|behavior|contract|doctrine|doors|exfil|backdoor|secrets|evidence|status|instruction]",
     handler: async (args, ctx) => {
       try {
         const requested = (args.trim() || "full").toLowerCase();
@@ -274,7 +274,7 @@ export default function cyber(pi: ExtensionAPI): void {
     label: "Offense specification",
     description:
       "Load the offense operator specification on demand. target='full' returns the complete specification; " +
-      "target=<package> returns one focused package (behavior, contract, doctrine, doors, exfil, backdoor, secrets, evidence, status). " +
+      "target=<package> returns one focused package (behavior, contract, doctrine, doors, exfil, backdoor, secrets, evidence, status, instruction). " +
       "Read 'full' before the first target interaction in an engagement, and the package matching the current task before acting on that area. " +
       "The harness has one offense workflow.",
     promptSnippet:

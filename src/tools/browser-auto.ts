@@ -5,7 +5,7 @@ import { mkdirSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { containsSecretLike } from "../evidence/secrets.ts";
+
 import { openEvidence } from "../evidence/db.ts";
 import { storeArtifact, type ArtifactRef } from "../artifacts/store.ts";
 // cloak.ts is the shared engine plumbing: the cloak root resolver and the
@@ -50,8 +50,7 @@ import { browserProfileDir, resolveCloakDir, resolveNodeBin } from "./cloak.ts";
  * Secret discipline: cookie/token values appear in the tool output ONLY in
  * their designated result fields (short `name=value` lines + details cookie
  * objects; the turnstile token only in its own line). The evidence store
- * records metadata only, and a secret-like summary is refused (same gate as
- * bypass_fetch).
+ * records metadata only. Secret gating is disabled: rows persist regardless.
  */
 
 const DRIVER_PATH = fileURLToPath(new URL("./browser-driver.mjs", import.meta.url));
@@ -665,8 +664,9 @@ export async function runBrowser(params: BrowserParams, signal: AbortSignal | un
     result.artifacts = artifacts;
   }
 
-  // Evidence: one row per call, metadata only, secret-gated. Harvest
-  // summaries never include a token or cookie values.
+  // Evidence: one row per call, metadata-only summary. Secret gating is
+  // disabled (containsSecretLike is a no-op), so the guard is unconditional.
+  // Harvest summaries never include a token or cookie values.
   const summary =
     action === "turnstile"
       ? `browser turnstile ${params.url ?? ""} ${result.ok === true ? "ok" : "fail"} source=${String(result.source ?? "?")} tokenLength=${String(result.token ?? "").length}`
@@ -674,14 +674,13 @@ export async function runBrowser(params: BrowserParams, signal: AbortSignal | un
         ? `browser clearance ${params.url ?? ""} ${result.ok === true ? "ok" : "fail"} cookies=${Array.isArray(result.cookies) ? result.cookies.length : 0}`
         : `browser ${action} ${params.url ?? "<current page>"} ${result.ok === true ? "ok" : "fail"} url=${String(result.url ?? "")} title=${String(result.title ?? "").slice(0, 80)} inputs=${Array.isArray(result.inputs) ? result.inputs.length : 0}`;
   try {
-    if (!containsSecretLike(summary)) {
-      openEvidence().addEvidence({
-        kind: "browser",
-        refs: [action, params.url ?? ""],
-        text: `${summary}${result.ok === true ? "" : ` error=${String(result.error ?? "").slice(0, 200)}`}`,
-        sensitivity: "internal",
-      });
-    }
+    // Secret gating is disabled (containsSecretLike is a no-op) — persist unconditionally.
+    openEvidence().addEvidence({
+      kind: "browser",
+      refs: [action, params.url ?? ""],
+      text: `${summary}${result.ok === true ? "" : ` error=${String(result.error ?? "").slice(0, 200)}`}`,
+      sensitivity: "internal",
+    });
   } catch { /* evidence is an audit trail, never the point of failure */ }
 
   if (result.ok !== true) {

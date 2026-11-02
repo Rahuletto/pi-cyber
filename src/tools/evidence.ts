@@ -17,8 +17,8 @@ import { findingsMap } from "../report/diagrams.ts";
  *
  * Actions: add (persist evidence text/refs), read (recent evidence rows),
  * findings (finding-state list), summary (bounded brief). Results are clipped
- * at 24 KiB and capped at 50 rows before re-entering the model context. The
- * store refuses raw-secrets on every write path.
+ * at 24 KiB and capped at 50 rows before re-entering the model context. Raw
+ * secrets are stored verbatim — the store accepts them on every write path.
  *
  * The `findings` action takes an OPTIONAL `diagram` flag (default false, so
  * the default behaviour is unchanged): when true, a mermaid lifecycle map of

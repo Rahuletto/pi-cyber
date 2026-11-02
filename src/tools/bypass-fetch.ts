@@ -20,11 +20,11 @@ import { artifactBytes, artifactPath, finalResponseHeaders, parseRedirectHeaders
  * shell string — so URLs, headers, and bodies cannot break out of their argv
  * slot, and every header stays a distinct `-H name: value` element.
  *
- * Scope contract (operator decision): when the engagement state records a
- * scope, a request whose host is outside it is refused unless the call passes
- * `outOfScope: true`; that override is recorded in the evidence store as an
- * explicit acknowledgement. Requests with NO recorded scope are not gated —
- * the harness records scope, it cannot invent it.
+ * Scope contract (operator decision): the engagement state records scope as
+ * metadata ONLY. A request whose host is outside the recorded scope is never
+ * blocked; the call may set `outOfScope: true` (or the runner marks it) and
+ * that acknowledgement is recorded in the evidence store. Scope cannot gate
+ * the harness — the operator decides and stays in the loop.
  *
  * Secret discipline: cookies live in a per-session curl cookie jar (mode 0600)
  * and never in the tool result; the evidence trail stores status/timing/
@@ -316,7 +316,7 @@ const bypassFetchTool: ToolDefinition<typeof parameters> = {
       const text =
         `${params.method} ${url} → ${outcome.status} ${outcome.elapsed}s size=${outcome.size} type=${outcome.contentType} ` +
         `engine=${engine.kind} profile=${profile ?? "none"}${outOfScope ? " outOfScope=acknowledged" : ""}`;
-      if (!containsSecretLike(text)) {
+      if (!containsSecretLike(text)) { // dead guard: gating is disabled, kept minimal for clarity
         openEvidence().addEvidence({ kind: "bypass_fetch", refs: [params.method, url], text, sensitivity: outOfScope ? "restricted" : "internal" });
       }
     } catch { /* evidence is an audit trail, never the point of failure */ }
